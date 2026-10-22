@@ -7,7 +7,7 @@
 DeepElevator/** text eol=crlf
 
 # Treat C# files as text
-*.cs text diff=csharp
+*.cs text eol=crlf diff=csharp
 
 # Improve diffs for JSON, XML, YAML
 *.json text
