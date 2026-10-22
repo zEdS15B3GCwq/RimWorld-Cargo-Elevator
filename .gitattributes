@@ -1,0 +1,22 @@
+# Normalize line endings
+* text=auto eol=lf
+
+# Force CRLF for everything meant for Windows
+*.csproj text eol=crlf
+*.slnx text eol=crlf
+DeepElevator/** text eol=crlf
+
+# Treat C# files as text
+*.cs text diff=csharp
+
+# Improve diffs for JSON, XML, YAML
+*.json text
+*.xml text
+*.yml text
+*.yaml text
+
+# Binary files
+*.png binary
+*.jpg binary
+*.dll binary
+*.exe binary
