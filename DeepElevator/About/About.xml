@@ -5,11 +5,16 @@
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
-	<modIconPath IgnoreIfNoMatchingField="True"></modIconPath>
 	<modDependencies>
+		<li>
+			<packageId>Mlie.DeepRim</packageId>
+			<displayName>DeepRim (Continued)</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2164179860</steamWorkshopUrl>
+		</li>
 	</modDependencies>
 	<packageId>FT.deepelevator</packageId>
 	<loadAfter>
+		<li>Mlie.DeepRim</li>
 	</loadAfter>
-	<description>Elevator building that can transport items between DeepRim map layers and the ground. Elevators send items dropped onto them automatically to another linked elevator. List of items can be requested to be sent. Received items are placed into neighbouring storage if possible, or dropped onto the ground. Works together with VFE conveyor belts: output can target hoppers and conveyor belts can place items onto elevator.</description>
+	<description>Elevator building that can transport items between DeepRim map layers and the ground. Elevators send items dropped onto them automatically to another linked elevator. List of items can be requested to be sent. Received items are placed into neighbouring storage if possible, or dropped onto the ground. Works together with VFE conveyor belts: output can target hoppers and conveyor belts can place items onto elevator. Build only one DeepRim mining shaft per map.</description>
 </ModMetaData>

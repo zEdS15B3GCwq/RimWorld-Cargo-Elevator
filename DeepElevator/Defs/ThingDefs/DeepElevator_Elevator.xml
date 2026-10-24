@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <ThingDef ParentName="BuildingBase">
+    <defName>DeepElevator_Elevator</defName>
+    <label>deep elevator</label>
+    <description>Transports items to a linked elevator on another DeepRim layer. Build a second elevator at the same position relative to the mining shaft / lift on another layer to link them.</description>
+    <thingClass>DeepElevator.Building_Elevator</thingClass>
+    <graphicData>
+      <texPath>Things/Buildings/DeepElevator/DeepElevator</texPath>
+      <graphicClass>Graphic_Multi</graphicClass>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon</uiIconPath>
+    <size>(1,1)</size>
+    <rotatable>true</rotatable>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <fillPercent>0.4</fillPercent>
+    <pathCost>42</pathCost>
+    <tickerType>Rare</tickerType>
+    <canOverlapZones>false</canOverlapZones>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <WorkToBuild>1500</WorkToBuild>
+      <Mass>30</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>75</Steel>
+      <ComponentIndustrial>2</ComponentIndustrial>
+    </costList>
+    <designationCategory>Misc</designationCategory>
+    <placeWorkers>
+      <li>DeepElevator.PlaceWorker_Elevator</li>
+    </placeWorkers>
+    <building>
+      <destroySound>BuildingDestroyed_Metal_Medium</destroySound>
+    </building>
+    <constructEffect>ConstructMetal</constructEffect>
+  </ThingDef>
+</Defs>

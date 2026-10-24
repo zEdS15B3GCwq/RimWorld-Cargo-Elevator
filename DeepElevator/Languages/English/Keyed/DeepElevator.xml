@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <DeepElevator_NoAnchor>Needs a DeepRim mining shaft (surface) or lift (layer) on this map.</DeepElevator_NoAnchor>
+  <DeepElevator_MultipleAnchors>This map has more than one DeepRim shaft or lift.</DeepElevator_MultipleAnchors>
+  <DeepElevator_AdjacentToAnchor>Too close to the mining shaft / lift.</DeepElevator_AdjacentToAnchor>
+  <DeepElevator_Surface>surface</DeepElevator_Surface>
+  <DeepElevator_Layer>layer at {0}m</DeepElevator_Layer>
+  <DeepElevator_LayerNamed>layer at {0}m ({1})</DeepElevator_LayerNamed>
+  <DeepElevator_ConnectedTo>Connected to {0}</DeepElevator_ConnectedTo>
+  <DeepElevator_NotConnected>Not connected</DeepElevator_NotConnected>
+  <DeepElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other layers. Use "Connect to...".</DeepElevator_CandidatesAvailable>
+  <DeepElevator_Connect>Connect to...</DeepElevator_Connect>
+  <DeepElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another layer. The link cannot be changed afterwards.</DeepElevator_ConnectDesc>
+  <DeepElevator_MsgLinked>Elevator connected to {0}.</DeepElevator_MsgLinked>
+  <DeepElevator_MsgUnlinked>Elevator lost its connection to {0}.</DeepElevator_MsgUnlinked>
+</LanguageData>
