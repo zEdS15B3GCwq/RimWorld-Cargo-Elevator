@@ -103,4 +103,4 @@ Decide during implementation (with the human user) which graphics to use. Availa
 
 ## 6. Verification
 
-The AI builds with MSBuild / VS 2022 (0 errors). The human tests in game after each step. Use `dotnet ilspycmd` (installed in this project) to check vanilla behaviour when in doubt.
+The AI builds with MSBuil (VS 2026 Community is installed). The human tests in game after each step. Use `dotnet ilspycmd` (installed in this project) to check vanilla behaviour when in doubt.
