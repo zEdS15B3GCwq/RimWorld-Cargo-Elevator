@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+	<name>DeepElevator</name>
+	<author>Me</author>
+	<supportedVersions>
+		<li>1.6</li>
+	</supportedVersions>
+	<modIconPath IgnoreIfNoMatchingField="True"></modIconPath>
+	<modDependencies>
+	</modDependencies>
+	<packageId>FT.deepelevator</packageId>
+	<loadAfter>
+	</loadAfter>
+	<description>Elevator building that can transport items between DeepRim map layers and the ground. Elevators send items dropped onto them automatically to another linked elevator. List of items can be requested to be sent. Received items are placed into neighbouring storage if possible, or dropped onto the ground. Works together with VFE conveyor belts: output can target hoppers and conveyor belts can place items onto elevator.</description>
+</ModMetaData>
