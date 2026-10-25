@@ -2,7 +2,7 @@
 <LanguageData>
   <DeepElevator_NoAnchor>Needs a DeepRim mining shaft (surface) or lift (layer) on this map.</DeepElevator_NoAnchor>
   <DeepElevator_MultipleAnchors>This map has more than one DeepRim shaft or lift.</DeepElevator_MultipleAnchors>
-  <DeepElevator_AdjacentToAnchor>Too close to the mining shaft / lift.</DeepElevator_AdjacentToAnchor>
+  <DeepElevator_AdjacentToAnchor>Cannot be adjacent to the mining shaft / lift.</DeepElevator_AdjacentToAnchor>
   <DeepElevator_Surface>surface</DeepElevator_Surface>
   <DeepElevator_Layer>layer at {0}m</DeepElevator_Layer>
   <DeepElevator_LayerNamed>layer at {0}m ({1})</DeepElevator_LayerNamed>

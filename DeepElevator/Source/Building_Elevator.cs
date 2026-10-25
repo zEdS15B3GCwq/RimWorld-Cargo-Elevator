@@ -46,11 +46,32 @@ public class Building_Elevator : Building
         base.SpawnSetup(map, respawningAfterLoad);
         ElevatorUtil.Log($"SpawnSetup: {ThingID} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.ThingID ?? "none"}");
 
-        // Never pair or validate while loading: the partner may live on a map that has not spawned yet.
-        if (!respawningAfterLoad && partner == null)
+        if (respawningAfterLoad)
+        {
+            // Only the reference itself is checked while loading, never the partner's spawned state:
+            // the partner may live on a map that has not spawned yet.
+            VerifyPartnerLinksBack();
+        }
+        else if (partner == null)
         {
             TryAutoPair();
         }
+    }
+
+    /// <summary>
+    /// A link must exist on both sides. All data and references are resolved before any map spawns,
+    /// so the partner's saved link can be read here even if the partner itself is not spawned yet.
+    /// A one-sided link (damaged save, mod removed mid-game) is dropped on this end.
+    /// </summary>
+    private void VerifyPartnerLinksBack()
+    {
+        if (partner == null || partner.partner == this)
+        {
+            return;
+        }
+
+        ElevatorUtil.LogWarn($"{ThingID}: partner {partner.ThingID} does not link back (it links to {partner.partner?.ThingID ?? "none"}); unlinking.");
+        Unlink("load check: partner does not link back");
     }
 
     /// <summary>Links automatically only when exactly one unambiguous candidate exists.</summary>
