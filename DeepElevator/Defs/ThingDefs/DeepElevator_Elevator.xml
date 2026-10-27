@@ -16,7 +16,12 @@
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
-    <tickerType>Rare</tickerType>
+    <tickerType>Normal</tickerType>
+    <surfaceType>Item</surfaceType>
+    <inspectorTabs>
+      <li>ITab_Storage</li>
+      <li>DeepElevator.ITab_ElevatorContents</li>
+    </inspectorTabs>
     <canOverlapZones>false</canOverlapZones>
     <statBases>
       <MaxHitPoints>200</MaxHitPoints>
@@ -34,7 +39,45 @@
     </placeWorkers>
     <building>
       <destroySound>BuildingDestroyed_Metal_Medium</destroySound>
+      <maxItemsInCell>1</maxItemsInCell>
+      <preventDeteriorationOnTop>true</preventDeteriorationOnTop>
+      <ignoreStoredThingsBeauty>true</ignoreStoredThingsBeauty>
+      <!-- no storageGroupTag: elevators must not be linked into shared storage groups -->
+      <fixedStorageSettings>
+        <filter>
+          <disallowNotEverStorable>true</disallowNotEverStorable>
+          <categories>
+            <li>Root</li>
+          </categories>
+        </filter>
+      </fixedStorageSettings>
+      <defaultStorageSettings>
+        <priority>Normal</priority>
+        <!-- nothing allowed by default; same pattern as VFE hoppers (empty filter) -->
+        <filter></filter>
+      </defaultStorageSettings>
     </building>
+    <comps>
+      <li Class="CompProperties_Transporter">
+        <massCapacity>100000</massCapacity> <!-- mass is not our capacity measure; slots are -->
+        <max1PerGroup>true</max1PerGroup>
+        <canChangeAssignedThingsAfterStarting>true</canChangeAssignedThingsAfterStarting>
+        <shouldTickContents>true</shouldTickContents> <!-- buffered food keeps rotting -->
+        <showMassInInspectString>false</showMassInInspectString>
+      </li>
+    </comps>
+    <modExtensions>
+      <li Class="DeepElevator.ElevatorSettingsExtension">
+        <defaultSlots>4</defaultSlots>
+        <minSlots>1</minSlots>
+        <maxSlots>20</maxSlots>
+        <ticksPerStack>60</ticksPerStack> <!-- one piece per second -->
+        <heldRetryTicks>-1</heldRetryTicks> <!-- -1 = same as ticksPerStack -->
+        <defaultFifo>true</defaultFifo>
+        <defaultMerge>true</defaultMerge>
+        <defaultAllowDrop>true</defaultAllowDrop>
+      </li>
+    </modExtensions>
     <constructEffect>ConstructMetal</constructEffect>
   </ThingDef>
 </Defs>

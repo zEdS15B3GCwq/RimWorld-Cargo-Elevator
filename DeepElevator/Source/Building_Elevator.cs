@@ -7,11 +7,14 @@ using Verse;
 namespace DeepElevator;
 
 /// <summary>
-/// Step B: an elevator that pairs with exactly one elevator on another level of the same level group.
-/// No storage or transport yet; this step only establishes, persists and tears down the link,
-/// and lets the player name the elevator.
+/// An elevator that pairs with exactly one elevator on another level of the same level group.
+/// Step B: link, lifecycle, naming. Step C: it is also a shelf-like storage building whose cell is the
+/// intake; items are pulled into the transporter comp's container (the buffer) and streamed to the partner.
+/// The class is split over several files: this one (link, lifecycle, UI), Building_Elevator.Buffer.cs
+/// (intake and buffer) and Building_Elevator.Send.cs (delivery at the partner).
 /// </summary>
-public class Building_Elevator : Building, IRenameable
+// ISlotGroupParent and IHaulDestination are listed again so that interface calls bind to our own Accepts.
+public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination
 {
     /// <summary>Interval for periodic work; matches the Rare ticker so switching tickerType is XML-only.</summary>
     public const int PeriodicInterval = GenTicks.TickRareInterval;
@@ -55,6 +58,10 @@ public class Building_Elevator : Building, IRenameable
         Scribe_References.Look(ref partner, "partner");
         Scribe_References.Look(ref partnerMap, "partnerMap");
         Scribe_Values.Look(ref customName, "customName");
+        Scribe_Values.Look(ref maxSlots, "maxSlots", Settings.defaultSlots);
+        Scribe_Values.Look(ref fifoMode, "fifoMode", Settings.defaultFifo);
+        Scribe_Values.Look(ref mergeStacks, "mergeStacks", Settings.defaultMerge);
+        Scribe_Values.Look(ref allowDrop, "allowDrop", Settings.defaultAllowDrop);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit && (partner == null) != (partnerMap == null))
         {
@@ -69,6 +76,7 @@ public class Building_Elevator : Building, IRenameable
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
+        CacheTransporter();
         ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
         if (respawningAfterLoad)
@@ -174,6 +182,7 @@ public class Building_Elevator : Building, IRenameable
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         OnLifecycleEnd(nameof(DeSpawn), $"mode={mode}");
+        ElevatorUtil.Log($"Despawn drop: {LogId} buffer has {BufferEntryCount} entries (vanilla drops them)");
         base.DeSpawn(mode);
     }
 
@@ -194,31 +203,37 @@ public class Building_Elevator : Building, IRenameable
     public override void Notify_MyMapRemoved()
     {
         OnLifecycleEnd(nameof(Notify_MyMapRemoved), "");
+        ElevatorUtil.Log($"Map removed: {LogId} buffer has {BufferEntryCount} entries (discarded with the map)");
         base.Notify_MyMapRemoved();
     }
 
     // ---------------------------------------------------------------- periodic work
 
-    // tickerType Rare: called every 250 ticks.
-    public override void TickRare()
-    {
-        base.TickRare();
-        DoPeriodicWork();
-    }
-
-    // tickerType Normal: called every tick, throttled to the same interval.
+    // tickerType Normal: called every tick; everything below exits early when idle.
     protected override void Tick()
     {
-        base.Tick();
+        base.Tick(); // ticks the comps, so CompTransporter ticks the buffer contents (rot etc.)
+
+        if (absorbPending)
+        {
+            absorbPending = false;
+            AbsorbIntake("event");
+        }
+
         if (this.IsHashIntervalTick(PeriodicInterval))
         {
             DoPeriodicWork();
         }
+
+        if (BufferEntryCount > 0 && Find.TickManager.TicksGame >= nextSendTick)
+        {
+            TrySend();
+        }
     }
 
     /// <summary>
-    /// All periodic logic lives here so it is independent of the ticker type.
-    /// Currently only a backstop: the lifecycle callbacks should already have caught every broken link.
+    /// Periodic logic, run every <see cref="PeriodicInterval"/> ticks: partner validation (a backstop,
+    /// the lifecycle callbacks should already have caught every broken link) and the intake backstop.
     /// </summary>
     private void DoPeriodicWork()
     {
@@ -227,6 +242,8 @@ public class Building_Elevator : Building, IRenameable
             ElevatorUtil.LogWarn($"Validation: {LogId} partner {partner.LogId} invalid ({invalidReason}); unlinking.");
             Unlink("validation: " + invalidReason);
         }
+
+        AbsorbIntake("backstop");
     }
 
     public bool IsValidPartner(out string invalidReason)
@@ -249,7 +266,17 @@ public class Building_Elevator : Building, IRenameable
     {
         foreach (Gizmo gizmo in base.GetGizmos())
         {
+            // The transporter comp's "Load" command is replaced by the manifest in a later step.
+            if (gizmo is Command_LoadToTransporter)
+            {
+                continue;
+            }
             yield return gizmo;
+        }
+
+        foreach (Gizmo bufferGizmo in GetBufferGizmos())
+        {
+            yield return bufferGizmo;
         }
 
         if (partner != null)
@@ -292,6 +319,11 @@ public class Building_Elevator : Building, IRenameable
             {
                 defaultLabel = "DEV: log link state",
                 action = LogLinkState
+            };
+            yield return new Command_Action
+            {
+                defaultLabel = "DEV: log buffer state",
+                action = LogBufferState
             };
         }
     }
@@ -354,6 +386,8 @@ public class Building_Elevator : Building, IRenameable
                 text.AppendLine("DeepElevator_CandidatesAvailable".Translate(candidateCount));
             }
         }
+
+        AppendBufferInspectLines(text);
 
         return text.ToString().TrimEndNewlines();
     }

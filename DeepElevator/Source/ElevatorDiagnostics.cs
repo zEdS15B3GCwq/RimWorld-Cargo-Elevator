@@ -1,4 +1,5 @@
 using System.Linq;
+using RimWorld;
 using Verse;
 
 namespace DeepElevator;
@@ -26,5 +27,14 @@ public static class ElevatorDiagnostics
 
         ElevatorUtil.Log($"Diagnostics: placeWorkers=[{placeWorkerNames}] hasInteractionCell={elevatorDef.hasInteractionCell} " +
                          $"passability={elevatorDef.passability} thingClass={elevatorDef.thingClass.FullName} tickerType={elevatorDef.tickerType}");
+
+        // Step C: the def facts the storage behaviour depends on.
+        var settingsExtension = elevatorDef.GetModExtension<ElevatorSettingsExtension>();
+        string settingsText = settingsExtension == null
+            ? "missing"
+            : $"slots {settingsExtension.defaultSlots} ({settingsExtension.minSlots}-{settingsExtension.maxSlots}), ticksPerStack={settingsExtension.ticksPerStack}, " +
+              $"heldRetryTicks={settingsExtension.HeldRetryTicks}, fifo={settingsExtension.defaultFifo}, merge={settingsExtension.defaultMerge}, drop={settingsExtension.defaultAllowDrop}";
+        ElevatorUtil.Log($"Diagnostics: surfaceType={elevatorDef.surfaceType} maxItemsInCell={elevatorDef.building?.maxItemsInCell} " +
+                         $"hasTransporterComp={elevatorDef.HasComp(typeof(CompTransporter))} settings=[{settingsText}]");
     }
 }

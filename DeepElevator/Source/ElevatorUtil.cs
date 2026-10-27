@@ -137,6 +137,122 @@ public static class ElevatorUtil
         return candidates.OrderBy(candidate => LevelLabels.SortKey(candidate.Map)).ToList();
     }
 
+    // ---------------------------------------------------------------- delivery cells
+
+    /// <summary>
+    /// The ring of in-bounds cells adjacent to <paramref name="receiver"/>, in a fixed order.
+    /// These are the only cells ever used for delivery and drops: vanilla haulers walk to one specific
+    /// cell, so reaching into a far cell of a big stockpile would be a teleport.
+    /// </summary>
+    public static List<IntVec3> OutputCells(Building_Elevator receiver)
+    {
+        var outputCells = new List<IntVec3>();
+        CellRect ownRect = receiver.OccupiedRect();
+        foreach (IntVec3 cell in ownRect.ExpandedBy(1).Cells)
+        {
+            if (!ownRect.Contains(cell) && cell.InBounds(receiver.Map))
+            {
+                outputCells.Add(cell);
+            }
+        }
+        return outputCells;
+    }
+
+    /// <summary>
+    /// How much of <paramref name="piece"/> a storage cell can take right now: free item slots times the
+    /// stack limit, plus the headroom of same-kind partial stacks. 0 if the cell is not valid storage for it.
+    /// </summary>
+    public static int StorageCellRoom(IntVec3 cell, Map map, Thing piece)
+    {
+        if (!cell.IsValidStorageFor(map, piece))
+        {
+            return 0;
+        }
+
+        int stackLimit = piece.def.stackLimit;
+        int freeItemSlots = Math.Max(0, cell.GetMaxItemsAllowedInCell(map) - cell.GetItemCount(map));
+        int room = freeItemSlots * stackLimit;
+
+        List<Thing> thingsOnCell = cell.GetThingList(map);
+        for (int index = 0; index < thingsOnCell.Count; index++)
+        {
+            Thing thingOnCell = thingsOnCell[index];
+            if (thingOnCell.def.category == ThingCategory.Item && thingOnCell.CanStackWith(piece))
+            {
+                room += Math.Max(0, stackLimit - thingOnCell.stackCount);
+            }
+        }
+        return room;
+    }
+
+    /// <summary>
+    /// How much of <paramref name="piece"/> a plain floor cell can take as a delivery drop.
+    /// Never a storage cell, a blocked cell, or a cell with anything built or planned on it;
+    /// an empty cell takes a full stack, a lone same-kind partial stack is topped up.
+    /// </summary>
+    public static int DeliveryDropRoom(IntVec3 cell, Map map, Thing piece)
+    {
+        if (!cell.InBounds(map) || cell.Fogged(map) || cell.GetSlotGroup(map) != null
+            || !cell.Standable(map) || cell.GetEdifice(map) != null)
+        {
+            return 0;
+        }
+
+        int stackLimit = piece.def.stackLimit;
+        Thing onlyItem = null;
+        int itemCount = 0;
+        List<Thing> thingsOnCell = cell.GetThingList(map);
+        for (int index = 0; index < thingsOnCell.Count; index++)
+        {
+            ThingDef thingDef = thingsOnCell[index].def;
+            if (thingDef.IsBlueprint || thingDef.IsFrame)
+            {
+                return 0;
+            }
+            if (thingDef.category == ThingCategory.Item)
+            {
+                onlyItem = thingsOnCell[index];
+                itemCount++;
+            }
+        }
+
+        if (itemCount == 0)
+        {
+            return stackLimit;
+        }
+        if (itemCount == 1 && onlyItem.CanStackWith(piece))
+        {
+            return Math.Max(0, stackLimit - onlyItem.stackCount);
+        }
+        return 0;
+    }
+
+    // ---------------------------------------------------------------- unloading
+
+    /// <summary>
+    /// Cells where vanilla-style "near" drops of buffer contents may land: not fogged, never an elevator
+    /// (it would absorb and send the item again), and a storage cell only if that storage accepts the item.
+    /// </summary>
+    public static bool UnloadValidator(IntVec3 cell, Map map, Thing thing)
+    {
+        if (cell.Fogged(map) || cell.GetFirstThing<Building_Elevator>(map) != null)
+        {
+            return false;
+        }
+
+        SlotGroup slotGroup = cell.GetSlotGroup(map);
+        return slotGroup == null || slotGroup.parent.Accepts(thing);
+    }
+
+    /// <summary>Puts a thing down near <paramref name="center"/> using <see cref="UnloadValidator"/>. False if there is no room.</summary>
+    public static bool TryDropNear(Thing thing, IntVec3 center, Map map)
+    {
+        return GenPlace.TryPlaceThing(thing, center, map, ThingPlaceMode.Near, out _, null, cell => UnloadValidator(cell, map, thing));
+    }
+
+    /// <summary>Item description for logs: label without count, then the stack count.</summary>
+    public static string Describe(Thing thing) => $"{thing.LabelCapNoCount} x{thing.stackCount}";
+
     // ---------------------------------------------------------------- logging
 
     /// <summary>For logs: the level label (which already contains the map id). Safe for null and already removed maps.</summary>

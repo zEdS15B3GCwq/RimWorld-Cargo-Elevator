@@ -31,4 +31,31 @@
 
   <DeepElevator_GoToPartner>Go to partner</DeepElevator_GoToPartner>
   <DeepElevator_GoToPartnerDesc>Jump to the linked elevator on the other level.</DeepElevator_GoToPartnerDesc>
+
+  <!-- Step C: buffer, modes, holding -->
+  <DeepElevator_BufferSlots>Buffer: {0} / {1} slots</DeepElevator_BufferSlots>
+  <DeepElevator_BufferMode>Order: {0}, stacks: {1}</DeepElevator_BufferMode>
+  <DeepElevator_ModeFifo>first in, first out</DeepElevator_ModeFifo>
+  <DeepElevator_ModeAnyOrder>first deliverable</DeepElevator_ModeAnyOrder>
+  <DeepElevator_MergeOn>merged</DeepElevator_MergeOn>
+  <DeepElevator_MergeOff>separate</DeepElevator_MergeOff>
+  <DeepElevator_Holding>Holding {0}: {1}</DeepElevator_Holding>
+  <DeepElevator_HoldTargetsFull>all accepting storage at the destination is full</DeepElevator_HoldTargetsFull>
+  <DeepElevator_HoldNoDropCell>no free cell to put it down at the destination</DeepElevator_HoldNoDropCell>
+  <DeepElevator_HoldNotConnected>not connected</DeepElevator_HoldNotConnected>
+  <DeepElevator_HoldDropDisabled>no storage accepts it and dropping on the floor is off</DeepElevator_HoldDropDisabled>
+  <DeepElevator_HoldUndeliverable>cannot be delivered</DeepElevator_HoldUndeliverable>
+  <DeepElevator_Unload>Unload</DeepElevator_Unload>
+  <DeepElevator_UnloadDesc>Put everything in this elevator's buffer down nearby. Pawns will haul it to storage.</DeepElevator_UnloadDesc>
+  <DeepElevator_UnloadEmpty>The buffer is empty.</DeepElevator_UnloadEmpty>
+  <DeepElevator_UnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the elevator.</DeepElevator_UnloadIncomplete>
+  <DeepElevator_ToggleFifo>First in, first out</DeepElevator_ToggleFifo>
+  <DeepElevator_ToggleFifoDesc>On: the buffer is sent strictly in order; if the first entry can't be delivered, everything waits. Off: the first entry that can be delivered is sent.</DeepElevator_ToggleFifoDesc>
+  <DeepElevator_ToggleMerge>Merge stacks</DeepElevator_ToggleMerge>
+  <DeepElevator_ToggleMergeDesc>On: arriving items join any buffered stack of the same kind. Off: every arrival is kept as its own entry.</DeepElevator_ToggleMergeDesc>
+  <DeepElevator_ToggleDrop>Drop on floor</DeepElevator_ToggleDrop>
+  <DeepElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</DeepElevator_ToggleDropDesc>
+  <DeepElevator_SlotsLess>Fewer slots</DeepElevator_SlotsLess>
+  <DeepElevator_SlotsMore>More slots</DeepElevator_SlotsMore>
+  <DeepElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</DeepElevator_SlotsDesc>
 </LanguageData>
