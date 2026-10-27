@@ -3,16 +3,15 @@
   <ThingDef ParentName="BuildingBase">
     <defName>DeepElevator_Elevator</defName>
     <label>deep elevator</label>
-    <description>Transports items to a linked elevator on another DeepRim layer. Build a second elevator at the same position relative to the mining shaft / lift on another layer to link them.</description>
+    <description>Transports items to a linked elevator on another level at the same world location (surface, DeepRim layers, MultiFloors levels). Build a second elevator at the same position, measured from the map center, on another level to link them.</description>
     <thingClass>DeepElevator.Building_Elevator</thingClass>
     <graphicData>
       <texPath>Things/Buildings/DeepElevator/DeepElevator</texPath>
-      <graphicClass>Graphic_Multi</graphicClass>
+      <graphicClass>Graphic_Single</graphicClass>
       <drawSize>(1,1)</drawSize>
     </graphicData>
-    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon</uiIconPath>
     <size>(1,1)</size>
-    <rotatable>true</rotatable>
+    <rotatable>false</rotatable>
     <altitudeLayer>Building</altitudeLayer>
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>

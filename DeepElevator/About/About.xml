@@ -5,16 +5,10 @@
 	<supportedVersions>
 		<li>1.6</li>
 	</supportedVersions>
-	<modDependencies>
-		<li>
-			<packageId>Mlie.DeepRim</packageId>
-			<displayName>DeepRim (Continued)</displayName>
-			<steamWorkshopUrl>steam://url/CommunityFilePage/2164179860</steamWorkshopUrl>
-		</li>
-	</modDependencies>
 	<packageId>FT.deepelevator</packageId>
 	<loadAfter>
 		<li>Mlie.DeepRim</li>
+		<li>telardo.MultiFloors</li>
 	</loadAfter>
-	<description>Elevator building that can transport items between DeepRim map layers and the ground. Elevators send items dropped onto them automatically to another linked elevator. List of items can be requested to be sent. Received items are placed into neighbouring storage if possible, or dropped onto the ground. Works together with VFE conveyor belts: output can target hoppers and conveyor belts can place items onto elevator. Build only one DeepRim mining shaft per map.</description>
+	<description>Elevator building that transports items between levels on the same world location: the surface, DeepRim layers, MultiFloors levels, and pocket maps together with the map they were opened from. Build two elevators at the same position measured from the center of their maps to link them. If maps have different sizes (DeepRim's layer size setting), the smaller map is placed over the center of the larger one, cell for cell. Elevators outside the smaller map's area can't connect to it, and an elevator's position relative to the DeepRim shaft may differ between levels. To avoid both, set DeepRim's layer size to the same size as your surface map. Items dropped onto an elevator are sent to its linked elevator; received items go into neighbouring storage if possible, or onto the ground. Works with VFE conveyor belts: conveyors can feed elevators, and output can go into hoppers.</description>
 </ModMetaData>

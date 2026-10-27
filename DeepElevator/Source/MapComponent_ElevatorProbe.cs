@@ -51,7 +51,7 @@ public class MapComponent_ElevatorProbe : MapComponent
 
     public override void MapRemoved()
     {
-        // The map is already out of Find.Maps here, so avoid ElevatorUtil.LayerLabel.
+        // The map is already out of Find.Maps here, so avoid LevelLabels.LevelLabel.
         ElevatorUtil.Log($"MapComponent.MapRemoved: map#{map.uniqueID} tile={map.Tile}");
     }
 }

@@ -7,21 +7,45 @@ using Verse;
 namespace DeepElevator;
 
 /// <summary>
-/// Step A: an elevator that pairs with exactly one elevator on another DeepRim layer.
-/// No storage or transport yet; this step only establishes, persists and tears down the link.
+/// Step B: an elevator that pairs with exactly one elevator on another level of the same level group.
+/// No storage or transport yet; this step only establishes, persists and tears down the link,
+/// and lets the player name the elevator.
 /// </summary>
-public class Building_Elevator : Building
+public class Building_Elevator : Building, IRenameable
 {
     /// <summary>Interval for periodic work; matches the Rare ticker so switching tickerType is XML-only.</summary>
     public const int PeriodicInterval = GenTicks.TickRareInterval;
 
-    // The linked elevator on another layer, and the map it lives on. Both null when unconnected.
+    // The linked elevator on another level, and the map it lives on. Both null when unconnected.
     private Building_Elevator partner;
     private Map partnerMap;
+
+    // Player-given name; null while the elevator uses its default label.
+    private string customName;
 
     public Building_Elevator Partner => partner;
 
     public bool IsConnected => partner != null;
+
+    public bool HasCustomName => customName != null;
+
+    /// <summary>Identifies this elevator in log messages: its thing id, plus the custom name if it has one.</summary>
+    public string LogId => customName != null ? $"{ThingID} \"{customName}\"" : ThingID;
+
+    // ---------------------------------------------------------------- naming (IRenameable)
+
+    public string RenamableLabel
+    {
+        get => customName ?? BaseLabel;
+        set => customName = value.NullOrEmpty() || value == BaseLabel ? null : value;
+    }
+
+    public string BaseLabel => def.label.CapitalizeFirst();
+
+    public string InspectLabel => LabelCap;
+
+    // Makes the name show in the selection title and in vanilla messages.
+    public override string Label => customName ?? base.Label;
 
     // ---------------------------------------------------------------- saving
 
@@ -30,10 +54,11 @@ public class Building_Elevator : Building
         base.ExposeData();
         Scribe_References.Look(ref partner, "partner");
         Scribe_References.Look(ref partnerMap, "partnerMap");
+        Scribe_Values.Look(ref customName, "customName");
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit && (partner == null) != (partnerMap == null))
         {
-            ElevatorUtil.LogWarn($"{ThingID}: inconsistent link after load (partner={partner?.ThingID ?? "null"}, partnerMap={(partnerMap == null ? "null" : "set")}); clearing.");
+            ElevatorUtil.LogWarn($"{LogId}: inconsistent link after load (partner={partner?.LogId ?? "null"}, partnerMap={(partnerMap == null ? "null" : "set")}); clearing.");
             partner = null;
             partnerMap = null;
         }
@@ -44,7 +69,7 @@ public class Building_Elevator : Building
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
-        ElevatorUtil.Log($"SpawnSetup: {ThingID} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.ThingID ?? "none"}");
+        ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
         if (respawningAfterLoad)
         {
@@ -70,7 +95,7 @@ public class Building_Elevator : Building
             return;
         }
 
-        ElevatorUtil.LogWarn($"{ThingID}: partner {partner.ThingID} does not link back (it links to {partner.partner?.ThingID ?? "none"}); unlinking.");
+        ElevatorUtil.LogWarn($"{LogId}: partner {partner.LogId} does not link back (it links to {partner.partner?.LogId ?? "none"}); unlinking.");
         Unlink("load check: partner does not link back");
     }
 
@@ -78,7 +103,8 @@ public class Building_Elevator : Building
     private void TryAutoPair()
     {
         List<Building_Elevator> candidates = ElevatorUtil.UnconnectedCandidates(this);
-        ElevatorUtil.Log($"TryAutoPair: {ThingID} found {candidates.Count} candidate(s)");
+        string candidateList = string.Join(", ", candidates.Select(candidate => $"{candidate.LogId} on {ElevatorUtil.MapDesc(candidate.Map)}"));
+        ElevatorUtil.Log($"TryAutoPair: {LogId} found {candidates.Count} candidate(s){(candidates.Count > 0 ? ": " + candidateList : "")}");
         if (candidates.Count == 1)
         {
             Link(candidates[0]);
@@ -89,7 +115,7 @@ public class Building_Elevator : Building
     {
         if (other == null || other == this || partner != null || other.partner != null)
         {
-            ElevatorUtil.LogWarn($"Link refused: {ThingID} -> {other?.ThingID ?? "null"} (self partner={partner?.ThingID ?? "none"}, other partner={other?.partner?.ThingID ?? "none"})");
+            ElevatorUtil.LogWarn($"Link refused: {LogId} -> {other?.LogId ?? "null"} (self partner={partner?.LogId ?? "none"}, other partner={other?.partner?.LogId ?? "none"})");
             return;
         }
 
@@ -98,8 +124,8 @@ public class Building_Elevator : Building
         other.partner = this;
         other.partnerMap = Map;
 
-        ElevatorUtil.Log($"Linked: {ThingID} ({ElevatorUtil.MapDesc(Map)}) <-> {other.ThingID} ({ElevatorUtil.MapDesc(other.Map)})");
-        Messages.Message("DeepElevator_MsgLinked".Translate(ElevatorUtil.LayerLabel(other.Map)), this, MessageTypeDefOf.PositiveEvent, historical: false);
+        ElevatorUtil.Log($"Linked: {LogId} ({ElevatorUtil.MapDesc(Map)}) <-> {other.LogId} ({ElevatorUtil.MapDesc(other.Map)})");
+        Messages.Message("DeepElevator_MsgLinked".Translate(LevelLabels.ElevatorLabel(other)), this, MessageTypeDefOf.PositiveEvent, historical: false);
     }
 
     /// <summary>Idempotent. Clears both sides (the other side only if it still points at us).</summary>
@@ -122,14 +148,14 @@ public class Building_Elevator : Building
             formerPartner.partnerMap = null;
         }
 
-        ElevatorUtil.Log($"Unlinked ({reason}): {ThingID} x {formerPartner.ThingID} (partner map {ElevatorUtil.MapDesc(formerPartnerMap)})");
+        ElevatorUtil.Log($"Unlinked ({reason}): {LogId} x {formerPartner.LogId} (partner map {ElevatorUtil.MapDesc(formerPartnerMap)})");
 
         // Tell the player about whichever end survived, if any.
         Building_Elevator survivor = Spawned ? this : (formerPartner.Spawned ? formerPartner : null);
         if (survivor != null)
         {
-            Map lostLayerMap = survivor == this ? formerPartnerMap : Map;
-            Messages.Message("DeepElevator_MsgUnlinked".Translate(ElevatorUtil.LayerLabel(lostLayerMap)), survivor, MessageTypeDefOf.NeutralEvent, historical: false);
+            Map lostLevelMap = survivor == this ? formerPartnerMap : Map;
+            Messages.Message("DeepElevator_MsgUnlinked".Translate(LevelLabels.LevelLabel(lostLevelMap)), survivor, MessageTypeDefOf.NeutralEvent, historical: false);
         }
     }
 
@@ -140,7 +166,7 @@ public class Building_Elevator : Building
     /// </summary>
     private void OnLifecycleEnd(string callbackName, string details)
     {
-        ElevatorUtil.Log($"{callbackName}: {ThingID} on {ElevatorUtil.MapDesc(Map)} spawned={Spawned} {details} partner={partner?.ThingID ?? "none"}");
+        ElevatorUtil.Log($"{callbackName}: {LogId} on {ElevatorUtil.MapDesc(Map)} spawned={Spawned} {details} partner={partner?.LogId ?? "none"}");
         Unlink(callbackName);
     }
 
@@ -198,7 +224,7 @@ public class Building_Elevator : Building
     {
         if (partner != null && !IsValidPartner(out string invalidReason))
         {
-            ElevatorUtil.LogWarn($"Validation: {ThingID} partner {partner.ThingID} invalid ({invalidReason}); unlinking.");
+            ElevatorUtil.LogWarn($"Validation: {LogId} partner {partner.LogId} invalid ({invalidReason}); unlinking.");
             Unlink("validation: " + invalidReason);
         }
     }
@@ -211,7 +237,7 @@ public class Building_Elevator : Building
         if (partner.Destroyed) { invalidReason = "partner destroyed"; return false; }
         if (!partner.Spawned) { invalidReason = "partner not spawned"; return false; }
         if (partner.Map != partnerMap) { invalidReason = "partner on different map"; return false; }
-        if (partner.partner != this) { invalidReason = "partner links elsewhere (" + (partner.partner?.ThingID ?? "none") + ")"; return false; }
+        if (partner.partner != this) { invalidReason = "partner links elsewhere (" + (partner.partner?.LogId ?? "none") + ")"; return false; }
 
         invalidReason = null;
         return true;
@@ -226,7 +252,18 @@ public class Building_Elevator : Building
             yield return gizmo;
         }
 
-        if (partner == null)
+        if (partner != null)
+        {
+            // Jumps the camera to the linked elevator (switching maps if needed) and selects it.
+            yield return new Command_Action
+            {
+                defaultLabel = "DeepElevator_GoToPartner".Translate(),
+                defaultDesc = "DeepElevator_GoToPartnerDesc".Translate(),
+                icon = ElevatorTextures.GoToPartner,
+                action = () => CameraJumper.TryJumpAndSelect(partner)
+            };
+        }
+        else
         {
             List<Building_Elevator> candidates = ElevatorUtil.UnconnectedCandidates(this);
             if (candidates.Count > 0)
@@ -240,6 +277,14 @@ public class Building_Elevator : Building
                 };
             }
         }
+
+        yield return new Command_Action
+        {
+            defaultLabel = "DeepElevator_Rename".Translate(),
+            defaultDesc = "DeepElevator_RenameDesc".Translate(),
+            icon = TexButton.Rename,
+            action = () => Find.WindowStack.Add(new Dialog_RenameElevator(this))
+        };
 
         if (Prefs.DevMode)
         {
@@ -255,7 +300,7 @@ public class Building_Elevator : Building
     private void OpenConnectMenu(List<Building_Elevator> candidates)
     {
         List<FloatMenuOption> options = candidates
-            .Select(candidate => new FloatMenuOption(ElevatorUtil.LayerLabel(candidate.Map), () =>
+            .Select(candidate => new FloatMenuOption(LevelLabels.ElevatorLabel(candidate), () =>
             {
                 // State may have changed while the menu was open, so check again.
                 if (partner == null && candidate.Spawned && candidate.Partner == null)
@@ -269,9 +314,21 @@ public class Building_Elevator : Building
 
     private void LogLinkState()
     {
-        string keyText = ElevatorUtil.TryGetKey(this, out IntVec3 key) ? key.ToString() : "n/a";
         string validityText = partner == null ? "-" : (IsValidPartner(out string invalidReason) ? "yes" : invalidReason);
-        ElevatorUtil.Log($"State: {ThingID} on {ElevatorUtil.MapDesc(Map)} key={keyText} partner={partner?.ThingID ?? "none"} partnerMap={ElevatorUtil.MapDesc(partnerMap)} valid={validityText} candidates={ElevatorUtil.UnconnectedCandidates(this).Count}");
+        ElevatorUtil.Log($"State: {LogId} on {ElevatorUtil.MapDesc(Map)} offset={ElevatorUtil.CenterOffset(Position, Map)} root=map#{ElevatorUtil.GroupRoot(Map)?.uniqueID} partner={partner?.LogId ?? "none"} partnerMap={ElevatorUtil.MapDesc(partnerMap)} valid={validityText} candidates={ElevatorUtil.UnconnectedCandidates(this).Count}");
+
+        // One line per other level of the group: where the matching cell is and which elevator stands there.
+        foreach (Map otherMap in ElevatorUtil.OtherLevelMaps(Map))
+        {
+            string matchingCellText = "out of bounds";
+            string elevatorThereText = "none";
+            if (ElevatorUtil.TryGetMatchingCell(Position, Map, otherMap, out IntVec3 matchingCell))
+            {
+                matchingCellText = matchingCell.ToString();
+                elevatorThereText = matchingCell.GetFirstThing<Building_Elevator>(otherMap)?.LogId ?? "none";
+            }
+            ElevatorUtil.Log($"    {ElevatorUtil.MapDesc(otherMap)} matchingCell={matchingCellText} elevatorThere={elevatorThereText}");
+        }
     }
 
     public override string GetInspectString()
@@ -285,7 +342,7 @@ public class Building_Elevator : Building
 
         if (partner != null)
         {
-            text.AppendLine("DeepElevator_ConnectedTo".Translate(ElevatorUtil.LayerLabel(partnerMap)));
+            text.AppendLine("DeepElevator_ConnectedTo".Translate(LevelLabels.ElevatorLabel(partner)));
         }
         else
         {

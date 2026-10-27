@@ -1,5 +1,14 @@
 # DeepElevator – Step A implementation spec (handoff)
 
+> **Status: implemented and tested** (see `results_stepA.md`). This file is kept as the original spec. Where the build differs, the as-built state is:
+> - **Tooling (§2.1, §6):** csproj is SDK-style `net472` (no compile list, no `Properties/AssemblyInfo.cs`), with `ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch=true` for DeepRim.dll. `dotnet build` works; VS is 2026 (`...\Visual Studio\18\Community\MSBuild\...`), not 2022.
+> - **§3.1 graphics:** now `Graphic_Single` (`DeepElevator.png`, 256x256), `rotatable false`, no `uiIconPath` (changed after Step A).
+> - **§4.1 `FindAnchor`:** uses `map.listerThings.ThingsOfDef(miningshaft / undergroundlift)` and counts player-owned buildings without allocating (the `listerBuildings` version caused a multi-second lag, results §3.2).
+> - **§4.2 placement:** the adjacency rule and the red-zone `DrawGhost` are commented out (user decision). The only rule left is exactly one anchor on the map. Superseded entirely by `plan.md` rev 5 §1 (center-relative pairing, no anchor) in the next step.
+> - **§4.4 load-time check:** `VerifyPartnerLinksBack()` runs in `SpawnSetup` when `respawningAfterLoad` is true and unlinks if `partner.partner != this`. That is allowed at load-spawn because all references are resolved before spawning; it doesn't read the partner's spawned state. This refines "no validation during load-spawn": spawn-state checks stay on the tick.
+> - **Temporary probes added:** `ElevatorProfiler`, `ElevatorDiagnostics`, the hitch detector in `MapComponent_ElevatorProbe`, the 500-calls caller report in `PlaceWorker_Elevator`.
+> - **Design rule learned:** `PlaceWorker.AllowsPlacing` (and later `Accepts`) can be called ~20000 times per frame by other mods (Designator Shapes), so it must be O(1) and allocation-free.
+
 Read `plan.md` (rev 4) first, especially §1 (decisions) and §2 (verified facts). This file is self-contained for Step A. Don't implement anything beyond it: no storage, no buffer, no transport, no Harmony, no mod settings.
 
 **Goal of Step A:** the elevator can be built; placement rules work; two elevators on different layers of the same tile pair automatically (or via the "Connect to…" gizmo when ambiguous). Every lifecycle path that can break a link is detected and **logged**, so the human tester can see which callbacks fire. Links survive save/load.

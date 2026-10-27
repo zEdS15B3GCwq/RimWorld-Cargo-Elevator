@@ -1,16 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
-  <DeepElevator_NoAnchor>Needs a DeepRim mining shaft (surface) or lift (layer) on this map.</DeepElevator_NoAnchor>
-  <DeepElevator_MultipleAnchors>This map has more than one DeepRim shaft or lift.</DeepElevator_MultipleAnchors>
-  <DeepElevator_AdjacentToAnchor>Cannot be adjacent to the mining shaft / lift.</DeepElevator_AdjacentToAnchor>
-  <DeepElevator_Surface>surface</DeepElevator_Surface>
-  <DeepElevator_Layer>layer at {0}m</DeepElevator_Layer>
-  <DeepElevator_LayerNamed>layer at {0}m ({1})</DeepElevator_LayerNamed>
   <DeepElevator_ConnectedTo>Connected to {0}</DeepElevator_ConnectedTo>
   <DeepElevator_NotConnected>Not connected</DeepElevator_NotConnected>
-  <DeepElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other layers. Use "Connect to...".</DeepElevator_CandidatesAvailable>
+  <DeepElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other levels. Use "Connect to...".</DeepElevator_CandidatesAvailable>
   <DeepElevator_Connect>Connect to...</DeepElevator_Connect>
-  <DeepElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another layer. The link cannot be changed afterwards.</DeepElevator_ConnectDesc>
+  <DeepElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another level. The link cannot be changed afterwards.</DeepElevator_ConnectDesc>
   <DeepElevator_MsgLinked>Elevator connected to {0}.</DeepElevator_MsgLinked>
   <DeepElevator_MsgUnlinked>Elevator lost its connection to {0}.</DeepElevator_MsgUnlinked>
+
+  <!-- Level labels: {0} = depth in metres, {1} = player-given layer name. -->
+  <DeepElevator_DeepRimDepth>{0}m</DeepElevator_DeepRimDepth>
+  <DeepElevator_DeepRimDepthNamed>{0}m {1}</DeepElevator_DeepRimDepthNamed>
+  <DeepElevator_TagDeepRim>DeepRim</DeepElevator_TagDeepRim>
+  <DeepElevator_TagMultiFloors>MultiFloors</DeepElevator_TagMultiFloors>
+  <DeepElevator_LabelWithTag>{0} ({1})</DeepElevator_LabelWithTag>
+  <DeepElevator_LabelSeparator>, </DeepElevator_LabelSeparator>
+  <!-- {0} = map id, {1} = the label of the map's level. -->
+  <DeepElevator_MapPrefix>map{0} - {1}</DeepElevator_MapPrefix>
+  <DeepElevator_Surface>surface</DeepElevator_Surface>
+  <DeepElevator_VanillaLabel>{0} (map {1})</DeepElevator_VanillaLabel>
+  <!-- {0} = the elevator's custom name, {1} = its level label. -->
+  <DeepElevator_ElevatorOnLevel>{0} on {1}</DeepElevator_ElevatorOnLevel>
+
+  <DeepElevator_Rename>Rename</DeepElevator_Rename>
+  <DeepElevator_RenameDesc>Give this elevator a name. It is shown in the connect menu and messages of the elevators on other levels.</DeepElevator_RenameDesc>
+
+  <DeepElevator_HelperConnectsTo>Connects to: {0}</DeepElevator_HelperConnectsTo>
+  <!-- {0} = level label of the smaller map that doesn't reach the hovered cell. -->
+  <DeepElevator_HelperOutsideMap>Outside the boundaries of {0}</DeepElevator_HelperOutsideMap>
+
+  <DeepElevator_GoToPartner>Go to partner</DeepElevator_GoToPartner>
+  <DeepElevator_GoToPartnerDesc>Jump to the linked elevator on the other level.</DeepElevator_GoToPartnerDesc>
 </LanguageData>

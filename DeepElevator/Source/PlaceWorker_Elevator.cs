@@ -1,6 +1,4 @@
-using System;
-using System.Diagnostics;
-using System.Linq;
+using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -8,69 +6,173 @@ using Verse;
 namespace DeepElevator;
 
 /// <summary>
-/// Placement rule for the elevator: the map needs exactly one DeepRim anchor (shaft or lift).
-/// (A rule keeping elevators away from the anchor existed in Step A and is commented out below.)
+/// Placement helper. There are no placement rules; while an elevator is being placed this worker shows
+/// where connections are possible: it highlights cells that match an unconnected elevator on another level,
+/// outlines the area the current map shares with smaller levels, and explains the hovered cell under the cursor.
+/// Everything is cached and rebuilt rarely, because the game calls these hooks every frame while placing.
 /// </summary>
 public class PlaceWorker_Elevator : PlaceWorker
 {
-    private const string AllowsPlacingSection = "PlaceWorker.AllowsPlacing";
+    /// <summary>How often the cached cells are rebuilt while placing, so changes on other levels show up.</summary>
+    private const int RebuildIntervalFrames = 60;
 
-    // Probe: the game was seen calling AllowsPlacing ~20000 times in one frame. When a frame passes this
-    // many calls, log who is calling (a few times only), to find the code that scans cells.
-    private const int SuspiciousCallsPerFrame = 500;
-    private const int MaxCallerReports = 3;
-    private static int callerReportsLogged;
+    private const float MouseTextLineHeight = 29f;
+    private const float MouseTextWidth = 999f;
 
-    public override AcceptanceReport AllowsPlacing(BuildableDef checkingDef, IntVec3 loc, Rot4 rot, Map map,
-        Thing thingToIgnore = null, Thing thing = null)
+    // ---- cache, valid for cachedMap until the rebuild interval has passed
+    private static Map cachedMap;
+    private static int cachedFrame = -RebuildIntervalFrames;
+
+    // Cells on the current map that match an unconnected elevator on another level (for DrawFieldEdges).
+    private static readonly List<IntVec3> targetCells = new();
+
+    // The same cells with the elevators they would connect to (for the cursor text).
+    private static readonly Dictionary<IntVec3, List<Building_Elevator>> targetsByCell = new();
+
+    // Other levels that are smaller than the current map: the area of the current map they cover.
+    private static readonly List<(Map otherMap, CellRect overlap)> partialOverlaps = new();
+
+    // ---------------------------------------------------------------- cache
+
+    private static void EnsureCache(Map map)
     {
-        AcceptanceReport report;
-        using (ElevatorProfiler.Measure(AllowsPlacingSection))
+        if (map == cachedMap && Time.frameCount - cachedFrame < RebuildIntervalFrames)
         {
-            report = EvaluatePlacement(loc, map);
-            ElevatorProfiler.Note(AllowsPlacingSection, $"cell={loc} result={(report.Accepted ? "accepted" : report.Reason)}");
+            return;
         }
 
-        if (callerReportsLogged < MaxCallerReports && ElevatorProfiler.GetCallCount(AllowsPlacingSection) == SuspiciousCallsPerFrame)
+        targetCells.Clear();
+        targetsByCell.Clear();
+        partialOverlaps.Clear();
+
+        foreach (Map otherMap in ElevatorUtil.OtherLevelMaps(map))
         {
-            callerReportsLogged++;
-            ElevatorUtil.LogWarn($"AllowsPlacing was called {SuspiciousCallsPerFrame} times within one frame. Caller:{Environment.NewLine}{new StackTrace(skipFrames: 1, fNeedFileInfo: false)}");
+            AddPartialOverlap(map, otherMap);
+            AddTargets(map, otherMap);
         }
 
-        return report;
+        cachedMap = map;
+        cachedFrame = Time.frameCount;
     }
 
-    private static AcceptanceReport EvaluatePlacement(IntVec3 loc, Map map)
+    /// <summary>
+    /// Remembers the part of <paramref name="map"/> covered by <paramref name="otherMap"/>, if that is not all of it.
+    /// The other map is overlaid 1:1 at the center, so its rectangle is its size shifted by the center difference.
+    /// </summary>
+    private static void AddPartialOverlap(Map map, Map otherMap)
     {
-        Building anchor = ElevatorUtil.FindAnchor(map, out string failReason);
-        if (anchor == null)
+        IntVec3 centerDifference = map.Center - otherMap.Center;
+        CellRect overlap = new CellRect(centerDifference.x, centerDifference.z, otherMap.Size.x, otherMap.Size.z).ClipInsideMap(map);
+        if (overlap.Area < map.Size.x * map.Size.z)
         {
-            return new AcceptanceReport(failReason);
+            partialOverlaps.Add((otherMap, overlap));
         }
-
-        // Disabled by decision (see results_stepA.md, section 5): elevators may touch the shaft/lift. The player
-        // is expected to know that DeepRim pulls items out of adjacent storage. Kept in case adjacency rules return.
-        // ExpandedBy(1) covers the anchor's own cells plus the surrounding 8-neighbourhood.
-        // if (anchor.OccupiedRect().ExpandedBy(1).Contains(loc))
-        // {
-        //     return "DeepElevator_AdjacentToAnchor".Translate();
-        // }
-
-        return true;
     }
 
-    // Disabled together with the adjacency rule above: highlighted the forbidden zone around the anchor.
-    // /// <summary>Highlights the forbidden zone around the anchor while the ghost is being placed.</summary>
-    // public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
-    // {
-    //     using (ElevatorProfiler.Measure("PlaceWorker.DrawGhost"))
-    //     {
-    //         Map map = Find.CurrentMap;
-    //         Building anchor = ElevatorUtil.FindAnchor(map, out _);
-    //         if (anchor != null)
-    //         {
-    //             GenDraw.DrawFieldEdges(anchor.OccupiedRect().ExpandedBy(1).Cells.ToList(), Color.red);
-    //         }
-    //     }
-    // }
+    /// <summary>Adds the cells of <paramref name="map"/> that match unconnected elevators on <paramref name="otherMap"/>.</summary>
+    private static void AddTargets(Map map, Map otherMap)
+    {
+        List<Thing> elevatorsThere = otherMap.listerThings.ThingsOfDef(DeepElevatorDefOf.DeepElevator_Elevator);
+        for (int elevatorIndex = 0; elevatorIndex < elevatorsThere.Count; elevatorIndex++)
+        {
+            if (elevatorsThere[elevatorIndex] is not Building_Elevator elevator || !elevator.Spawned || elevator.Partner != null)
+            {
+                continue;
+            }
+
+            // The mapping is symmetric, so the cell here is the one that would pair with that elevator.
+            if (!ElevatorUtil.TryGetMatchingCell(elevator.Position, otherMap, map, out IntVec3 cellHere))
+            {
+                continue;
+            }
+
+            if (!targetsByCell.TryGetValue(cellHere, out List<Building_Elevator> elevatorsAtCell))
+            {
+                elevatorsAtCell = new List<Building_Elevator>();
+                targetsByCell[cellHere] = elevatorsAtCell;
+                targetCells.Add(cellHere);
+            }
+            elevatorsAtCell.Add(elevator);
+        }
+    }
+
+    // ---------------------------------------------------------------- world pass
+
+    public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
+    {
+        using (ElevatorProfiler.Measure("PlaceWorker.DrawGhost"))
+        {
+            Map map = Find.CurrentMap;
+            if (map == null)
+            {
+                return;
+            }
+
+            EnsureCache(map);
+            if (targetCells.Count > 0)
+            {
+                GenDraw.DrawFieldEdges(targetCells, Color.green);
+            }
+            foreach ((Map _, CellRect overlap) in partialOverlaps)
+            {
+                DrawRectOutline(overlap, SimpleColor.Yellow);
+            }
+        }
+    }
+
+    /// <summary>Outlines a rectangle with four lines; DrawFieldEdges would walk every cell of a large area.</summary>
+    private static void DrawRectOutline(CellRect rect, SimpleColor color)
+    {
+        float altitude = AltitudeLayer.MetaOverlays.AltitudeFor();
+        var minCorner = new Vector3(rect.minX, altitude, rect.minZ);
+        var minXMaxZCorner = new Vector3(rect.minX, altitude, rect.maxZ + 1);
+        var maxCorner = new Vector3(rect.maxX + 1, altitude, rect.maxZ + 1);
+        var maxXMinZCorner = new Vector3(rect.maxX + 1, altitude, rect.minZ);
+
+        GenDraw.DrawLineBetween(minCorner, maxXMinZCorner, color);
+        GenDraw.DrawLineBetween(maxXMinZCorner, maxCorner, color);
+        GenDraw.DrawLineBetween(maxCorner, minXMaxZCorner, color);
+        GenDraw.DrawLineBetween(minXMaxZCorner, minCorner, color);
+    }
+
+    // ---------------------------------------------------------------- GUI pass
+
+    public override void DrawPlaceMouseAttachments(float curX, ref float curY, BuildableDef def, IntVec3 center, Rot4 rot)
+    {
+        using (ElevatorProfiler.Measure("PlaceWorker.DrawPlaceMouseAttachments"))
+        {
+            Map map = Find.CurrentMap;
+            if (map == null)
+            {
+                return;
+            }
+
+            // center is the cell under the mouse.
+            EnsureCache(map);
+            if (targetsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
+            {
+                foreach (Building_Elevator elevator in elevatorsAtCell)
+                {
+                    DrawMouseTextLine(curX, ref curY, "DeepElevator_HelperConnectsTo".Translate(LevelLabels.ElevatorLabel(elevator)), Color.green);
+                }
+            }
+
+            foreach ((Map otherMap, CellRect overlap) in partialOverlaps)
+            {
+                if (!overlap.Contains(center))
+                {
+                    DrawMouseTextLine(curX, ref curY, "DeepElevator_HelperOutsideMap".Translate(LevelLabels.LevelLabel(otherMap)), Color.yellow);
+                }
+            }
+        }
+    }
+
+    private static void DrawMouseTextLine(float curX, ref float curY, string text, Color color)
+    {
+        Text.Font = GameFont.Small;
+        GUI.color = color;
+        Widgets.Label(new Rect(curX, curY, MouseTextWidth, MouseTextLineHeight), text);
+        GUI.color = Color.white;
+        curY += MouseTextLineHeight;
+    }
 }

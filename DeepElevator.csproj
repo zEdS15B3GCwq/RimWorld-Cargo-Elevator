@@ -13,9 +13,6 @@
     <!-- Compile only our own sources (not Examples\ or build output); XML files are listed below for VS only. -->
     <EnableDefaultItems>false</EnableDefaultItems>
 
-    <!-- DeepRim is built against .NET 4.8.1; the game loads it fine, so accept the newer reference. -->
-    <ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>true</ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>
-
     <Version>1.0.0.0</Version>
     <Product>DeepElevator</Product>
     <Copyright>Copyright © 2026</Copyright>
@@ -36,12 +33,12 @@
       <HintPath>..\..\..\Games\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\..\Games\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>..\..\..\Games\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.IMGUIModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
-    <Reference Include="DeepRim">
-      <HintPath>C:\Games\RimWorld\Mods\2164179860\1.6\Assemblies\DeepRim.dll</HintPath>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>..\..\..\Games\RimWorld\RimWorldWin64_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
       <Private>False</Private>
     </Reference>
   </ItemGroup>
