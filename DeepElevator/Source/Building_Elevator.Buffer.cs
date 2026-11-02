@@ -9,7 +9,7 @@ namespace DeepElevator;
 
 /// <summary>
 /// The intake and buffer half of the elevator: what it accepts, how items move from its cell into the
-/// buffer (the transporter comp's container), the player-facing buffer settings and the unload commands.
+/// buffer (a plain container the elevator owns), the player-facing buffer settings and the unload commands.
 /// </summary>
 public partial class Building_Elevator
 {
@@ -22,7 +22,10 @@ public partial class Building_Elevator
     private static readonly List<Thing> itemsOnIntakeCell = new List<Thing>();
 
     private ElevatorSettingsExtension cachedSettings;
-    private CompTransporter transporter;
+
+    // The buffer: one plain container owned by the elevator. Saved under the name the old transporter comp
+    // used ("innerContainer"), so buffers of older saves load into it. Created in the constructor, never null.
+    private ThingOwner<Thing> buffer;
 
     // Saved, per-elevator player settings; initialised from the def's extension in PostMake.
     private int maxSlots = 4;
@@ -42,21 +45,31 @@ public partial class Building_Elevator
 
     public ElevatorSettingsExtension Settings => cachedSettings ??= def.GetModExtension<ElevatorSettingsExtension>() ?? FallbackSettings;
 
-    /// <summary>The buffer: the transporter comp's container. Null if the def has no transporter comp.</summary>
-    public ThingOwner Buffer => transporter?.innerContainer;
+    public Building_Elevator()
+    {
+        buffer = new ThingOwner<Thing>(this);
+    }
 
-    public int BufferEntryCount => Buffer?.Count ?? 0;
+    /// <summary>The buffer. Never null.</summary>
+    public ThingOwner<Thing> Buffer => buffer;
+
+    public int BufferEntryCount => buffer.Count;
 
     public int MaxSlots => maxSlots;
 
-    private void CacheTransporter()
+    // ---------------------------------------------------------------- container (IThingHolder)
+
+    // Being an IThingHolder is what makes the game tick the buffered items (rot, deterioration) every tick
+    // and find them for searches and saving; nothing in this mod ticks the buffer itself.
+
+    public ThingOwner GetDirectlyHeldThings() => buffer;
+
+    public void GetChildHolders(List<IThingHolder> outChildren)
     {
-        transporter = GetComp<CompTransporter>();
-        if (transporter == null)
-        {
-            ElevatorUtil.LogWarn($"{LogId}: the def has no CompTransporter; the buffer is unavailable and the elevator will refuse everything.");
-        }
+        ThingOwnerUtility.AppendThingHoldersFromThings(outChildren, GetDirectlyHeldThings());
     }
+
+    public ThingOwner SearchableContents => buffer;
 
     // Called on newly made elevators only; loaded ones get their values from ExposeData.
     public override void PostMake()
@@ -74,12 +87,6 @@ public partial class Building_Elevator
     /// <summary>Slots in use: every buffer entry takes one slot per (started) full stack.</summary>
     public int UsedSlots()
     {
-        ThingOwner buffer = Buffer;
-        if (buffer == null)
-        {
-            return 0;
-        }
-
         int usedSlots = 0;
         for (int index = 0; index < buffer.Count; index++)
         {
@@ -98,7 +105,6 @@ public partial class Building_Elevator
             return false;
         }
 
-        ThingOwner buffer = Buffer;
         for (int index = 0; index < buffer.Count; index++)
         {
             Thing entry = buffer[index];
@@ -113,7 +119,6 @@ public partial class Building_Elevator
     /// <summary>Index of the first entry the buffer would merge <paramref name="incoming"/> into, or -1.</summary>
     private int FindMergeTargetIndex(Thing incoming)
     {
-        ThingOwner buffer = Buffer;
         for (int index = 0; index < buffer.Count; index++)
         {
             if (buffer[index].CanStackWith(incoming))
@@ -142,7 +147,6 @@ public partial class Building_Elevator
         if (!IsPowered) return "no power";
         if (!partner.IsPowered) return "partner unpowered";
         if (!GetStoreSettings().AllowedToAccept(thing)) return FilterRefusalReason;
-        if (Buffer == null) return "no buffer";
         if (CanMergeIntoBuffer(thing)) return null;
         if (UsedSlots() < maxSlots) return null;
         return "buffer full";
@@ -271,7 +275,7 @@ public partial class Building_Elevator
             ignoreReason = "partner unpowered";
             return false;
         }
-        if (item is Pawn || Buffer == null)
+        if (item is Pawn)
         {
             ignoreReason = "cannot be buffered";
             return false;
@@ -296,7 +300,7 @@ public partial class Building_Elevator
         string description = ElevatorUtil.Describe(thing);
         int mergeTargetIndex = mergeStacks ? FindMergeTargetIndex(thing) : -1;
 
-        if (!Buffer.TryAdd(thing, canMergeWithExistingStacks: mergeStacks))
+        if (!buffer.TryAdd(thing, canMergeWithExistingStacks: mergeStacks))
         {
             ElevatorUtil.LogWarn($"AddToBuffer: {LogId} could not buffer {description}; putting it down nearby.");
             ElevatorUtil.TryDropNear(thing, Position, Map);
@@ -304,7 +308,7 @@ public partial class Building_Elevator
         }
 
         bool merged = mergeTargetIndex >= 0;
-        int entryIndex = merged ? mergeTargetIndex : Buffer.Count - 1;
+        int entryIndex = merged ? mergeTargetIndex : buffer.Count - 1;
         ElevatorUtil.Log($"Absorbed ({trigger}): {LogId} {description} → entry #{entryIndex} ({(merged ? "merged" : "new")}); slots {UsedSlots()}/{maxSlots}");
         return true;
     }
@@ -317,8 +321,7 @@ public partial class Building_Elevator
     /// </summary>
     private void UnloadBuffer()
     {
-        ThingOwner buffer = Buffer;
-        if (buffer == null || !Spawned)
+        if (!Spawned)
         {
             return;
         }
@@ -342,8 +345,7 @@ public partial class Building_Elevator
     /// <summary>Takes <paramref name="count"/> of an entry out of the buffer and puts it down near the elevator (contents tab).</summary>
     public void DropFromBuffer(Thing entry, int count, string source)
     {
-        ThingOwner buffer = Buffer;
-        if (buffer == null || !Spawned || !buffer.Contains(entry))
+        if (!Spawned || !buffer.Contains(entry))
         {
             return;
         }
@@ -376,20 +378,20 @@ public partial class Building_Elevator
         }
 
         string description = ElevatorUtil.Describe(portion);
-        if (!wholeEntryTaken && Buffer.Contains(originalEntry))
+        if (!wholeEntryTaken && buffer.Contains(originalEntry))
         {
             originalEntry.TryAbsorbStack(portion, respectStackLimit: false);
             return;
         }
 
-        if (!Buffer.TryAdd(portion, canMergeWithExistingStacks: mergeStacks))
+        if (!buffer.TryAdd(portion, canMergeWithExistingStacks: mergeStacks))
         {
             ElevatorUtil.LogWarn($"ReturnPortionToBuffer: {LogId} could not return {description}; putting it down nearby.");
             ElevatorUtil.TryDropNear(portion, Position, Map);
             return;
         }
 
-        ElevatorUtil.Log($"Order changed: {LogId} {description} returned to the buffer at #{Buffer.Count - 1} (was #{oldIndex}) after a failed delivery");
+        ElevatorUtil.Log($"Order changed: {LogId} {description} returned to the buffer at #{buffer.Count - 1} (was #{oldIndex}) after a failed delivery");
     }
 
     // ---------------------------------------------------------------- gizmos and inspect
@@ -479,7 +481,7 @@ public partial class Building_Elevator
 
     /// <summary>
     /// The held entries with their reasons in square brackets (round ones would look like quality / hit points).
-    /// The vanilla "Contents" line already lists the buffer, so short forms are used where possible:
+    /// The held-items line and the contents tab already list the buffer, so short forms are used where possible:
     /// "all items [no power]" when one reason applies to every held entry; "Berries x25 [no storage]; all others [FIFO on]"
     /// when FIFO holds the queue behind its head; otherwise the entries grouped by reason, e.g.
     /// "Corn x50, Rice x20 [storage full]; Steel x75 [no storage]". Null when nothing is held.
@@ -497,7 +499,7 @@ public partial class Building_Elevator
             return BufferEntryCount == 0 ? null : PausedGroup("DeepElevator_PausedAllItems".Translate(), notOperationalReasonKey.Translate());
         }
 
-        List<KeyValuePair<Thing, HoldReason>> stillHeld = heldEntries.Where(held => Buffer.Contains(held.Key)).ToList();
+        List<KeyValuePair<Thing, HoldReason>> stillHeld = heldEntries.Where(held => buffer.Contains(held.Key)).ToList();
         if (stillHeld.Count == 0)
         {
             return null;
@@ -538,14 +540,13 @@ public partial class Building_Elevator
         var report = new StringBuilder();
         report.Append($"Buffer: {LogId} slots {UsedSlots()}/{maxSlots} fifo={fifoMode} merge={mergeStacks} allowDrop={allowDrop} allowInsert={allowInsert} ");
         report.Append($"nextSendTick={nextSendTick} (now {Find.TickManager.TicksGame}) hold=[{string.Join(", ", heldEntries.Select(held => held.Key.LabelCapNoCount + ":" + held.Value))}]");
-        ThingOwner buffer = Buffer;
-        for (int index = 0; buffer != null && index < buffer.Count; index++)
+        for (int index = 0; index < buffer.Count; index++)
         {
             Thing entry = buffer[index];
             int stackLimit = entry.def.stackLimit;
             report.Append($"\n    #{index} {ElevatorUtil.Describe(entry)} ({(entry.stackCount + stackLimit - 1) / stackLimit} slot(s))");
         }
-        if (buffer != null && buffer.Count > 0)
+        if (buffer.Count > 0)
         {
             report.Append($"\n    head targets: {DescribeDeliveryTargets(buffer[0])}");
         }

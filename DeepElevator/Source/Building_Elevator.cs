@@ -9,12 +9,14 @@ namespace DeepElevator;
 /// <summary>
 /// An elevator that pairs with exactly one elevator on another level of the same level group.
 /// Step B: link, lifecycle, naming. Step C: it is also a shelf-like storage building whose cell is the
-/// intake; items are pulled into the transporter comp's container (the buffer) and streamed to the partner.
+/// intake; items are absorbed into one plain container (the buffer) and streamed to the partner. Step E:
+/// it also pulls finished items out of adjacent transport loaders (manifest loading lives on the loader).
 /// The class is split over several files: this one (link, lifecycle, UI), Building_Elevator.Buffer.cs
-/// (intake and buffer) and Building_Elevator.Send.cs (delivery at the partner).
+/// (intake and buffer), Building_Elevator.Send.cs (delivery at the partner), Building_Elevator.Power.cs
+/// (power and status) and Building_Elevator.Loaders.cs (linked transport loaders).
 /// </summary>
 // ISlotGroupParent and IHaulDestination are listed again so that interface calls bind to our own Accepts.
-public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination, IStorageGroupMember
+public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination, IStorageGroupMember, IThingHolder, ISearchableContents
 {
     /// <summary>Interval for periodic work; matches the Rare ticker so switching tickerType is XML-only.</summary>
     public const int PeriodicInterval = GenTicks.TickRareInterval;
@@ -83,6 +85,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         Scribe_Values.Look(ref mergeStacks, "mergeStacks", Settings.defaultMerge);
         Scribe_Values.Look(ref allowDrop, "allowDrop", Settings.defaultAllowDrop);
         Scribe_Values.Look(ref allowInsert, "allowInsert", Settings.defaultAllowInsert);
+        Scribe_Deep.Look(ref buffer, "innerContainer", this);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit && (partner == null) != (partnerMap == null))
         {
@@ -97,7 +100,6 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
-        CacheTransporter();
         CachePower();
         ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
@@ -204,8 +206,16 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         OnLifecycleEnd(nameof(DeSpawn), $"mode={mode}");
-        ElevatorUtil.Log($"Despawn drop: {LogId} buffer has {BufferEntryCount} entries (vanilla drops them)");
+        Map mapBeforeDespawn = Map;
         base.DeSpawn(mode);
+
+        // Dropped after the base call, so the items do not land on this elevator's own (now free) storage cells.
+        // A replacement (e.g. minify or upgrade) keeps the thing alive, so then the buffer stays.
+        if (mode != DestroyMode.WillReplace)
+        {
+            ElevatorUtil.Log($"Despawn drop: {LogId} drops {BufferEntryCount} buffer entries near {Position}");
+            buffer.TryDropAll(Position, mapBeforeDespawn, ThingPlaceMode.Near);
+        }
     }
 
     public override void Destroy(DestroyMode mode = DestroyMode.Vanish)
@@ -234,7 +244,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     // tickerType Normal: called every tick; everything below exits early when idle.
     protected override void Tick()
     {
-        base.Tick(); // ticks the comps, so CompTransporter ticks the buffer contents (rot etc.)
+        base.Tick(); // ticks the comps; the game ticks the buffer contents (rot etc.) itself, as we are an IThingHolder
 
         if (absorbPending)
         {
@@ -294,11 +304,6 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     {
         foreach (Gizmo gizmo in base.GetGizmos())
         {
-            // The transporter comp's "Load" command is replaced by the manifest in a later step.
-            if (gizmo is Command_LoadToTransporter)
-            {
-                continue;
-            }
             yield return gizmo;
         }
 

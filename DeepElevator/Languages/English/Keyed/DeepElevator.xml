@@ -51,7 +51,7 @@
   <DeepElevator_ToggleDrop>Drop on floor near target</DeepElevator_ToggleDrop>
   <DeepElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</DeepElevator_ToggleDropDesc>
   <DeepElevator_ToggleInsert>Allow insert</DeepElevator_ToggleInsert>
-  <DeepElevator_ToggleInsertDesc>On: colonists haul items into this elevator. Off: colonists leave it alone, so it only receives from conveyor belts and other mods. Items already on their way still arrive.</DeepElevator_ToggleInsertDesc>
+  <DeepElevator_ToggleInsertDesc>On: colonists haul items into this elevator. Off: colonists leave it alone, so it only receives from conveyor belts and other mods. Items already on their way still arrive. Transport loaders are not affected: this elevator still pulls from them.</DeepElevator_ToggleInsertDesc>
   <DeepElevator_SlotsLess>Fewer slots</DeepElevator_SlotsLess>
   <DeepElevator_SlotsMore>More slots</DeepElevator_SlotsMore>
   <!-- Step D: status line. {0} = status text, {1} = partner label (ElevatorLabel). -->
@@ -65,7 +65,5 @@
   <DeepElevator_StatusBlocked>blocked</DeepElevator_StatusBlocked>
   <DeepElevator_StatusActive>active</DeepElevator_StatusActive>
   <DeepElevator_StatusIdle>idle</DeepElevator_StatusIdle>
-  <!-- {0} = blocked/active/idle -->
-  <DeepElevator_StatusLoading>loading, {0}</DeepElevator_StatusLoading>
   <DeepElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</DeepElevator_SlotsDesc>
 </LanguageData>

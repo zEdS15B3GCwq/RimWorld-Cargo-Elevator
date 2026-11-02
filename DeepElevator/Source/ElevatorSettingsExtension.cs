@@ -31,7 +31,7 @@ public class ElevatorSettingsExtension : DefModExtension
     public int blockedAfterSendIntervals = 2;
 
     // State light overlays: full sprites on the same canvas as the base sprite, drawn over it. Null = no light.
-    public string greenTexPath, redTexPath, orangeTexPath;
+    public string greenTexPath, redTexPath;
 
     public int HeldRetryTicks => heldRetryTicks > 0 ? heldRetryTicks : ticksPerStack;
 

@@ -54,7 +54,6 @@ public partial class Building_Elevator
     private void TrySend()
     {
         int now = Find.TickManager.TicksGame;
-        ThingOwner buffer = Buffer;
 
         // Nothing moves unless the link is valid and both ends are powered. No hold entries are set in
         // that case: the status line already explains it.
@@ -335,7 +334,7 @@ public partial class Building_Elevator
         string entryLabel = entry.LabelCapNoCount;
         bool wholeEntryTaken = amount >= entry.stackCount;
 
-        Thing portion = Buffer.Take(entry, amount);
+        Thing portion = buffer.Take(entry, amount);
         int portionCount = portion.stackCount;
         portion.SetForbidden(false, warnOnFail: false);
         GenPlace.TryPlaceThing(portion, cell, partnerMap, ThingPlaceMode.Direct, out _);
@@ -352,7 +351,7 @@ public partial class Building_Elevator
 
         if (placed > 0)
         {
-            int remainingInEntry = Buffer.Contains(entry) ? entry.stackCount : 0;
+            int remainingInEntry = buffer.Contains(entry) ? entry.stackCount : 0;
             ElevatorUtil.Log($"{logVerb}: {LogId} → {partner.LogId}: {entryLabel} x{placed}{destinationText} at {cell}; remaining in entry {remainingInEntry}");
         }
         return placed;
@@ -371,7 +370,6 @@ public partial class Building_Elevator
         }
 
         heldEntries.Clear();
-        ThingOwner buffer = Buffer;
         for (int index = 0; index < buffer.Count; index++)
         {
             HoldReason reason = index < consideredReasons.Count ? consideredReasons[index] : HoldReason.FifoWaiting;

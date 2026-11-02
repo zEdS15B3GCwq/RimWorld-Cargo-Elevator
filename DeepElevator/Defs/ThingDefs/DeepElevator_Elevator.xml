@@ -45,15 +45,6 @@
         <filter></filter>
       </defaultStorageSettings>
     </building>
-    <comps>
-      <li Class="CompProperties_Transporter">
-        <massCapacity>100000</massCapacity> <!-- mass is not our capacity measure; slots are -->
-        <max1PerGroup>true</max1PerGroup>
-        <canChangeAssignedThingsAfterStarting>true</canChangeAssignedThingsAfterStarting>
-        <shouldTickContents>true</shouldTickContents> <!-- buffered food keeps rotting -->
-        <showMassInInspectString>false</showMassInInspectString>
-      </li>
-    </comps>
     <constructEffect>ConstructMetal</constructEffect>
   </ThingDef>
 
@@ -99,7 +90,6 @@
         <defaultAllowInsert>true</defaultAllowInsert>
         <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green</greenTexPath>
         <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red</redTexPath>
-        <orangeTexPath>Things/Buildings/DeepElevator/DeepElevator_orange</orangeTexPath>
       </li>
     </modExtensions>
   </ThingDef>
@@ -146,7 +136,6 @@
         <defaultAllowInsert>true</defaultAllowInsert>
         <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green_large</greenTexPath>
         <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red_large</redTexPath>
-        <orangeTexPath>Things/Buildings/DeepElevator/DeepElevator_orange_large</orangeTexPath>
       </li>
     </modExtensions>
   </ThingDef>

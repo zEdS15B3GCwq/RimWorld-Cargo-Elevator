@@ -45,7 +45,7 @@ public static class ElevatorDiagnostics
             : $"slots {settingsExtension.defaultSlots} ({settingsExtension.minSlots}-{settingsExtension.maxSlots}), ticksPerStack={settingsExtension.ticksPerStack}, " +
               $"heldRetryTicks={settingsExtension.HeldRetryTicks}, fifo={settingsExtension.defaultFifo}, merge={settingsExtension.defaultMerge}, drop={settingsExtension.defaultAllowDrop}, insert={settingsExtension.defaultAllowInsert}, " +
               $"activeHoldTicks={settingsExtension.ActiveHoldTicks}, blockedAfterSendIntervals={settingsExtension.blockedAfterSendIntervals}, " +
-              $"lights=[{settingsExtension.greenTexPath}, {settingsExtension.redTexPath}, {settingsExtension.orangeTexPath}]";
+              $"lights=[{settingsExtension.greenTexPath}, {settingsExtension.redTexPath}]";
 
         var powerProperties = elevatorDef.GetCompProperties<CompProperties_Power>();
         string powerText = powerProperties == null
@@ -53,6 +53,6 @@ public static class ElevatorDiagnostics
             : $"active={powerProperties.PowerConsumption} idle={powerProperties.idlePowerDraw}";
 
         ElevatorUtil.Log($"Diagnostics: {elevatorDef.defName} surfaceType={elevatorDef.surfaceType} maxItemsInCell={elevatorDef.building?.maxItemsInCell} " +
-                         $"hasTransporterComp={elevatorDef.HasComp(typeof(CompTransporter))} power=[{powerText}] settings=[{settingsText}]");
+                         $"power=[{powerText}] settings=[{settingsText}]");
     }
 }

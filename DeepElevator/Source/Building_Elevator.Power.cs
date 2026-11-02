@@ -26,9 +26,6 @@ public partial class Building_Elevator
     /// <summary>How often (in ticks) the draw state and the logged status are re-evaluated.</summary>
     private const int PowerUpdateInterval = 30;
 
-    /// <summary>Length of one half of the orange manifest blink, in real seconds.</summary>
-    private const float ManifestBlinkHalfPeriodSeconds = 1f;
-
     // Runtime only; power state is recomputed after load.
     private CompPowerTrader powerComp;
     private int lastActiveTick = -99999;   // last transfer involving this pair
@@ -130,9 +127,6 @@ public partial class Building_Elevator
     public bool IsBlocked => blockedSinceTick >= 0 && BufferEntryCount > 0
         && Find.TickManager.TicksGame - blockedSinceTick >= Settings.blockedAfterSendIntervals * Settings.HeldRetryTicks;
 
-    /// <summary>A manifest load is set up. Never true before the manifest step.</summary>
-    public bool IsManifestLoading => transporter != null && transporter.LoadingInProgressOrReadyToLaunch;
-
     /// <summary>First match wins: link, own power, partner power, blocked, active, idle.</summary>
     public ElevatorStatus Status
     {
@@ -146,7 +140,7 @@ public partial class Building_Elevator
         }
     }
 
-    /// <summary>The status as shown in the inspect line; wrapped in "loading, ..." while a manifest load is set up.</summary>
+    /// <summary>The status as shown in the inspect line.</summary>
     private string DescribeStatus()
     {
         ElevatorStatus status = Status;
@@ -158,8 +152,7 @@ public partial class Building_Elevator
             return "DeepElevator_StatusUnpoweredDisconnected".Translate("DeepElevator_StatusNoPower".Translate(), statusText).ToString();
         }
 
-        bool statusCanBeLoading = status == ElevatorStatus.Blocked || status == ElevatorStatus.Active || status == ElevatorStatus.Idle;
-        return IsManifestLoading && statusCanBeLoading ? "DeepElevator_StatusLoading".Translate(statusText).ToString() : statusText;
+        return statusText;
     }
 
     /// <summary>Logs a status change. Called from the periodic tick only, never from drawing or inspecting.</summary>
@@ -179,7 +172,7 @@ public partial class Building_Elevator
 
     private const int GreenLightIndex = 0;
     private const int RedLightIndex = 1;
-    private const int OrangeLightIndex = 2;
+    private const int LightCount = 2;
 
     // Per def: light graphics by index above; an entry is null where the extension names no (loadable) texture.
     private static readonly Dictionary<ThingDef, Graphic[]> lightGraphicsByDef = new Dictionary<ThingDef, Graphic[]>();
@@ -202,7 +195,6 @@ public partial class Building_Elevator
 
     /// <summary>
     /// Null = no light (the off look is the base sprite). Operational: green, or red when blocked.
-    /// While a manifest load is set up the light blinks between orange and that color.
     /// </summary>
     private Graphic CurrentLightGraphic()
     {
@@ -212,15 +204,7 @@ public partial class Building_Elevator
             return null;
         }
 
-        Graphic[] lightGraphics = GetLightGraphics();
-        int steadyLightIndex = status == ElevatorStatus.Blocked ? RedLightIndex : GreenLightIndex;
-
-        // Real time keeps the blink steady at any game speed and while paused.
-        if (IsManifestLoading && Time.realtimeSinceStartup % (2f * ManifestBlinkHalfPeriodSeconds) < ManifestBlinkHalfPeriodSeconds)
-        {
-            return lightGraphics[OrangeLightIndex];
-        }
-        return lightGraphics[steadyLightIndex];
+        return GetLightGraphics()[status == ElevatorStatus.Blocked ? RedLightIndex : GreenLightIndex];
     }
 
     /// <summary>Lazily loads the def's light graphics (first use is in DrawAt, on the main thread after content loading).</summary>
@@ -231,10 +215,9 @@ public partial class Building_Elevator
             return lightGraphics;
         }
 
-        lightGraphics = new Graphic[3];
+        lightGraphics = new Graphic[LightCount];
         lightGraphics[GreenLightIndex] = LoadLightGraphic(Settings.greenTexPath);
         lightGraphics[RedLightIndex] = LoadLightGraphic(Settings.redTexPath);
-        lightGraphics[OrangeLightIndex] = LoadLightGraphic(Settings.orangeTexPath);
         lightGraphicsByDef[def] = lightGraphics;
         return lightGraphics;
     }
