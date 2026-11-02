@@ -14,7 +14,7 @@ namespace DeepElevator;
 /// (intake and buffer) and Building_Elevator.Send.cs (delivery at the partner).
 /// </summary>
 // ISlotGroupParent and IHaulDestination are listed again so that interface calls bind to our own Accepts.
-public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination
+public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination, IStorageGroupMember
 {
     /// <summary>Interval for periodic work; matches the Rare ticker so switching tickerType is XML-only.</summary>
     public const int PeriodicInterval = GenTicks.TickRareInterval;
@@ -47,6 +47,26 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
 
     public string InspectLabel => LabelCap;
 
+    // ---------------------------------------------------------------- storage groups (disabled)
+
+    // Building_Storage implements IStorageGroupMember explicitly. Re-implemented here so the inspect pane
+    // shows the normal IRenameable rename button instead of the "create storage group" one; elevators
+    // never join shared storage groups. Everything else delegates to the same values as the base.
+    StorageGroup IStorageGroupMember.Group
+    {
+        get => storageGroup;
+        set => storageGroup = value;
+    }
+
+    Map IStorageGroupMember.Map => MapHeld;
+    StorageSettings IStorageGroupMember.StoreSettings => GetStoreSettings();
+    StorageSettings IStorageGroupMember.ParentStoreSettings => GetParentStoreSettings();
+    StorageSettings IStorageGroupMember.ThingStoreSettings => settings;
+    string IStorageGroupMember.StorageGroupTag => def.building.storageGroupTag;
+    bool IStorageGroupMember.DrawConnectionOverlay => false;
+    bool IStorageGroupMember.DrawStorageTab => true;
+    bool IStorageGroupMember.ShowRenameButton => false;
+
     // Makes the name show in the selection title and in vanilla messages.
     public override string Label => customName ?? base.Label;
 
@@ -62,6 +82,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         Scribe_Values.Look(ref fifoMode, "fifoMode", Settings.defaultFifo);
         Scribe_Values.Look(ref mergeStacks, "mergeStacks", Settings.defaultMerge);
         Scribe_Values.Look(ref allowDrop, "allowDrop", Settings.defaultAllowDrop);
+        Scribe_Values.Look(ref allowInsert, "allowInsert", Settings.defaultAllowInsert);
 
         if (Scribe.mode == LoadSaveMode.PostLoadInit && (partner == null) != (partnerMap == null))
         {
@@ -77,6 +98,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     {
         base.SpawnSetup(map, respawningAfterLoad);
         CacheTransporter();
+        CachePower();
         ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
         if (respawningAfterLoad)
@@ -229,6 +251,12 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         {
             TrySend();
         }
+
+        if (this.IsHashIntervalTick(PowerUpdateInterval))
+        {
+            UpdatePowerDraw();
+            LogStatusIfChanged();
+        }
     }
 
     /// <summary>
@@ -305,15 +333,8 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             }
         }
 
-        yield return new Command_Action
-        {
-            defaultLabel = "DeepElevator_Rename".Translate(),
-            defaultDesc = "DeepElevator_RenameDesc".Translate(),
-            icon = TexButton.Rename,
-            action = () => Find.WindowStack.Add(new Dialog_RenameElevator(this))
-        };
-
-        if (Prefs.DevMode)
+        // Vanilla convention for dev gizmos: dev mode and god mode both on.
+        if (DebugSettings.ShowDevGizmos)
         {
             yield return new Command_Action
             {
@@ -357,7 +378,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             if (ElevatorUtil.TryGetMatchingCell(Position, Map, otherMap, out IntVec3 matchingCell))
             {
                 matchingCellText = matchingCell.ToString();
-                elevatorThereText = matchingCell.GetFirstThing<Building_Elevator>(otherMap)?.LogId ?? "none";
+                elevatorThereText = ElevatorUtil.ElevatorAnchoredAt(matchingCell, otherMap, def)?.LogId ?? "none";
             }
             ElevatorUtil.Log($"    {ElevatorUtil.MapDesc(otherMap)} matchingCell={matchingCellText} elevatorThere={elevatorThereText}");
         }
@@ -372,13 +393,14 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             text.AppendLine(baseText);
         }
 
+        string statusText = DescribeStatus();
         if (partner != null)
         {
-            text.AppendLine("DeepElevator_ConnectedTo".Translate(LevelLabels.ElevatorLabel(partner)));
+            text.AppendLine("DeepElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner)));
         }
         else
         {
-            text.AppendLine("DeepElevator_NotConnected".Translate());
+            text.AppendLine("DeepElevator_StatusUnlinked".Translate(statusText));
             // Auto-pairing only runs on build, so show the hint for any candidate count above zero.
             int candidateCount = ElevatorUtil.UnconnectedCandidates(this).Count;
             if (candidateCount > 0)

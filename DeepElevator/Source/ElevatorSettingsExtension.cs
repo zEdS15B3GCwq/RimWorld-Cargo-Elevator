@@ -20,5 +20,20 @@ public class ElevatorSettingsExtension : DefModExtension
     public bool defaultMerge = true;
     public bool defaultAllowDrop = true;
 
+    // Pawns may haul items into the elevator (the "allow insert" switch).
+    public bool defaultAllowInsert = true;
+
+    // Ticks a transfer keeps both ends in the active power state; -1 = ticksPerStack + ActiveMarginTicks.
+    public int activeHoldTicks = -1;
+    public const int ActiveMarginTicks = 30;
+
+    // "Blocked" (red light) needs this many send intervals without a delivery while items are held.
+    public int blockedAfterSendIntervals = 2;
+
+    // State light overlays: full sprites on the same canvas as the base sprite, drawn over it. Null = no light.
+    public string greenTexPath, redTexPath, orangeTexPath;
+
     public int HeldRetryTicks => heldRetryTicks > 0 ? heldRetryTicks : ticksPerStack;
+
+    public int ActiveHoldTicks => activeHoldTicks > 0 ? activeHoldTicks : ticksPerStack + ActiveMarginTicks;
 }

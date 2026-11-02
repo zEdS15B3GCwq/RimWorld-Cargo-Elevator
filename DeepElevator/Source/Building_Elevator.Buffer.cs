@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using RimWorld;
 using UnityEngine;
@@ -28,6 +29,7 @@ public partial class Building_Elevator
     private bool fifoMode = true;     // only governs which entry is sent (Send.cs)
     private bool mergeStacks = true;  // only governs how arriving items are added to the buffer
     private bool allowDrop = true;    // sender's setting: drop on the floor at the partner when no storage accepts
+    private bool allowInsert = true;  // pawns may haul items here; conveyors and other mods are not affected
 
     // Runtime only.
     private bool absorbPending;       // an item arrived on the intake cell; absorb it on the next tick
@@ -64,6 +66,7 @@ public partial class Building_Elevator
         fifoMode = Settings.defaultFifo;
         mergeStacks = Settings.defaultMerge;
         allowDrop = Settings.defaultAllowDrop;
+        allowInsert = Settings.defaultAllowInsert;
     }
 
     // ---------------------------------------------------------------- slots
@@ -123,23 +126,72 @@ public partial class Building_Elevator
 
     // ---------------------------------------------------------------- accepting (hot path: no allocations)
 
+    // The one refusal that is not logged: the game pre-filters on the storage filter anyway.
+    private const string FilterRefusalReason = "not allowed by the filter";
+
+    /// <summary>
+    /// The single rule for "can this thing be put into the buffer right now": null = yes, otherwise the reason.
+    /// No side effects, so it may be called freely from searches. <see cref="Accepts"/> (the game's job checks)
+    /// and <see cref="AcceptsPawnDelivery"/> (the haul search, via the Harmony patch) both build on it, so the
+    /// search can never be more permissive than the check that follows it.
+    /// </summary>
+    private string GetRefusalReason(Thing thing)
+    {
+        if (thing is Pawn) return "pawn";
+        if (!IsConnected) return "not connected";
+        if (!IsPowered) return "no power";
+        if (!partner.IsPowered) return "partner unpowered";
+        if (!GetStoreSettings().AllowedToAccept(thing)) return FilterRefusalReason;
+        if (Buffer == null) return "no buffer";
+        if (CanMergeIntoBuffer(thing)) return null;
+        if (UsedSlots() < maxSlots) return null;
+        return "buffer full";
+    }
+
     /// <summary>
     /// Hides Building_Storage.Accepts, which is not virtual; the interface re-declaration on the class makes
-    /// the game's interface calls reach this one. Called by haul searches, so it is cheap and only logs
-    /// a refusal when it differs from the previous one.
+    /// the game's interface calls reach this one. Used by the game's haul job (after the search), by conveyors
+    /// and by our own deliveries, so it does not depend on <see cref="allowInsert"/>. Logs a refusal only when
+    /// it differs from the previous one.
     /// </summary>
     public new bool Accepts(Thing thing)
     {
-        if (thing is Pawn) return Refuse(thing, "pawn");
-        if (!IsConnected) return Refuse(thing, "not connected");
-        if (!GetStoreSettings().AllowedToAccept(thing)) return false; // the game pre-filters on this anyway
-        if (Buffer == null) return Refuse(thing, "no buffer");
-        if (CanMergeIntoBuffer(thing)) return true;
-        if (UsedSlots() < maxSlots) return true;
-        return Refuse(thing, "buffer full");
+        string refusalReason = GetRefusalReason(thing);
+        if (refusalReason == null)
+        {
+            return true;
+        }
+
+        if (refusalReason != FilterRefusalReason)
+        {
+            LogRefusal(thing, refusalReason);
+        }
+        return false;
     }
 
-    private bool Refuse(Thing thing, string reason)
+    /// <summary>
+    /// Whether the haul search may pick this elevator as a destination for a pawn to carry <paramref name="thing"/> to:
+    /// everything <see cref="Accepts"/> requires, plus the player's "allow insert" switch. Stricter than or equal to
+    /// Accepts by construction, never looser. Does not log (called per cell per search).
+    /// </summary>
+    public bool AcceptsPawnDelivery(Thing thing)
+    {
+        return allowInsert && GetRefusalReason(thing) == null;
+
+        // PROBE (disabled): logs every refusal of the haul search with its reason, unfiltered. Used to find out why
+        // pawn deliveries were refused during steady transfer (results_stepD §15.5/§16). It floods the log (the search
+        // runs per cell, per item, per pawn scan), so it is commented out; to re-enable, replace the line above with this.
+        // string refusalReason = allowInsert ? GetRefusalReason(thing) : "allow insert is off";
+        // if (refusalReason == null)
+        // {
+        //     return true;
+        // }
+        //
+        // ElevatorUtil.Log($"Pawn delivery refused: {LogId} refuses {ElevatorUtil.Describe(thing)}: {refusalReason}");
+        // return false;
+    }
+
+    private void LogRefusal(Thing thing, string reason)
     {
         if (thing.def != lastRefusedDef || reason != lastRefusalReason)
         {
@@ -147,7 +199,6 @@ public partial class Building_Elevator
             lastRefusalReason = reason;
             ElevatorUtil.Log($"Rejected: {LogId} refuses {thing.def.defName}: {reason}");
         }
-        return false;
     }
 
     // ---------------------------------------------------------------- intake
@@ -156,7 +207,7 @@ public partial class Building_Elevator
     public override void Notify_ReceivedThing(Thing newItem)
     {
         base.Notify_ReceivedThing(newItem);
-        ElevatorUtil.Log($"Received: {LogId} got {ElevatorUtil.Describe(newItem)}");
+        ElevatorUtil.Log($"Received: {LogId} got {newItem.LabelCapNoCount}");
         absorbPending = true;
     }
 
@@ -208,6 +259,16 @@ public partial class Building_Elevator
         if (!IsConnected)
         {
             ignoreReason = "not connected";
+            return false;
+        }
+        if (!IsPowered)
+        {
+            ignoreReason = "no power";
+            return false;
+        }
+        if (!partner.IsPowered)
+        {
+            ignoreReason = "partner unpowered";
             return false;
         }
         if (item is Pawn || Buffer == null)
@@ -355,6 +416,9 @@ public partial class Building_Elevator
             () => mergeStacks, () => mergeStacks = !mergeStacks, "merge");
         yield return CreateToggle("DeepElevator_ToggleDrop", "DeepElevator_ToggleDropDesc", TexCommand.ForbidOff,
             () => allowDrop, () => allowDrop = !allowDrop, "allowDrop");
+        // Placeholder icon (vanilla "install"); a dedicated texture can replace it.
+        yield return CreateToggle("DeepElevator_ToggleInsert", "DeepElevator_ToggleInsertDesc", TexCommand.Install,
+            () => allowInsert, () => allowInsert = !allowInsert, "allowInsert");
 
         yield return CreateSlotsCommand("DeepElevator_SlotsLess", TexButton.Minus, -1);
         yield return CreateSlotsCommand("DeepElevator_SlotsMore", TexButton.Plus, +1);
@@ -392,9 +456,10 @@ public partial class Building_Elevator
             }
         };
 
-        // Lowering below the used slots is allowed: intake just stops until the buffer drains.
-        int newSlots = maxSlots + slotChange;
-        if (newSlots < Settings.minSlots || newSlots > Settings.maxSlots)
+        // A saved value above the def's maximum (older version or changed def) can still be reduced;
+        // the clamp above then brings it straight down to the maximum.
+        bool atLimit = slotChange < 0 ? maxSlots <= Settings.minSlots : maxSlots >= Settings.maxSlots;
+        if (atLimit)
         {
             slotsCommand.Disable();
         }
@@ -404,22 +469,75 @@ public partial class Building_Elevator
     private void AppendBufferInspectLines(StringBuilder text)
     {
         text.AppendLine("DeepElevator_BufferSlots".Translate(UsedSlots(), maxSlots));
-        text.AppendLine("DeepElevator_BufferMode".Translate(
-            (fifoMode ? "DeepElevator_ModeFifo" : "DeepElevator_ModeAnyOrder").Translate(),
-            (mergeStacks ? "DeepElevator_MergeOn" : "DeepElevator_MergeOff").Translate()));
 
-        if (holdReasonKey != null && heldThing != null && !heldThing.Destroyed)
+        string pausedText = DescribePausedTransfer();
+        if (pausedText != null)
         {
-            text.AppendLine("DeepElevator_Holding".Translate(heldThing.LabelCapNoCount, holdReasonKey.Translate()));
+            text.AppendLine("DeepElevator_Paused".Translate(pausedText));
         }
     }
+
+    /// <summary>
+    /// The held entries with their reasons in square brackets (round ones would look like quality / hit points).
+    /// The vanilla "Contents" line already lists the buffer, so short forms are used where possible:
+    /// "all items [no power]" when one reason applies to every held entry; "Berries x25 [no storage]; all others [FIFO on]"
+    /// when FIFO holds the queue behind its head; otherwise the entries grouped by reason, e.g.
+    /// "Corn x50, Rice x20 [storage full]; Steel x75 [no storage]". Null when nothing is held.
+    /// Entries that left the buffer since the last attempt are skipped.
+    /// </summary>
+    private string DescribePausedTransfer()
+    {
+        // Not connected wins over no power (either end). Read live rather than from heldEntries: TrySend stops
+        // before evaluating entries in this state, and the live check is never stale after the state changes.
+        string notOperationalReasonKey = !IsConnected ? "DeepElevator_PausedNotConnected"
+            : !IsOperational ? "DeepElevator_PausedNoPower"
+            : null;
+        if (notOperationalReasonKey != null)
+        {
+            return BufferEntryCount == 0 ? null : PausedGroup("DeepElevator_PausedAllItems".Translate(), notOperationalReasonKey.Translate());
+        }
+
+        List<KeyValuePair<Thing, HoldReason>> stillHeld = heldEntries.Where(held => Buffer.Contains(held.Key)).ToList();
+        if (stillHeld.Count == 0)
+        {
+            return null;
+        }
+
+        // FIFO: only the head was evaluated; everything behind it waits for the head.
+        if (stillHeld.Count > 1 && stillHeld.Skip(1).All(held => held.Value == HoldReason.FifoWaiting))
+        {
+            return PausedGroup(stillHeld[0].Key.LabelCap, PausedReasonText(stillHeld[0].Value)) + "; "
+                + PausedGroup("DeepElevator_PausedAllOthers".Translate(), PausedReasonText(HoldReason.FifoWaiting));
+        }
+
+        // FIFO off and nothing could be sent, for the same reason everywhere.
+        if (stillHeld.Count > 1 && stillHeld.All(held => held.Value == stillHeld[0].Value))
+        {
+            return PausedGroup("DeepElevator_PausedAllItems".Translate(), PausedReasonText(stillHeld[0].Value));
+        }
+
+        var groups = new List<string>();
+        foreach (HoldReason reason in new[] { HoldReason.StorageFull, HoldReason.NoStorage, HoldReason.FifoWaiting })
+        {
+            string labelList = string.Join(", ", stillHeld.Where(held => held.Value == reason).Select(held => held.Key.LabelCap));
+            if (labelList.Length > 0)
+            {
+                groups.Add(PausedGroup(labelList, PausedReasonText(reason)));
+            }
+        }
+        return groups.Count > 0 ? string.Join("; ", groups) : null;
+    }
+
+    private static string PausedReasonText(HoldReason reason) => ("DeepElevator_Paused" + reason).Translate();
+
+    private static string PausedGroup(string labels, string reasonText) => $"{labels} [{reasonText}]";
 
     /// <summary>DEV: dumps the buffer, the modes, the send timer and what the head entry would be delivered to.</summary>
     private void LogBufferState()
     {
         var report = new StringBuilder();
-        report.Append($"Buffer: {LogId} slots {UsedSlots()}/{maxSlots} fifo={fifoMode} merge={mergeStacks} allowDrop={allowDrop} ");
-        report.Append($"nextSendTick={nextSendTick} (now {Find.TickManager.TicksGame}) hold={holdReasonKey ?? "none"}");
+        report.Append($"Buffer: {LogId} slots {UsedSlots()}/{maxSlots} fifo={fifoMode} merge={mergeStacks} allowDrop={allowDrop} allowInsert={allowInsert} ");
+        report.Append($"nextSendTick={nextSendTick} (now {Find.TickManager.TicksGame}) hold=[{string.Join(", ", heldEntries.Select(held => held.Key.LabelCapNoCount + ":" + held.Value))}]");
         ThingOwner buffer = Buffer;
         for (int index = 0; buffer != null && index < buffer.Count; index++)
         {

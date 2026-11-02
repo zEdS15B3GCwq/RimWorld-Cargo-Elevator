@@ -26,13 +26,22 @@ public partial class Building_Elevator
         public string Label => Storage.SlotYielderLabel();
     }
 
-    // Hold state of the head of the queue: why nothing was sent on the last attempt. Null key = not holding.
-    private string holdReasonKey;
-    private Thing heldThing;
+    /// <summary>Why an entry could not be sent. Shown briefly to the player; the log carries the exact cause.</summary>
+    public enum HoldReason
+    {
+        StorageFull,     // storage that accepts the item exists next to the destination, but has no room
+        NoStorage,       // nothing accepts it, and dropping is off or there is no free cell
+        FifoWaiting,     // FIFO is on and this entry is behind the head of the queue
+        Undeliverable    // e.g. a pawn entry; not shown to the player
+    }
+
+    // The entries held back on the last failed send attempt, with their reasons. Empty = not holding.
+    // With FIFO, entries behind the head are listed as FifoWaiting.
+    private readonly List<KeyValuePair<Thing, HoldReason>> heldEntries = new List<KeyValuePair<Thing, HoldReason>>();
 
     // Change detection for hold and target logs, so a 1-second retry does not spam the log.
     private ThingDef lastLoggedHoldDef;
-    private string lastLoggedHoldKey;
+    private HoldReason? lastLoggedHoldReason;
     private string lastLoggedTargets;
     private readonly HashSet<int> warnedUndeliverableIds = new HashSet<int>();
 
@@ -47,32 +56,42 @@ public partial class Building_Elevator
         int now = Find.TickManager.TicksGame;
         ThingOwner buffer = Buffer;
 
-        if (!IsValidPartner(out _))
+        // Nothing moves unless the link is valid and both ends are powered. No hold entries are set in
+        // that case: the status line already explains it.
+        if (!IsValidPartner(out _) || !IsOperational)
         {
-            SetHold(buffer[0], "DeepElevator_HoldNotConnected", "not connected");
-            nextSendTick = now + PeriodicInterval; // no point retrying faster until relinked
+            if (heldEntries.Count > 0)
+            {
+                ClearHold();
+            }
+            LogSendPausedIfChanged();
+            nextSendTick = now + PowerUpdateInterval; // cheap check; sending resumes within half a second of power or link returning
             return;
         }
+        lastLoggedPauseReason = null;
 
         int entriesToConsider = fifoMode ? 1 : buffer.Count;
         Thing firstHeldEntry = null;
-        string firstHoldKey = null;
+        HoldReason firstHoldReason = HoldReason.NoStorage;
         string firstHoldDetail = null;
+        var reasonPerConsideredEntry = new List<HoldReason>();
         bool sent = false;
 
         for (int entryIndex = 0; entryIndex < entriesToConsider; entryIndex++)
         {
             Thing entry = buffer[entryIndex];
-            if (TryDeliverEntry(entry, entryIndex, out string holdKey, out string holdDetail))
+            if (TryDeliverEntry(entry, entryIndex, out HoldReason holdReason, out string holdDetail))
             {
                 sent = true;
                 break; // one successful send per call; the buffer has changed
             }
 
+            reasonPerConsideredEntry.Add(holdReason);
+
             if (firstHeldEntry == null)
             {
                 firstHeldEntry = entry;
-                firstHoldKey = holdKey;
+                firstHoldReason = holdReason;
                 firstHoldDetail = holdDetail;
             }
         }
@@ -80,11 +99,12 @@ public partial class Building_Elevator
         if (sent)
         {
             ClearHold();
+            MarkTransferActive();
             nextSendTick = now + Settings.ticksPerStack;
         }
         else
         {
-            SetHold(firstHeldEntry, firstHoldKey, firstHoldDetail);
+            SetHold(firstHeldEntry, firstHoldReason, reasonPerConsideredEntry, firstHoldDetail);
             nextSendTick = now + Settings.HeldRetryTicks;
         }
     }
@@ -94,7 +114,7 @@ public partial class Building_Elevator
     /// Case A: accepting storage with room. Case B: accepting storage but all full (hold).
     /// Case C: no accepting storage, so drop on adjacent floor cells if allowed.
     /// </summary>
-    private bool TryDeliverEntry(Thing entry, int entryIndex, out string holdKey, out string holdDetail)
+    private bool TryDeliverEntry(Thing entry, int entryIndex, out HoldReason holdReason, out string holdDetail)
     {
         if (entry is Pawn)
         {
@@ -103,7 +123,7 @@ public partial class Building_Elevator
             {
                 ElevatorUtil.LogWarn($"{LogId}: {entry.LabelShort} in the buffer cannot be delivered (pawn sending is not implemented).");
             }
-            holdKey = "DeepElevator_HoldUndeliverable";
+            holdReason = HoldReason.Undeliverable;
             holdDetail = "pawn entry cannot be delivered";
             return false;
         }
@@ -119,33 +139,33 @@ public partial class Building_Elevator
             // Case A or B.
             if (acceptingTargets.Any(target => target.Room > 0) && DeliverToStorage(entry, entryIndex, pieceCount, acceptingTargets) > 0)
             {
-                holdKey = null;
+                holdReason = default;
                 holdDetail = null;
                 return true;
             }
 
-            holdKey = "DeepElevator_HoldTargetsFull";
-            holdDetail = $"all {acceptingTargets.Count} accepting storages full";
+            holdReason = HoldReason.StorageFull;
+            holdDetail = $"all {acceptingTargets.Count} accepting storages near the destination are full";
             return false;
         }
 
         // Case C.
         if (!allowDrop)
         {
-            holdKey = "DeepElevator_HoldDropDisabled";
-            holdDetail = "no storage accepts it and dropping on the floor is off";
+            holdReason = HoldReason.NoStorage;
+            holdDetail = "no storage near the destination accepts it (drop on floor is off)";
             return false;
         }
 
         if (DropOnFloor(entry, entryIndex, pieceCount, outputCells) > 0)
         {
-            holdKey = null;
+            holdReason = default;
             holdDetail = null;
             return true;
         }
 
-        holdKey = "DeepElevator_HoldNoDropCell";
-        holdDetail = "no drop cell";
+        holdReason = HoldReason.NoStorage;
+        holdDetail = "no storage or empty cell near the destination accepts it";
         return false;
     }
 
@@ -220,7 +240,7 @@ public partial class Building_Elevator
 
     private void LogTargetsIfChanged(Thing entry, List<DeliveryTarget> targets)
     {
-        string targetsText = $"{LogId} for {entry.LabelCapNoCount}: {DescribeTargets(targets)}";
+        string targetsText = $"{LogId} → {partner.LogId} for {entry.LabelCapNoCount}: {DescribeTargets(targets)}";
         if (targetsText != lastLoggedTargets)
         {
             lastLoggedTargets = targetsText;
@@ -263,30 +283,41 @@ public partial class Building_Elevator
         return pieceCount - remaining;
     }
 
-    /// <summary>Case C: puts the piece down on plain, empty (or same-kind partial) output cells. Returns how much was placed.</summary>
+    /// <summary>
+    /// Case C: puts the piece down on plain output cells. Same-kind partial stacks are topped up first,
+    /// and only then are empty cells opened. Returns how much was placed.
+    /// </summary>
     private int DropOnFloor(Thing entry, int entryIndex, int pieceCount, List<IntVec3> outputCells)
     {
         Map receiverMap = partnerMap;
+        int stackLimit = entry.def.stackLimit;
         int remaining = pieceCount;
 
-        foreach (IntVec3 cell in outputCells)
+        // Pass 1 takes cells whose room is below a full stack (a partial stack lies there);
+        // pass 2 takes the empty cells (room equals a full stack).
+        for (int pass = 1; pass <= 2 && remaining > 0; pass++)
         {
-            if (remaining <= 0)
+            foreach (IntVec3 cell in outputCells)
             {
-                break;
-            }
+                if (remaining <= 0)
+                {
+                    break;
+                }
 
-            int amountForCell = Math.Min(remaining, ElevatorUtil.DeliveryDropRoom(cell, receiverMap, entry));
-            if (amountForCell <= 0)
-            {
-                continue;
-            }
+                int cellRoom = ElevatorUtil.DeliveryDropRoom(cell, receiverMap, entry);
+                bool cellBelongsToPass = pass == 1 ? cellRoom > 0 && cellRoom < stackLimit : cellRoom >= stackLimit;
+                if (!cellBelongsToPass)
+                {
+                    continue;
+                }
 
-            int placed = PlaceFromEntry(entry, entryIndex, amountForCell, cell, "", "Dropped");
-            remaining -= placed;
-            if (placed < amountForCell)
-            {
-                break;
+                int amountForCell = Math.Min(remaining, cellRoom);
+                int placed = PlaceFromEntry(entry, entryIndex, amountForCell, cell, "", "Dropped");
+                remaining -= placed;
+                if (placed < amountForCell)
+                {
+                    return pieceCount - remaining; // defensive failure; the rest was returned to the buffer
+                }
             }
         }
 
@@ -330,24 +361,37 @@ public partial class Building_Elevator
     // ---------------------------------------------------------------- hold state
 
     /// <summary>Remembers why the queue is stuck (shown in the inspect string); logs only when the reason changes.</summary>
-    private void SetHold(Thing entry, string reasonKey, string logDetail)
+    private void SetHold(Thing firstHeldEntry, HoldReason firstReason, List<HoldReason> consideredReasons, string logDetail)
     {
-        holdReasonKey = reasonKey;
-        heldThing = entry;
-
-        if (entry.def != lastLoggedHoldDef || reasonKey != lastLoggedHoldKey)
+        // Every buffer entry is held back when nothing was sent. Entries that were not evaluated
+        // (everything behind the head in FIFO mode) are waiting only because of FIFO.
+        if (blockedSinceTick < 0)
         {
-            lastLoggedHoldDef = entry.def;
-            lastLoggedHoldKey = reasonKey;
-            ElevatorUtil.Log($"Held: {LogId} {entry.LabelCapNoCount}: {logDetail}");
+            blockedSinceTick = Find.TickManager.TicksGame;
+        }
+
+        heldEntries.Clear();
+        ThingOwner buffer = Buffer;
+        for (int index = 0; index < buffer.Count; index++)
+        {
+            HoldReason reason = index < consideredReasons.Count ? consideredReasons[index] : HoldReason.FifoWaiting;
+            heldEntries.Add(new KeyValuePair<Thing, HoldReason>(buffer[index], reason));
+        }
+
+        // The log follows the first held entry only.
+        if (firstHeldEntry.def != lastLoggedHoldDef || firstReason != lastLoggedHoldReason)
+        {
+            lastLoggedHoldDef = firstHeldEntry.def;
+            lastLoggedHoldReason = firstReason;
+            ElevatorUtil.Log($"Held: {LogId} → {(partner != null ? partner.LogId : "no partner")} {firstHeldEntry.LabelCapNoCount}: {logDetail}");
         }
     }
 
     private void ClearHold()
     {
-        holdReasonKey = null;
-        heldThing = null;
+        blockedSinceTick = -1;
+        heldEntries.Clear();
         lastLoggedHoldDef = null;
-        lastLoggedHoldKey = null;
+        lastLoggedHoldReason = null;
     }
 }

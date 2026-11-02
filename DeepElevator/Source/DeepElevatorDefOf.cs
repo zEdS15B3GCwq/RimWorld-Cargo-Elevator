@@ -8,6 +8,7 @@ namespace DeepElevator;
 public static class DeepElevatorDefOf
 {
     public static ThingDef DeepElevator_Elevator;
+    public static ThingDef DeepElevator_ElevatorLarge;
 
     static DeepElevatorDefOf()
     {

@@ -1,5 +1,13 @@
 # DeepElevator – Step C implementation spec (handoff)
 
+> **Status: implemented and tested** (see `results_stepC.md`). Kept as the original spec. Differences from the as-built state:
+> - The rename goes through the vanilla `IRenameable` inspect-pane button (via an explicit `IStorageGroupMember` re-implementation); the Rename gizmo is gone.
+> - `maxSlots` is 4.
+> - The mode line was removed; the status line is "Transfer paused: … (reason)".
+> - Floor drops top up partial stacks first.
+> - Unload and contents-tab drops are vanilla `CompTransporter` behaviour.
+> - Steps were renumbered afterwards: VFE checks are now Step E, manifest Step F.
+
 Read `plan.md` (rev 7) first, especially §1 "Storage handling and requests", "Ticking, input, delivery", and §2 "Storage", "Hauling system", "Transporter loading". This file is self-contained for Step C. **Don't implement anything beyond it:** no VFE-specific code (Step D), no manifest/Load dialog (Step E), no Harmony, no mod settings, no probe removal, no pawn/animal sending.
 
 **Goal of Step C:** the elevator becomes a working item elevator.

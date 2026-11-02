@@ -1,38 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
-  <ThingDef ParentName="BuildingBase">
-    <defName>DeepElevator_Elevator</defName>
-    <label>deep elevator</label>
-    <description>Transports items to a linked elevator on another level at the same world location (surface, DeepRim layers, MultiFloors levels). Build a second elevator at the same position, measured from the map center, on another level to link them.</description>
+  <!-- Everything the elevator sizes share. Lists that differ per size (costList, statBases, the power comp,
+       modExtensions) live only in the children, because a child's list items are appended to the parent's. -->
+  <ThingDef Name="DeepElevatorBase" ParentName="BuildingBase" Abstract="True">
     <thingClass>DeepElevator.Building_Elevator</thingClass>
     <graphicData>
-      <texPath>Things/Buildings/DeepElevator/DeepElevator</texPath>
+      <!-- texPath and drawSize are set per size -->
       <graphicClass>Graphic_Single</graphicClass>
-      <drawSize>(1,1)</drawSize>
     </graphicData>
-    <size>(1,1)</size>
     <rotatable>false</rotatable>
     <altitudeLayer>Building</altitudeLayer>
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
     <tickerType>Normal</tickerType>
+    <drawerType>MapMeshAndRealTime</drawerType> <!-- base sprite in the map mesh, the state light drawn every frame -->
     <surfaceType>Item</surfaceType>
     <inspectorTabs>
       <li>ITab_Storage</li>
       <li>DeepElevator.ITab_ElevatorContents</li>
     </inspectorTabs>
     <canOverlapZones>false</canOverlapZones>
-    <statBases>
-      <MaxHitPoints>200</MaxHitPoints>
-      <WorkToBuild>1500</WorkToBuild>
-      <Mass>30</Mass>
-      <Flammability>0</Flammability>
-    </statBases>
-    <costList>
-      <Steel>75</Steel>
-      <ComponentIndustrial>2</ComponentIndustrial>
-    </costList>
     <designationCategory>Misc</designationCategory>
     <placeWorkers>
       <li>DeepElevator.PlaceWorker_Elevator</li>
@@ -66,18 +54,100 @@
         <showMassInInspectString>false</showMassInInspectString>
       </li>
     </comps>
+    <constructEffect>ConstructMetal</constructEffect>
+  </ThingDef>
+
+  <!-- 1x1 elevator -->
+  <ThingDef ParentName="DeepElevatorBase">
+    <defName>DeepElevator_Elevator</defName>
+    <label>deep elevator</label>
+    <description>Transports items to a linked elevator on another level at the same world location (surface, DeepRim layers, MultiFloors levels). Build a second elevator at the same position, measured from the map center, on another level to link them.</description>
+    <graphicData>
+      <texPath>Things/Buildings/DeepElevator/DeepElevator</texPath>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon</uiIconPath> <!-- build menu icon; the base sprite is still used for the blueprint and ghost -->
+    <size>(1,1)</size>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <WorkToBuild>1500</WorkToBuild>
+      <Mass>30</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>75</Steel>
+      <ComponentIndustrial>2</ComponentIndustrial>
+    </costList>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>100</basePowerConsumption> <!-- active -->
+        <idlePowerDraw>10</idlePowerDraw>
+        <shortCircuitInRain>false</shortCircuitInRain>
+      </li>
+    </comps>
     <modExtensions>
       <li Class="DeepElevator.ElevatorSettingsExtension">
         <defaultSlots>4</defaultSlots>
         <minSlots>1</minSlots>
-        <maxSlots>20</maxSlots>
+        <maxSlots>4</maxSlots>
         <ticksPerStack>60</ticksPerStack> <!-- one piece per second -->
         <heldRetryTicks>-1</heldRetryTicks> <!-- -1 = same as ticksPerStack -->
         <defaultFifo>true</defaultFifo>
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
+        <defaultAllowInsert>true</defaultAllowInsert>
+        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green</greenTexPath>
+        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red</redTexPath>
+        <orangeTexPath>Things/Buildings/DeepElevator/DeepElevator_orange</orangeTexPath>
       </li>
     </modExtensions>
-    <constructEffect>ConstructMetal</constructEffect>
+  </ThingDef>
+
+  <!-- 2x2 elevator: four intake cells, a 12-cell output ring, four times the sending speed -->
+  <ThingDef ParentName="DeepElevatorBase">
+    <defName>DeepElevator_ElevatorLarge</defName>
+    <label>large deep elevator</label>
+    <description>A large deep elevator. Works like the small one, but has four intake cells, delivers to the twelve cells around it and transfers items four times as fast. Pairs only with another large deep elevator at the same position on another level.</description>
+    <graphicData>
+      <texPath>Things/Buildings/DeepElevator/DeepElevator_large</texPath>
+      <drawSize>(2,2)</drawSize>
+    </graphicData>
+    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon_large</uiIconPath>
+    <size>(2,2)</size>
+    <statBases>
+      <MaxHitPoints>400</MaxHitPoints>
+      <WorkToBuild>4000</WorkToBuild>
+      <Mass>100</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>250</Steel>
+      <ComponentIndustrial>6</ComponentIndustrial>
+    </costList>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>300</basePowerConsumption> <!-- active -->
+        <idlePowerDraw>30</idlePowerDraw>
+        <shortCircuitInRain>false</shortCircuitInRain>
+      </li>
+    </comps>
+    <modExtensions>
+      <li Class="DeepElevator.ElevatorSettingsExtension">
+        <defaultSlots>8</defaultSlots>
+        <minSlots>1</minSlots>
+        <maxSlots>8</maxSlots>
+        <ticksPerStack>15</ticksPerStack> <!-- four pieces per second -->
+        <heldRetryTicks>-1</heldRetryTicks>
+        <defaultFifo>true</defaultFifo>
+        <defaultMerge>true</defaultMerge>
+        <defaultAllowDrop>true</defaultAllowDrop>
+        <defaultAllowInsert>true</defaultAllowInsert>
+        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green_large</greenTexPath>
+        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red_large</redTexPath>
+        <orangeTexPath>Things/Buildings/DeepElevator/DeepElevator_orange_large</orangeTexPath>
+      </li>
+    </modExtensions>
   </ThingDef>
 </Defs>

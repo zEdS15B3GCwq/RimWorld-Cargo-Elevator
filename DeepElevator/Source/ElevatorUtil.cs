@@ -127,7 +127,8 @@ public static class ElevatorUtil
                 continue;
             }
 
-            Building_Elevator otherElevator = matchingCell.GetFirstThing<Building_Elevator>(otherMap);
+            // Same def only: elevators of different sizes never pair.
+            Building_Elevator otherElevator = ElevatorAnchoredAt(matchingCell, otherMap, self.def);
             if (otherElevator != null && otherElevator != self && otherElevator.Spawned && otherElevator.Partner == null)
             {
                 candidates.Add(otherElevator);
@@ -135,6 +136,20 @@ public static class ElevatorUtil
         }
 
         return candidates.OrderBy(candidate => LevelLabels.SortKey(candidate.Map)).ToList();
+    }
+
+    /// <summary>The elevator of def <paramref name="def"/> whose anchor (Position) is exactly <paramref name="cell"/>, or null.</summary>
+    public static Building_Elevator ElevatorAnchoredAt(IntVec3 cell, Map map, ThingDef def)
+    {
+        List<Thing> thingsOnCell = cell.GetThingList(map);
+        for (int index = 0; index < thingsOnCell.Count; index++)
+        {
+            if (thingsOnCell[index] is Building_Elevator elevator && elevator.def == def && elevator.Position == cell)
+            {
+                return elevator;
+            }
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------- delivery cells

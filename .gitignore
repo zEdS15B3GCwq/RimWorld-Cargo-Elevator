@@ -421,3 +421,5 @@ FodyWeavers.xsd
 Libs/
 
 [Ee]xamples/
+[Ii]nclude/
+.vscode/

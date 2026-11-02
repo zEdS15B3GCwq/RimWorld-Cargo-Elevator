@@ -5,36 +5,54 @@ using Verse;
 namespace DeepElevator;
 
 /// <summary>
-/// Step A probe: logs once at startup everything about the elevator def that could make the game
-/// reject a placement for reasons other than our own PlaceWorker (extra place workers added by other
-/// mods, interaction cells, passability).
+/// Logs once at startup everything about each elevator def that could make the game reject a placement
+/// for reasons other than our own PlaceWorker (extra place workers added by other mods, interaction cells,
+/// passability), plus the def facts the storage, power and drawing behaviour depends on.
 /// </summary>
 [StaticConstructorOnStartup]
 public static class ElevatorDiagnostics
 {
     static ElevatorDiagnostics()
     {
-        ThingDef elevatorDef = DeepElevatorDefOf.DeepElevator_Elevator;
-        if (elevatorDef == null)
+        var elevatorDefs = DefDatabase<ThingDef>.AllDefsListForReading
+            .Where(thingDef => typeof(Building_Elevator).IsAssignableFrom(thingDef.thingClass))
+            .ToList();
+        if (elevatorDefs.Count == 0)
         {
-            ElevatorUtil.LogWarn("Diagnostics: elevator def not found.");
+            ElevatorUtil.LogWarn("Diagnostics: no elevator def found.");
             return;
         }
 
+        foreach (ThingDef elevatorDef in elevatorDefs)
+        {
+            LogDef(elevatorDef);
+        }
+    }
+
+    private static void LogDef(ThingDef elevatorDef)
+    {
         string placeWorkerNames = elevatorDef.PlaceWorkers == null
             ? "none"
             : string.Join(", ", elevatorDef.PlaceWorkers.Select(placeWorker => placeWorker.GetType().FullName));
 
-        ElevatorUtil.Log($"Diagnostics: placeWorkers=[{placeWorkerNames}] hasInteractionCell={elevatorDef.hasInteractionCell} " +
-                         $"passability={elevatorDef.passability} thingClass={elevatorDef.thingClass.FullName} tickerType={elevatorDef.tickerType}");
+        ElevatorUtil.Log($"Diagnostics: {elevatorDef.defName} size={elevatorDef.size} drawerType={elevatorDef.drawerType} placeWorkers=[{placeWorkerNames}] " +
+                         $"hasInteractionCell={elevatorDef.hasInteractionCell} passability={elevatorDef.passability} " +
+                         $"thingClass={elevatorDef.thingClass.FullName} tickerType={elevatorDef.tickerType}");
 
-        // Step C: the def facts the storage behaviour depends on.
         var settingsExtension = elevatorDef.GetModExtension<ElevatorSettingsExtension>();
         string settingsText = settingsExtension == null
             ? "missing"
             : $"slots {settingsExtension.defaultSlots} ({settingsExtension.minSlots}-{settingsExtension.maxSlots}), ticksPerStack={settingsExtension.ticksPerStack}, " +
-              $"heldRetryTicks={settingsExtension.HeldRetryTicks}, fifo={settingsExtension.defaultFifo}, merge={settingsExtension.defaultMerge}, drop={settingsExtension.defaultAllowDrop}";
-        ElevatorUtil.Log($"Diagnostics: surfaceType={elevatorDef.surfaceType} maxItemsInCell={elevatorDef.building?.maxItemsInCell} " +
-                         $"hasTransporterComp={elevatorDef.HasComp(typeof(CompTransporter))} settings=[{settingsText}]");
+              $"heldRetryTicks={settingsExtension.HeldRetryTicks}, fifo={settingsExtension.defaultFifo}, merge={settingsExtension.defaultMerge}, drop={settingsExtension.defaultAllowDrop}, insert={settingsExtension.defaultAllowInsert}, " +
+              $"activeHoldTicks={settingsExtension.ActiveHoldTicks}, blockedAfterSendIntervals={settingsExtension.blockedAfterSendIntervals}, " +
+              $"lights=[{settingsExtension.greenTexPath}, {settingsExtension.redTexPath}, {settingsExtension.orangeTexPath}]";
+
+        var powerProperties = elevatorDef.GetCompProperties<CompProperties_Power>();
+        string powerText = powerProperties == null
+            ? "none"
+            : $"active={powerProperties.PowerConsumption} idle={powerProperties.idlePowerDraw}";
+
+        ElevatorUtil.Log($"Diagnostics: {elevatorDef.defName} surfaceType={elevatorDef.surfaceType} maxItemsInCell={elevatorDef.building?.maxItemsInCell} " +
+                         $"hasTransporterComp={elevatorDef.HasComp(typeof(CompTransporter))} power=[{powerText}] settings=[{settingsText}]");
     }
 }

@@ -19,14 +19,15 @@ public class PlaceWorker_Elevator : PlaceWorker
     private const float MouseTextLineHeight = 29f;
     private const float MouseTextWidth = 999f;
 
-    // ---- cache, valid for cachedMap until the rebuild interval has passed
+    // ---- cache, valid for (cachedMap, cachedDef) until the rebuild interval has passed
     private static Map cachedMap;
+    private static ThingDef cachedDef;
     private static int cachedFrame = -RebuildIntervalFrames;
 
-    // Cells on the current map that match an unconnected elevator on another level (for DrawFieldEdges).
+    // Every footprint cell on the current map that matches an unconnected elevator of the placed def on another level (for DrawFieldEdges).
     private static readonly List<IntVec3> targetCells = new();
 
-    // The same cells with the elevators they would connect to (for the cursor text).
+    // The anchor cells of those footprints with the elevators they would connect to (for the cursor text).
     private static readonly Dictionary<IntVec3, List<Building_Elevator>> targetsByCell = new();
 
     // Other levels that are smaller than the current map: the area of the current map they cover.
@@ -34,9 +35,9 @@ public class PlaceWorker_Elevator : PlaceWorker
 
     // ---------------------------------------------------------------- cache
 
-    private static void EnsureCache(Map map)
+    private static void EnsureCache(Map map, ThingDef def)
     {
-        if (map == cachedMap && Time.frameCount - cachedFrame < RebuildIntervalFrames)
+        if (map == cachedMap && def == cachedDef && Time.frameCount - cachedFrame < RebuildIntervalFrames)
         {
             return;
         }
@@ -48,10 +49,11 @@ public class PlaceWorker_Elevator : PlaceWorker
         foreach (Map otherMap in ElevatorUtil.OtherLevelMaps(map))
         {
             AddPartialOverlap(map, otherMap);
-            AddTargets(map, otherMap);
+            AddTargets(map, otherMap, def);
         }
 
         cachedMap = map;
+        cachedDef = def;
         cachedFrame = Time.frameCount;
     }
 
@@ -69,10 +71,13 @@ public class PlaceWorker_Elevator : PlaceWorker
         }
     }
 
-    /// <summary>Adds the cells of <paramref name="map"/> that match unconnected elevators on <paramref name="otherMap"/>.</summary>
-    private static void AddTargets(Map map, Map otherMap)
+    /// <summary>
+    /// Adds the cells of <paramref name="map"/> that match unconnected elevators of def <paramref name="def"/> on
+    /// <paramref name="otherMap"/>. Only the same def can pair, so other sizes are not highlighted.
+    /// </summary>
+    private static void AddTargets(Map map, Map otherMap, ThingDef def)
     {
-        List<Thing> elevatorsThere = otherMap.listerThings.ThingsOfDef(DeepElevatorDefOf.DeepElevator_Elevator);
+        List<Thing> elevatorsThere = otherMap.listerThings.ThingsOfDef(def);
         for (int elevatorIndex = 0; elevatorIndex < elevatorsThere.Count; elevatorIndex++)
         {
             if (elevatorsThere[elevatorIndex] is not Building_Elevator elevator || !elevator.Spawned || elevator.Partner != null)
@@ -86,11 +91,18 @@ public class PlaceWorker_Elevator : PlaceWorker
                 continue;
             }
 
+            // The anchor is where the ghost is centered, so it keys the cursor text; the whole footprint is outlined.
             if (!targetsByCell.TryGetValue(cellHere, out List<Building_Elevator> elevatorsAtCell))
             {
                 elevatorsAtCell = new List<Building_Elevator>();
                 targetsByCell[cellHere] = elevatorsAtCell;
-                targetCells.Add(cellHere);
+                foreach (IntVec3 footprintCell in GenAdj.OccupiedRect(cellHere, Rot4.North, def.Size))
+                {
+                    if (footprintCell.InBounds(map) && !targetCells.Contains(footprintCell))
+                    {
+                        targetCells.Add(footprintCell);
+                    }
+                }
             }
             elevatorsAtCell.Add(elevator);
         }
@@ -108,7 +120,7 @@ public class PlaceWorker_Elevator : PlaceWorker
                 return;
             }
 
-            EnsureCache(map);
+            EnsureCache(map, def);
             if (targetCells.Count > 0)
             {
                 GenDraw.DrawFieldEdges(targetCells, Color.green);
@@ -148,7 +160,7 @@ public class PlaceWorker_Elevator : PlaceWorker
             }
 
             // center is the cell under the mouse.
-            EnsureCache(map);
+            EnsureCache(map, def as ThingDef);
             if (targetsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
             {
                 foreach (Building_Elevator elevator in elevatorsAtCell)

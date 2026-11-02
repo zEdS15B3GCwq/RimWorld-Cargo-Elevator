@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
-  <DeepElevator_ConnectedTo>Connected to {0}</DeepElevator_ConnectedTo>
-  <DeepElevator_NotConnected>Not connected</DeepElevator_NotConnected>
   <DeepElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other levels. Use "Connect to...".</DeepElevator_CandidatesAvailable>
   <DeepElevator_Connect>Connect to...</DeepElevator_Connect>
   <DeepElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another level. The link cannot be changed afterwards.</DeepElevator_ConnectDesc>
@@ -22,9 +20,6 @@
   <!-- {0} = the elevator's custom name, {1} = its level label. -->
   <DeepElevator_ElevatorOnLevel>{0} on {1}</DeepElevator_ElevatorOnLevel>
 
-  <DeepElevator_Rename>Rename</DeepElevator_Rename>
-  <DeepElevator_RenameDesc>Give this elevator a name. It is shown in the connect menu and messages of the elevators on other levels.</DeepElevator_RenameDesc>
-
   <DeepElevator_HelperConnectsTo>Connects to: {0}</DeepElevator_HelperConnectsTo>
   <!-- {0} = level label of the smaller map that doesn't reach the hovered cell. -->
   <DeepElevator_HelperOutsideMap>Outside the boundaries of {0}</DeepElevator_HelperOutsideMap>
@@ -33,18 +28,18 @@
   <DeepElevator_GoToPartnerDesc>Jump to the linked elevator on the other level.</DeepElevator_GoToPartnerDesc>
 
   <!-- Step C: buffer, modes, holding -->
-  <DeepElevator_BufferSlots>Buffer: {0} / {1} slots</DeepElevator_BufferSlots>
-  <DeepElevator_BufferMode>Order: {0}, stacks: {1}</DeepElevator_BufferMode>
-  <DeepElevator_ModeFifo>first in, first out</DeepElevator_ModeFifo>
-  <DeepElevator_ModeAnyOrder>first deliverable</DeepElevator_ModeAnyOrder>
-  <DeepElevator_MergeOn>merged</DeepElevator_MergeOn>
-  <DeepElevator_MergeOff>separate</DeepElevator_MergeOff>
-  <DeepElevator_Holding>Holding {0}: {1}</DeepElevator_Holding>
-  <DeepElevator_HoldTargetsFull>all accepting storage at the destination is full</DeepElevator_HoldTargetsFull>
-  <DeepElevator_HoldNoDropCell>no free cell to put it down at the destination</DeepElevator_HoldNoDropCell>
-  <DeepElevator_HoldNotConnected>not connected</DeepElevator_HoldNotConnected>
-  <DeepElevator_HoldDropDisabled>no storage accepts it and dropping on the floor is off</DeepElevator_HoldDropDisabled>
-  <DeepElevator_HoldUndeliverable>cannot be delivered</DeepElevator_HoldUndeliverable>
+  <DeepElevator_BufferSlots>Buffer: {0} / {1} stacks</DeepElevator_BufferSlots>
+  <!-- {0} = the held stacks with their short reasons. -->
+  <DeepElevator_Paused>Transfer paused: {0}.</DeepElevator_Paused>
+  <DeepElevator_PausedStorageFull>storage full</DeepElevator_PausedStorageFull>
+  <DeepElevator_PausedNoStorage>no storage</DeepElevator_PausedNoStorage>
+  <DeepElevator_PausedFifoWaiting>FIFO on</DeepElevator_PausedFifoWaiting>
+  <DeepElevator_PausedNotConnected>not connected</DeepElevator_PausedNotConnected>
+  <!-- Either end unpowered. -->
+  <DeepElevator_PausedNoPower>no power</DeepElevator_PausedNoPower>
+  <!-- Replace the item list when one reason applies to every held stack, or to all stacks behind the FIFO head. -->
+  <DeepElevator_PausedAllItems>all items</DeepElevator_PausedAllItems>
+  <DeepElevator_PausedAllOthers>all others</DeepElevator_PausedAllOthers>
   <DeepElevator_Unload>Unload</DeepElevator_Unload>
   <DeepElevator_UnloadDesc>Put everything in this elevator's buffer down nearby. Pawns will haul it to storage.</DeepElevator_UnloadDesc>
   <DeepElevator_UnloadEmpty>The buffer is empty.</DeepElevator_UnloadEmpty>
@@ -53,9 +48,24 @@
   <DeepElevator_ToggleFifoDesc>On: the buffer is sent strictly in order; if the first entry can't be delivered, everything waits. Off: the first entry that can be delivered is sent.</DeepElevator_ToggleFifoDesc>
   <DeepElevator_ToggleMerge>Merge stacks</DeepElevator_ToggleMerge>
   <DeepElevator_ToggleMergeDesc>On: arriving items join any buffered stack of the same kind. Off: every arrival is kept as its own entry.</DeepElevator_ToggleMergeDesc>
-  <DeepElevator_ToggleDrop>Drop on floor</DeepElevator_ToggleDrop>
+  <DeepElevator_ToggleDrop>Drop on floor near target</DeepElevator_ToggleDrop>
   <DeepElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</DeepElevator_ToggleDropDesc>
+  <DeepElevator_ToggleInsert>Allow insert</DeepElevator_ToggleInsert>
+  <DeepElevator_ToggleInsertDesc>On: colonists haul items into this elevator. Off: colonists leave it alone, so it only receives from conveyor belts and other mods. Items already on their way still arrive.</DeepElevator_ToggleInsertDesc>
   <DeepElevator_SlotsLess>Fewer slots</DeepElevator_SlotsLess>
   <DeepElevator_SlotsMore>More slots</DeepElevator_SlotsMore>
+  <!-- Step D: status line. {0} = status text, {1} = partner label (ElevatorLabel). -->
+  <DeepElevator_StatusLinked>Status: {0}, connected to {1}</DeepElevator_StatusLinked>
+  <DeepElevator_StatusUnlinked>Status: {0}</DeepElevator_StatusUnlinked>
+  <DeepElevator_StatusDisconnected>disconnected</DeepElevator_StatusDisconnected>
+  <DeepElevator_StatusNoPower>no power</DeepElevator_StatusNoPower>
+  <DeepElevator_StatusPartnerUnpowered>partner unpowered</DeepElevator_StatusPartnerUnpowered>
+  <!-- Disconnected and unpowered at once: {0} = no power text, {1} = disconnected text. -->
+  <DeepElevator_StatusUnpoweredDisconnected>{0}, {1}</DeepElevator_StatusUnpoweredDisconnected>
+  <DeepElevator_StatusBlocked>blocked</DeepElevator_StatusBlocked>
+  <DeepElevator_StatusActive>active</DeepElevator_StatusActive>
+  <DeepElevator_StatusIdle>idle</DeepElevator_StatusIdle>
+  <!-- {0} = blocked/active/idle -->
+  <DeepElevator_StatusLoading>loading, {0}</DeepElevator_StatusLoading>
   <DeepElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</DeepElevator_SlotsDesc>
 </LanguageData>
