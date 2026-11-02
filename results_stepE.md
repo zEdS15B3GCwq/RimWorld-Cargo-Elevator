@@ -14,7 +14,7 @@ Implemented from `plan_stepE1.md` on branch `stepE`. Builds with 0 errors, 0 war
 - Plain container: `buffer` field created in the constructor, saved as `innerContainer` (the name the transporter comp used). A guard re-creates it when a save has no such node.
 - `DeSpawn` drops the buffer after the base call unless the mode is `WillReplace`. Log text fixed.
 - Removed: transporter field and caching, the `Command_LoadToTransporter` filter, `IsManifestLoading`, the "loading, ..." status wrapper and key `DeepElevator_StatusLoading`, the orange blink, `OrangeLightIndex`, `orangeTexPath` (extension, both XML defs, diagnostics), `hasTransporterComp` in diagnostics. The `DeepElevator_orange*.png` files are kept and unreferenced. The `<comps>` transporter entry is removed from the base def.
-- `ITab_ElevatorContents : ITab_ContentsBase` as specified (own `container`, `UseDiscardMessage` false, visible when the player's and the buffer is non-empty, `OnDropThing` → `DropFromBuffer`).
+- `ITab_ElevatorContents : ITab_ContentsBase` as specified (own `container`, `UseDiscardMessage` false, visible when the thing is the player's and the buffer is non-empty, `OnDropThing` → `DropFromBuffer`).
 - New `Building_Elevator.Loaders.cs`: `linkedLoaders` (priority descending, stable), `RegisterLoader` / `UnregisterLoader` / `Notify_LoaderPriorityChanged`, `RoomFor`, `PullFromLoaders`, `CanPullFrom`, `LinkWaitingLoaders` (new elevator links the waiting loaders), `ReleaseLoaders` (after the base `DeSpawn`).
 - `Tick` order: `base.Tick()`, `PullFromLoaders()`, then the `absorbPending` block, periodic work and `TrySend`.
 - Hint added to `DeepElevator_ToggleInsertDesc`.
