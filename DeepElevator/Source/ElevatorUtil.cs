@@ -20,6 +20,16 @@ public static class ElevatorUtil
 
     private static bool loggedSourceChainTooLong;
 
+    private static List<ThingDef> elevatorDefs;
+
+    /// <summary>
+    /// Every def whose building class is an elevator (both sizes, and any later variant), found on first use.
+    /// Not available while defs are still loading, so only call it from gameplay code.
+    /// </summary>
+    public static List<ThingDef> ElevatorDefs => elevatorDefs ??= DefDatabase<ThingDef>.AllDefsListForReading
+        .Where(thingDef => typeof(Building_Elevator).IsAssignableFrom(thingDef.thingClass))
+        .ToList();
+
     // Probe build, so logging is unconditional. Later steps may gate it on Prefs.DevMode.
     public static void Log(string message) => Verse.Log.Message(LogPrefix + message);
 

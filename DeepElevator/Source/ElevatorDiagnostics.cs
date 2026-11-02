@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using Verse;
@@ -14,9 +15,7 @@ public static class ElevatorDiagnostics
 {
     static ElevatorDiagnostics()
     {
-        var elevatorDefs = DefDatabase<ThingDef>.AllDefsListForReading
-            .Where(thingDef => typeof(Building_Elevator).IsAssignableFrom(thingDef.thingClass))
-            .ToList();
+        List<ThingDef> elevatorDefs = ElevatorUtil.ElevatorDefs;
         if (elevatorDefs.Count == 0)
         {
             ElevatorUtil.LogWarn("Diagnostics: no elevator def found.");

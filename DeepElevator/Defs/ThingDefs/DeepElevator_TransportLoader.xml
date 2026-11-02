@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- A vanilla transport pod that cannot launch: the vanilla Load dialog, loading jobs and contents tab, no power.
+       It stands next to a deep elevator, which pulls the finished items out of it (Building_Elevator.Loaders.cs). -->
+  <ThingDef ParentName="BuildingBase">
+    <defName>DeepElevator_TransportLoader</defName>
+    <label>transport loader</label>
+    <description>Loads a chosen list of items, using the same loading window as a transport pod, and passes them to the deep elevator next to it. It cannot launch and needs no power. Build it beside an elevator; it links to that elevator by itself, or use "Connect to..." when several elevators are adjacent.</description>
+    <thingClass>DeepElevator.Building_TransportLoader</thingClass>
+    <graphicData>
+      <texPath>Things/Buildings/DeepElevator/TransportLoader</texPath>
+      <graphicClass>Graphic_Single</graphicClass>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <size>(1,1)</size>
+    <rotatable>false</rotatable>
+    <tickerType>Normal</tickerType>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <fillPercent>0.4</fillPercent>
+    <pathCost>42</pathCost>
+    <designationCategory>Misc</designationCategory>
+    <canOverlapZones>false</canOverlapZones>
+    <constructEffect>ConstructMetal</constructEffect>
+    <statBases>
+      <MaxHitPoints>150</MaxHitPoints>
+      <WorkToBuild>800</WorkToBuild>
+      <Mass>20</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>50</Steel>
+      <ComponentIndustrial>1</ComponentIndustrial>
+    </costList>
+    <inspectorTabs>
+      <li>ITab_ContentsTransporter</li>
+    </inspectorTabs>
+    <placeWorkers>
+      <li>DeepElevator.PlaceWorker_TransportLoader</li>
+    </placeWorkers>
+    <comps>
+      <li Class="CompProperties_Transporter">
+        <massCapacity>100000</massCapacity> <!-- the capacity is not meaningful here; the elevator's slots are the limit -->
+        <max1PerGroup>true</max1PerGroup>
+        <canChangeAssignedThingsAfterStarting>true</canChangeAssignedThingsAfterStarting>
+        <shouldTickContents>true</shouldTickContents> <!-- food waiting in the loader keeps rotting -->
+        <showMassInInspectString>false</showMassInInspectString>
+        <showOverallStats>false</showOverallStats> <!-- no caravan info bar in the loading dialog -->
+      </li>
+    </comps>
+  </ThingDef>
+</Defs>

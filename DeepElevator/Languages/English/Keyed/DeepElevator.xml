@@ -66,4 +66,28 @@
   <DeepElevator_StatusActive>active</DeepElevator_StatusActive>
   <DeepElevator_StatusIdle>idle</DeepElevator_StatusIdle>
   <DeepElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</DeepElevator_SlotsDesc>
+  <!-- Step E1: transport loader -->
+  <DeepElevator_MsgLoaderLinked>Transport loader linked to {0}.</DeepElevator_MsgLoaderLinked>
+  <DeepElevator_MsgLoaderUnlinked>Transport loader lost its elevator. Loading continues, but nothing is transferred until you turn "Transfer items to elevator" back on.</DeepElevator_MsgLoaderUnlinked>
+  <DeepElevator_LoaderNeedsLink>The loader is not linked to an elevator. Build it next to one, or use "Connect to...".</DeepElevator_LoaderNeedsLink>
+  <DeepElevator_ToggleTransfer>Transfer items to elevator</DeepElevator_ToggleTransfer>
+  <DeepElevator_ToggleTransferDesc>On: the linked elevator takes loaded items out of this loader as soon as it has room. Off: loaded items stay here until you unload them.</DeepElevator_ToggleTransferDesc>
+  <!-- {0} = the current priority level. -->
+  <DeepElevator_LoaderPriority>Priority: {0}</DeepElevator_LoaderPriority>
+  <DeepElevator_LoaderPriorityDesc>When several loaders are linked to one elevator, the elevator takes items from the higher priority loader first.</DeepElevator_LoaderPriorityDesc>
+  <DeepElevator_LoaderConnectDesc>Link this loader to one of the elevators next to it. The link stays until one of them is removed.</DeepElevator_LoaderConnectDesc>
+  <!-- {0} = elevator label, {1} = direction from the loader. -->
+  <DeepElevator_LoaderLinkedTo>Linked to: {0} ({1})</DeepElevator_LoaderLinkedTo>
+  <DeepElevator_DirectionNorth>north</DeepElevator_DirectionNorth>
+  <DeepElevator_DirectionEast>east</DeepElevator_DirectionEast>
+  <DeepElevator_DirectionSouth>south</DeepElevator_DirectionSouth>
+  <DeepElevator_DirectionWest>west</DeepElevator_DirectionWest>
+  <!-- Parts of the loader's status line, joined with "; ". -->
+  <DeepElevator_LoaderStatusLoading>loading</DeepElevator_LoaderStatusLoading>
+  <DeepElevator_LoaderStatusComplete>loading complete</DeepElevator_LoaderStatusComplete>
+  <DeepElevator_LoaderStatusNotLinked>not linked</DeepElevator_LoaderStatusNotLinked>
+  <DeepElevator_LoaderStatusTransferOff>transfer off</DeepElevator_LoaderStatusTransferOff>
+  <DeepElevator_LoaderStatusCannotAccept>elevator cannot accept</DeepElevator_LoaderStatusCannotAccept>
+  <DeepElevator_LoaderStatusTransferring>transferring items</DeepElevator_LoaderStatusTransferring>
+  <DeepElevator_HelperSeveralElevators>Several elevators: use Connect to...</DeepElevator_HelperSeveralElevators>
 </LanguageData>

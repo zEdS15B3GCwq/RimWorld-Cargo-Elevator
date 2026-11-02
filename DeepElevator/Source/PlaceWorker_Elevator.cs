@@ -179,7 +179,8 @@ public class PlaceWorker_Elevator : PlaceWorker
         }
     }
 
-    private static void DrawMouseTextLine(float curX, ref float curY, string text, Color color)
+    /// <summary>One line of cursor text; shared with the transport loader's place worker.</summary>
+    internal static void DrawMouseTextLine(float curX, ref float curY, string text, Color color)
     {
         Text.Font = GameFont.Small;
         GUI.color = color;

@@ -87,6 +87,12 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         Scribe_Values.Look(ref allowInsert, "allowInsert", Settings.defaultAllowInsert);
         Scribe_Deep.Look(ref buffer, "innerContainer", this);
 
+        // A save without that node (an elevator from before the buffer existed) leaves the field null.
+        if (Scribe.mode == LoadSaveMode.PostLoadInit && buffer == null)
+        {
+            buffer = new ThingOwner<Thing>(this);
+        }
+
         if (Scribe.mode == LoadSaveMode.PostLoadInit && (partner == null) != (partnerMap == null))
         {
             ElevatorUtil.LogWarn($"{LogId}: inconsistent link after load (partner={partner?.LogId ?? "null"}, partnerMap={(partnerMap == null ? "null" : "set")}); clearing.");
@@ -109,9 +115,13 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             // the partner may live on a map that has not spawned yet.
             VerifyPartnerLinksBack();
         }
-        else if (partner == null)
+        else
         {
-            TryAutoPair();
+            if (partner == null)
+            {
+                TryAutoPair();
+            }
+            LinkWaitingLoaders();
         }
     }
 
@@ -208,6 +218,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         OnLifecycleEnd(nameof(DeSpawn), $"mode={mode}");
         Map mapBeforeDespawn = Map;
         base.DeSpawn(mode);
+        ReleaseLoaders();
 
         // Dropped after the base call, so the items do not land on this elevator's own (now free) storage cells.
         // A replacement (e.g. minify or upgrade) keeps the thing alive, so then the buffer stays.
@@ -235,6 +246,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     public override void Notify_MyMapRemoved()
     {
         OnLifecycleEnd(nameof(Notify_MyMapRemoved), "");
+        linkedLoaders.Clear(); // the loaders go with the map and clean up themselves
         ElevatorUtil.Log($"Map removed: {LogId} buffer has {BufferEntryCount} entries (discarded with the map)");
         base.Notify_MyMapRemoved();
     }
@@ -245,6 +257,10 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     protected override void Tick()
     {
         base.Tick(); // ticks the comps; the game ticks the buffer contents (rot etc.) itself, as we are an IThingHolder
+
+        // Loaders first: the intake absorb below runs from this same tick (the arrival event only sets
+        // absorbPending), so a pull always comes before an absorb and loaders have precedence over cells.
+        PullFromLoaders();
 
         if (absorbPending)
         {
