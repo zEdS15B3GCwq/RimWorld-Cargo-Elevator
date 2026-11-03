@@ -84,10 +84,15 @@
   <DeepElevator_DirectionWest>west</DeepElevator_DirectionWest>
   <!-- Parts of the loader's status line, joined with "; ". -->
   <DeepElevator_LoaderStatusLoading>loading</DeepElevator_LoaderStatusLoading>
-  <DeepElevator_LoaderStatusComplete>loading complete</DeepElevator_LoaderStatusComplete>
   <DeepElevator_LoaderStatusNotLinked>not linked</DeepElevator_LoaderStatusNotLinked>
   <DeepElevator_LoaderStatusTransferOff>transfer off</DeepElevator_LoaderStatusTransferOff>
   <DeepElevator_LoaderStatusCannotAccept>elevator cannot accept</DeepElevator_LoaderStatusCannotAccept>
   <DeepElevator_LoaderStatusTransferring>transferring items</DeepElevator_LoaderStatusTransferring>
+  <!-- Step E2: portal loader. -->
+  <DeepElevator_LoaderPairDown>the elevator is not connected or has no power</DeepElevator_LoaderPairDown>
+  <!-- {0} = pawn name, {1} = loader label. -->
+  <DeepElevator_MsgLoaderPawnReturned>{0} could not go through {1}: the elevator is not connected or has no power. Put down next to the loader.</DeepElevator_MsgLoaderPawnReturned>
+  <!-- {0} = loader label, {1} = number of stacks. -->
+  <DeepElevator_LoaderUnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the loader.</DeepElevator_LoaderUnloadIncomplete>
   <DeepElevator_HelperSeveralElevators>Several elevators: use Connect to...</DeepElevator_HelperSeveralElevators>
 </LanguageData>

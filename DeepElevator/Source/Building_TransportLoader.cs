@@ -9,14 +9,20 @@ using Verse.Sound;
 namespace DeepElevator;
 
 /// <summary>
-/// The transport loader: in effect a vanilla transport pod that cannot launch. The vanilla transporter comp
-/// provides the Load dialog, the loading jobs and the contents tab. The loader stands next to an elevator
-/// (its "partner") and the elevator pulls the loaded items out of the container into its own buffer
-/// (see Building_Elevator.Loaders.cs). The loader needs no power and has no power-related state.
-/// The link to the elevator is saved here and only here; the elevator keeps a runtime list.
-/// Items only (step E1); pawns and animals come in step E2.
+/// The transport loader: a vanilla map portal (the same base MultiFloors' stairs use). The player picks what to
+/// send in the vanilla portal dialog; the portal's order (<c>leftToLoad</c>) and the hauling and entering jobs
+/// are all vanilla. The loader stands next to an elevator (its "partner") and treats the two kinds of cargo differently:
+/// <list type="bullet">
+/// <item>Items are hauled into the loader's own container (through <see cref="LoaderContainerProxy"/>), and the
+/// elevator pulls them into its buffer (see Building_Elevator.Loaders.cs), so slots, send rate and storage
+/// placement at the destination apply.</item>
+/// <item>People and animals use the vanilla portal behaviour: walking colonists walk in, animals, prisoners and
+/// downed pawns are carried in, and all of them appear next to the partner elevator on the other level directly.</item>
+/// </list>
+/// The loader needs no power and has no power-related state. The link to the elevator is saved here and only
+/// here; the elevator keeps a runtime list.
 /// </summary>
-public class Building_TransportLoader : Building
+public class Building_TransportLoader : MapPortal, IThingHolder
 {
     /// <summary>How long after the last pull the status line still counts the elevator as accepting (avoids flicker).</summary>
     private const int PullGraceTicks = 120;
@@ -32,9 +38,16 @@ public class Building_TransportLoader : Building
     private bool transferAllowed = true;   // "Transfer items to elevator"; default on, also for a loader without a link yet
     private StoragePriority priority = StoragePriority.Normal;
 
+    // The container and the holder that presents it to the game; created in the constructor, never null.
+    private readonly LoaderContainerHolder containerHolder;
+
     // ---- runtime only
-    private CompTransporter transporter;
     private int lastPullTick = -99999;
+
+    public Building_TransportLoader()
+    {
+        containerHolder = new LoaderContainerHolder(this);
+    }
 
     public Building_Elevator Partner => partner;
 
@@ -42,14 +55,73 @@ public class Building_TransportLoader : Building
 
     public StoragePriority Priority => priority;
 
-    /// <summary>The vanilla transporter's container; the elevator pulls from it.</summary>
-    public ThingOwner Container => transporter.innerContainer;
+    /// <summary>The loader's own container: hauled items wait here until the elevator pulls them. Never null.</summary>
+    public ThingOwner<Thing> Container => containerHolder.Container;
+
+    // ---------------------------------------------------------------- container (IThingHolder)
+
+    // Re-implemented for GetChildHolders only, like the elevator's Accepts. The game ticks, counts and searches the
+    // container through the child holder. GetDirectlyHeldThings must stay MapPortal's (the proxy): vanilla hauling
+    // deposits through it, and that is what shrinks the order. Explicit, because MapPortal's own public
+    // GetChildHolders is not virtual.
+    void IThingHolder.GetChildHolders(List<IThingHolder> outChildren)
+    {
+        outChildren.Add(containerHolder);
+    }
+
+    // ---------------------------------------------------------------- portal behaviour
+
+    protected override Texture2D EnterTex => ElevatorTextures.LoaderEnter;
+
+    /// <summary>The other end of the trip: the level of the partner elevator's partner, or null while the pair is not connected.</summary>
+    public override Map GetOtherMap() => partner?.Partner?.Map;
+
+    /// <summary>The partner elevator's partner; vanilla puts the arriving pawn on a standable cell within 5 cells of it.</summary>
+    public override IntVec3 GetDestinationLocation()
+    {
+        Building_Elevator destinationElevator = partner?.Partner;
+        return destinationElevator is { Spawned: true } ? destinationElevator.Position : IntVec3.Invalid;
+    }
+
+    /// <summary>
+    /// Pawns can enter (walk in, or be carried in) while the loader is linked and both elevators have power.
+    /// The "transfer items" switch only governs items, so it does not matter here.
+    /// </summary>
+    public override bool IsEnterable(out string reason)
+    {
+        if (!base.IsEnterable(out reason))
+        {
+            return false;
+        }
+        if (partner == null)
+        {
+            reason = "DeepElevator_LoaderNeedsLink".Translate();
+            return false;
+        }
+        if (!partner.IsOperational)
+        {
+            reason = "DeepElevator_LoaderPairDown".Translate();
+            return false;
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// A pawn has arrived on the other level. Never calls the base: it needs portal def properties and an exit
+    /// that this portal does not have. Taking the pawn off the order is a no-op for a right-click entry.
+    /// </summary>
+    public override void OnEntered(Pawn pawn)
+    {
+        Notify_ThingAdded(pawn);
+        ElevatorUtil.Log($"Entered (loader): {ThingID} sent {pawn.LabelShort} to {ElevatorUtil.MapDesc(GetOtherMap())} at {GetDestinationLocation()}");
+    }
 
     // ---------------------------------------------------------------- saving
 
     public override void ExposeData()
     {
         base.ExposeData();
+        containerHolder.ExposeData();
         Scribe_References.Look(ref partner, "partner");
         Scribe_Values.Look(ref transferAllowed, "transferAllowed", true);
         Scribe_Values.Look(ref priority, "priority", StoragePriority.Normal);
@@ -60,11 +132,9 @@ public class Building_TransportLoader : Building
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
-        transporter = GetComp<CompTransporter>();
-        if (transporter == null)
-        {
-            ElevatorUtil.LogWarn($"{ThingID}: the def has no CompTransporter; the loader cannot hold anything.");
-        }
+
+        // Replaces the vanilla proxy the base just created, so deposits go through the loader's rules.
+        containerProxy = new LoaderContainerProxy { portal = this, loader = this };
 
         if (respawningAfterLoad)
         {
@@ -79,11 +149,27 @@ public class Building_TransportLoader : Building
         ElevatorUtil.Log($"SpawnSetup: {ThingID} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"} transfer={transferAllowed} priority={priority}");
     }
 
-    // Deconstructed or destroyed while the map stays. The base call (the transporter comp) cancels the load and
-    // drops the contents by itself; the link is released first.
+    // Deconstructed or destroyed while the map stays. The base class leaves the lord and the order as they are,
+    // so the load is cancelled here (the haulers stop), and the container is emptied before the building is gone.
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         ReleasePartner("DeSpawn");
+        if (Spawned)
+        {
+            if (LoadInProgress)
+            {
+                CancelLoad();
+            }
+
+            // A replacement (e.g. minify) keeps the thing alive, so then the container stays.
+            if (mode != DestroyMode.WillReplace)
+            {
+                DropContainerContents("despawn");
+
+                // Whatever found no spot off the elevator cells is put down plainly: nothing is ever deleted.
+                Container.TryDropAll(Position, Map, ThingPlaceMode.Near);
+            }
+        }
         base.DeSpawn(mode);
     }
 
@@ -106,28 +192,12 @@ public class Building_TransportLoader : Building
 
     protected override void Tick()
     {
-        base.Tick(); // the transporter comp ticks the contents (rot etc.)
-
-        FinishLoadIfComplete();
+        base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
 
         if (partner != null && this.IsHashIntervalTick(Building_Elevator.PeriodicInterval) && !IsPartnerStillValid(out string invalidReason))
         {
             ElevatorUtil.LogWarn($"Validation: {ThingID} partner {partner.LogId} invalid ({invalidReason}).");
             Notify_PartnerLost();
-        }
-    }
-
-    /// <summary>
-    /// Ends the load by itself once nothing is left to load and the container is empty (everything was pulled
-    /// by the elevator). Same two steps as the end of a launch, so nothing is dropped and no message is shown.
-    /// Runs regardless of link and transfer setting: an empty manifest, or a load finished by hand, ends here too.
-    /// </summary>
-    private void FinishLoadIfComplete()
-    {
-        if (transporter.LoadingInProgressOrReadyToLaunch && !transporter.AnythingLeftToLoad && !transporter.innerContainer.Any)
-        {
-            transporter.CancelLoad(Map);
-            ElevatorUtil.Log($"Load finished: {ThingID} (nothing left to load, container empty); the loading state ended.");
         }
     }
 
@@ -144,15 +214,14 @@ public class Building_TransportLoader : Building
 
     // ---------------------------------------------------------------- notifications from the elevator
 
-    /// <summary>The elevator took (part of) an item out of the container: remember when and keep the mass cache right.</summary>
+    /// <summary>The elevator took (part of) an item out of the container: remember when, for the status line.</summary>
     public void Notify_Pulled(Thing pulledItem)
     {
         lastPullTick = Find.TickManager.TicksGame;
-        transporter.Notify_ThingRemoved(pulledItem);
     }
 
     /// <summary>
-    /// The elevator is gone, or the link became invalid. Loading continues; the transfer switch turns off and
+    /// The elevator is gone, or the link became invalid. The order continues; the transfer switch turns off and
     /// stays off after relinking, so a new elevator never starts taking items the player did not expect to move.
     /// </summary>
     public void Notify_PartnerLost()
@@ -245,32 +314,79 @@ public class Building_TransportLoader : Building
         return directionKey.Translate();
     }
 
+    // ---------------------------------------------------------------- unloading
+
+    /// <summary>
+    /// Puts every entry of the container down near the loader on cells that are not elevator cells (a plain "near"
+    /// drop could land on the intake cell, which would absorb the item again). Whatever finds no room stays.
+    /// Does not touch the order. Returns how many entries are left.
+    /// </summary>
+    private int DropContainerContents(string source)
+    {
+        int entriesBefore = Container.Count;
+        for (int entryIndex = Container.Count - 1; entryIndex >= 0; entryIndex--)
+        {
+            Thing entry = Container[entryIndex];
+            Container.TryDrop(entry, Position, Map, ThingPlaceMode.Near, out _, null, cell => ElevatorUtil.UnloadValidator(cell, Map, entry));
+        }
+
+        int entriesLeft = Container.Count;
+        ElevatorUtil.Log($"Unloaded ({source}): {ThingID} {entriesBefore - entriesLeft} entr{(entriesBefore - entriesLeft == 1 ? "y" : "ies")} dropped, {entriesLeft} left");
+        return entriesLeft;
+    }
+
+    /// <summary>Takes <paramref name="count"/> of an entry out of the container and puts it down near the loader (contents tab). Returns false if there was no room; the portion is then back in the container.</summary>
+    public bool DropFromContainer(Thing entry, int count, string source)
+    {
+        if (!Spawned || !Container.Contains(entry))
+        {
+            return false;
+        }
+
+        int entryIndex = Container.IndexOf(entry);
+        bool wholeEntryTaken = count >= entry.stackCount;
+        Thing portion = Container.Take(entry, count);
+        string description = ElevatorUtil.Describe(portion);
+
+        if (ElevatorUtil.TryDropNear(portion, Position, Map))
+        {
+            ElevatorUtil.Log($"Dropped from loader ({source}): {ThingID} {description}");
+            return true;
+        }
+
+        // No room: put the portion back where it came from.
+        if (!wholeEntryTaken && Container.Contains(entry))
+        {
+            entry.TryAbsorbStack(portion, respectStackLimit: false);
+        }
+        else
+        {
+            Container.TryAdd(portion, canMergeWithExistingStacks: false);
+        }
+        ElevatorUtil.LogWarn($"Dropped from loader ({source}): {ThingID} found no room for {description}; it stays (was entry #{entryIndex}).");
+        return false;
+    }
+
     // ---------------------------------------------------------------- gizmos
 
     public override IEnumerable<Gizmo> GetGizmos()
     {
-        bool isLoading = transporter.LoadingInProgressOrReadyToLaunch;
-
         foreach (Gizmo gizmo in base.GetGizmos())
         {
-            // The vanilla cancel button only shows while the container holds something, so it would flicker as
-            // the elevator empties the container. Ours (below) is always there while a load exists.
-            if (gizmo is Command_Action { icon: var vanillaIcon } && vanillaIcon == CompTransporter.CancelLoadCommandTex)
+            // The vanilla Enter command is disabled whenever IsEnterable is false (including an unpowered pair).
+            // The dialog only needs a link: the order can be made while the pair is down, and pawns in it then
+            // wait until the pair works. EnterTex is our own cached texture, so the reference match is reliable.
+            if (gizmo is Command_Action enterCommand && enterCommand.icon == EnterTex)
             {
-                continue;
-            }
-
-            // A manifest can only be started once there is an elevator to hand the items to.
-            if (gizmo is Command_LoadToTransporter loadCommand && !isLoading && partner == null)
-            {
-                loadCommand.Disable("DeepElevator_LoaderNeedsLink".Translate());
+                enterCommand.Disabled = partner == null;
+                enterCommand.disabledReason = partner == null ? "DeepElevator_LoaderNeedsLink".Translate().Resolve() : null;
             }
             yield return gizmo;
         }
 
-        if (isLoading || Container.Any)
+        if (Container.Any)
         {
-            yield return CreateCancelOrUnloadCommand();
+            yield return CreateUnloadCommand();
         }
 
         yield return CreateTransferToggle();
@@ -303,30 +419,24 @@ public class Building_TransportLoader : Building
     }
 
     /// <summary>
-    /// Our own cancel button, with the vanilla texts: "cancel loading" while items are left to load, otherwise
-    /// "unload all". Without a load (items left behind, e.g. after transfer was switched off) it just drops them.
+    /// "Unload all", with the vanilla texts: drops what waits in the container (e.g. after the order was
+    /// cancelled, or transfer was switched off). The order is a separate matter: the vanilla cancel button handles it.
     /// </summary>
-    private Command_Action CreateCancelOrUnloadCommand()
+    private Command_Action CreateUnloadCommand()
     {
-        bool itemsLeftToLoad = transporter.AnythingLeftToLoad;
         return new Command_Action
         {
-            defaultLabel = (itemsLeftToLoad ? "CommandCancelLoad" : "CommandUnload").Translate(),
-            defaultDesc = itemsLeftToLoad ? "CommandCancelLoadDesc".Translate() : "CommandUnloadDesc".Translate(LabelShort),
+            defaultLabel = "CommandUnload".Translate(),
+            defaultDesc = "CommandUnloadDesc".Translate(LabelShort),
             icon = CompTransporter.CancelLoadCommandTex,
             action = () =>
             {
                 SoundDefOf.Designate_Cancel.PlayOneShotOnCamera();
-                if (transporter.LoadingInProgressOrReadyToLaunch)
+                int entriesLeft = DropContainerContents("unload command");
+                if (entriesLeft > 0)
                 {
-                    transporter.CancelLoad();
+                    Messages.Message("DeepElevator_LoaderUnloadIncomplete".Translate(LabelCap, entriesLeft), this, MessageTypeDefOf.RejectInput, historical: false);
                 }
-                else
-                {
-                    // Safety path: items in the container but no load to cancel.
-                    Container.TryDropAll(Position, Map, ThingPlaceMode.Near);
-                }
-                ElevatorUtil.Log($"Cancel/unload: {ThingID} (itemsLeftToLoad={itemsLeftToLoad})");
             }
         };
     }
@@ -438,10 +548,10 @@ public class Building_TransportLoader : Building
     {
         var statusParts = new List<string>();
 
-        bool isLoading = transporter.LoadingInProgressOrReadyToLaunch;
+        bool isLoading = LoadInProgress;
         if (isLoading)
         {
-            statusParts.Add((transporter.AnythingLeftToLoad ? "DeepElevator_LoaderStatusLoading" : "DeepElevator_LoaderStatusComplete").Translate());
+            statusParts.Add("DeepElevator_LoaderStatusLoading".Translate());
         }
 
         string transferPart = DescribeTransferPart(isLoading);
@@ -490,6 +600,7 @@ public class Building_TransportLoader : Building
             return true;
         }
 
+        // Pawns never reach the container any more; the check stays as a safety net, like the elevator's pull.
         bool anythingToPull = false;
         ThingOwner container = Container;
         for (int entryIndex = 0; entryIndex < container.Count; entryIndex++)
@@ -505,12 +616,12 @@ public class Building_TransportLoader : Building
 
     // ---------------------------------------------------------------- dev
 
-    /// <summary>DEV: dumps the link, the settings, the loading state and the container.</summary>
+    /// <summary>DEV: dumps the link, the settings, the order and the container.</summary>
     private void LogLoaderState()
     {
         var report = new StringBuilder();
         report.Append($"Loader: {ThingID} partner={partner?.LogId ?? "none"} transfer={transferAllowed} priority={priority} ");
-        report.Append($"loading={transporter.LoadingInProgressOrReadyToLaunch} groupID={transporter.groupID} leftToLoad={transporter.AnythingLeftToLoad} ");
+        report.Append($"loadInProgress={LoadInProgress} orderEntries={leftToLoad?.Count ?? 0} notifiedCantLoadMore={notifiedCantLoadMore} ");
         report.Append($"lastPullTick={lastPullTick} (now {Find.TickManager.TicksGame}) candidates={Candidates().Count}");
         ThingOwner container = Container;
         for (int entryIndex = 0; entryIndex < container.Count; entryIndex++)

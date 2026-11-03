@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
-  <!-- A vanilla transport pod that cannot launch: the vanilla Load dialog, loading jobs and contents tab, no power.
-       It stands next to a deep elevator, which pulls the finished items out of it (Building_Elevator.Loaders.cs). -->
+  <!-- A vanilla map portal (the base MultiFloors' stairs use) that opens the vanilla portal dialog. Items are hauled into
+       the loader's own container, and the deep elevator next to it pulls them out (Building_Elevator.Loaders.cs).
+       People and animals walk or are carried through to the partner elevator's level directly.
+       No <portal> properties: the portal never leads to a pocket map, and the class overrides what would use them. -->
   <ThingDef ParentName="BuildingBase">
     <defName>DeepElevator_TransportLoader</defName>
     <label>transport loader</label>
-    <description>Loads a chosen list of items, using the same loading window as a transport pod, and passes them to the deep elevator next to it. It cannot launch and needs no power. Build it beside an elevator; it links to that elevator by itself, or use "Connect to..." when several elevators are adjacent.</description>
+    <description>Sends a chosen list of items, and people and animals, through the elevator next to it, using the same window as other portals. Items ride the elevator; people and animals step out at the other end. Needs no power. Build it beside an elevator; it links to that elevator by itself, or use "Connect to..." when several elevators are adjacent.</description>
     <thingClass>DeepElevator.Building_TransportLoader</thingClass>
     <graphicData>
       <texPath>Things/Buildings/DeepElevator/TransportLoader</texPath>
@@ -14,7 +16,7 @@
     </graphicData>
     <size>(1,1)</size>
     <rotatable>false</rotatable>
-    <tickerType>Normal</tickerType>
+    <tickerType>Normal</tickerType> <!-- needed: the game ticks the container contents through the building (food keeps rotting) -->
     <altitudeLayer>Building</altitudeLayer>
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
@@ -33,20 +35,11 @@
       <ComponentIndustrial>1</ComponentIndustrial>
     </costList>
     <inspectorTabs>
-      <li>ITab_ContentsTransporter</li>
+      <li>ITab_ContentsMapPortal</li> <!-- "Travel": the order, visible only while loading -->
+      <li>DeepElevator.ITab_LoaderContents</li> <!-- what waits in the container for the elevator -->
     </inspectorTabs>
     <placeWorkers>
       <li>DeepElevator.PlaceWorker_TransportLoader</li>
     </placeWorkers>
-    <comps>
-      <li Class="CompProperties_Transporter">
-        <massCapacity>100000</massCapacity> <!-- the capacity is not meaningful here; the elevator's slots are the limit -->
-        <max1PerGroup>true</max1PerGroup>
-        <canChangeAssignedThingsAfterStarting>true</canChangeAssignedThingsAfterStarting>
-        <shouldTickContents>true</shouldTickContents> <!-- food waiting in the loader keeps rotting -->
-        <showMassInInspectString>false</showMassInInspectString>
-        <showOverallStats>false</showOverallStats> <!-- no caravan info bar in the loading dialog -->
-      </li>
-    </comps>
   </ThingDef>
 </Defs>

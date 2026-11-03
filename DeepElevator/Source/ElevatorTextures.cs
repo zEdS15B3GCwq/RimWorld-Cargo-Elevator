@@ -12,6 +12,13 @@ public static class ElevatorTextures
     public static readonly Texture2D Connect =
         ContentFinder<Texture2D>.Get("UI/Commands/LoadTransporter", reportFailure: false) ?? BaseContent.BadTex;
 
+    /// <summary>
+    /// Icon of the loader's Enter command (the vanilla transport pod "load" icon). One cached reference, which the
+    /// loader also uses to recognise that command among the portal's gizmos.
+    /// </summary>
+    public static readonly Texture2D LoaderEnter =
+        ContentFinder<Texture2D>.Get("UI/Commands/LoadTransporter", reportFailure: false) ?? BaseContent.BadTex;
+
     /// <summary>Placeholder vanilla icon for the loader's "Transfer items to elevator" toggle.</summary>
     public static readonly Texture2D LoaderTransfer = TexCommand.SelectCarriedThing;
 
