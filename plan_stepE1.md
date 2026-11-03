@@ -1,9 +1,11 @@
 # DeepElevator – Step E1: transport loader (manifest loading, items only)
 
+> **Superseded in part by `plan_stepE2.md`:** the loader's transporter comp, Load dialog, finish check and cancel handling are replaced by a vanilla map portal. The elevator side of E1 stays.
+
 Handoff spec for the implementing agent. Background: `plan.md`. RimWorld 1.6 only.
 The human tests in game and makes decisions about implementation.
 Log findings, decisions and anything beyond this spec in `results_stepE.md`.
-**Do not edit other documentation files** , such as `plan.md` and `plan_stepE.md` - updates should all be logged in the results document, including decisions that modify the original plan. These will be reviewed by another agent and incorporated into the plan documentation.
+**Do not edit other documentation files** , such as `plan.md` and `plan_stepE1.md` - updates should all be logged in the results document, including decisions that modify the original plan. These will be reviewed by another agent and incorporated into the plan documentation.
 
 Build with MSBuild (0 errors) before handing over.
 
