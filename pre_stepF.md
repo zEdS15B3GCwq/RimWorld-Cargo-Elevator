@@ -1,6 +1,6 @@
 # DeepElevator – Step F preparation: visuals
 
-Findings for the human's decisions before `plan_stepF.md` was written. **Decisions (human):** icons wired as supplied (done before Step F, tested in game); one vanilla unload icon on both buildings; slots ±, Open transport menu, Cancel loading and the large menu icon stay vanilla or as they are; glow option C and the night-visible lights, whose files are supplied, are Step F (`plan_stepF.md`). The tables below show the current state. Basis: the `stepE` branch as of `5446e38`, the texture folder, and decompiled RimWorld 1.6 (`include/decompiled`). No game data folder was available on this machine, so vanilla def values below are from memory and marked as such. Nothing was run in game.
+Findings for the human's decisions before `plan_stepF.md` was written. **Decisions (human):** icons wired as supplied (done before Step F, tested in game); one vanilla unload icon on both buildings; slots ±, Open transport menu, Cancel loading and the large menu icon stay vanilla or as they are; glow option C and the night-visible lights, whose files are supplied, are Step F (`plan_stepF.md`). The tables below show the current state after Step F (`results_stepF.md`): the state looks are the base sprite plus a lights-only overlay, and the full state sprites were removed. Basis: the `stepE` branch as of `5446e38`, the texture folder, and decompiled RimWorld 1.6 (`include/decompiled`). No game data folder was available on this machine, so vanilla def values below are from memory and marked as such. Nothing was run in game.
 
 ## 1. Textures and icons
 
@@ -11,15 +11,14 @@ All mod textures are in `DeepElevator/Textures/Things/Buildings/DeepElevator/`. 
 | Use | Path | Size | Referenced by |
 | --- | --- | --- | --- |
 | 1x1 elevator: base (off look, blueprint, ghost) | `.../DeepElevator` | 256x256 | def `texPath` |
-| 1x1 elevator: green / red state | `.../DeepElevator_Green`, `.../DeepElevator_Red` | 256x256 | def extension |
+| 1x1 elevator: green / red state (lights-only overlay) | `.../DeepElevator_GreenLight`, `.../DeepElevator_RedLight` | 256x256 | def extension (`greenLightTexPath`, `redLightTexPath`) |
 | 1x1 elevator: build-menu icon | `.../DeepElevator_MenuIcon` | 256x256 | def `uiIconPath` |
 | Large elevator: base | `.../DeepElevator_Large` | 512x512 | def `texPath` |
-| Large elevator: green / red state | `.../DeepElevator_Large_Green`, `.../DeepElevator_Large_Red` | 512x512 | def extension |
+| Large elevator: green / red state (lights-only overlay) | `.../DeepElevator_Large_GreenLight`, `.../DeepElevator_Large_RedLight` | 512x512 | def extension |
 | Loader: base | `.../DeepElevatorLoader` | 256x256 | def `texPath` |
-| Loader: loading look | `.../DeepElevatorLoader_Orange` | 256x256 | `LoaderSettingsExtension` |
-| Lights-only night overlays (§2.4) | `.../DeepElevator_GreenLight`, `.../DeepElevator_RedLight` | 256x256 | Step F |
-| Large lights-only night overlays | `.../DeepElevator_Large_GreenLight`, `.../DeepElevator_Large_RedLight` | 512x512 | Step F |
-| Unused (kept for reuse) | `.../DeepElevator_Orange` | | nothing |
+| Loader: loading and waiting look (lights-only overlay) | `.../DeepElevatorLoader_OrangeLight` | 256x256 | `LoaderSettingsExtension` (`lightTexPath`) |
+
+All overlays are drawn with `TransparentPostLight` (§2.4).
 
 ### 1.2 Gizmo icons
 
@@ -59,9 +58,9 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 | --- | --- | --- |
 | Large elevator build-menu icon | none | the sprite, decided |
 | Mod preview in the mod list | **`About/Preview.png`** (640x360 per `plan.md` §5) | missing; not part of Step F |
-| Lights-only state overlays | §2.4 | supplied; wired in Step F |
+| Lights-only state overlays | §1.1 | in use (Step F) |
 
-**Missing:** only `About/Preview.png`, outside Step F.
+**Missing:** only `About/Preview.png`.
 
 **Notes**
 - **Size:** 256x256 is fine for gizmos; the game scales them down.
@@ -99,7 +98,7 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 
 ### 2.4 Lights that stay bright at night (optional, needs assets)
 
-The state overlays are drawn with the `Cutout` shader (`ElevatorUtil.LoadOverlayGraphic`), so they darken at night like the rest of the sprite. A light that should look bright in the dark needs a self-lit shader, `ShaderDatabase.TransparentPostLight`, which exists in 1.6 and is drawn after lighting.
+Before Step F, the state overlays were drawn with the `Cutout` shader (`ElevatorUtil.LoadOverlayGraphic`), so they darkened at night like the rest of the sprite. A light that should look bright in the dark needs a self-lit shader, `ShaderDatabase.TransparentPostLight`, which exists in 1.6 and is drawn after lighting.
 
 But the overlays are full sprites of the whole building. A full sprite drawn with that shader would make the whole elevator look lit. This needs **lights-only overlays**: same canvas, transparent except the lamp pixels and a faint spill. The human supplied them:
 - `DeepElevator_GreenLight`, `DeepElevator_RedLight` (256x256)
@@ -113,7 +112,7 @@ A or C. A costs only XML and gives the lamp. C adds the status colour with small
 
 ## 3. Decisions (human)
 
-1. Glow option C, plus §2.4's night-visible lights: Step F.
+1. Glow option C, plus §2.4's night-visible lights: done in Step F. After testing, the full state sprites were dropped and the lights-only overlays alone give the state look, because the post-light overlay on top of a full sprite was too bright in daylight. The loader got the same treatment (orange glow and overlay, real-time blink).
 2. Icon location: the current folder.
 3. Loader "Unload all": the same vanilla unload icon as the elevator.
 4. The vanilla "Cancel loading" icon stays.
