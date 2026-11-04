@@ -1,6 +1,6 @@
 # DeepElevator – Step F results: glow and night-visible lights
 
-Status: implemented, built (0 errors, 0 warnings) and looked at in game by the human, who reported the glow working in red and green on both sizes, the lights good underground, and "all OK so far" for the loader additions. The full test list of `plan_stepF.md` §6 was not reported item by item (save/reload, deconstruct, the room and darkness check). Branch `stepF` (from `stepE`). This document is the final state; it replaces the earlier per-change notes. The plan documents are to be updated from the **Decisions** section.
+Status: implemented, built (0 errors, 0 warnings) and looked at in game by the human, who reported the glow working in red and green on both sizes, the lights good underground, and "all OK so far" for the loader additions. The human also reported: green and red come back unchanged after save and load, and a glowing building that is deleted loses its light. Not reported: the room and darkness check (§6 test 6), the loader after a save and load, and the log after loading. Branch `stepF` (from `stepE`). This document is the final state; it replaces the earlier per-change notes. The plan documents are to be updated from the **Decisions** section.
 
 ## Decisions (for the plan update)
 
@@ -63,6 +63,7 @@ The glow colours have the same hue as the lamps but are dimmer, since the glow b
 
 ## Open for the human
 
-- The remaining tests of `plan_stepF.md` §6 not yet reported: save and reload with a green and a red elevator, deconstructing a lit elevator, and the room and darkness check.
-- Tuning of radius and colours; whether the large elevator's light looks off-centre.
-- Watching the cost with many blinking loaders.
+- Not yet reported: the room and darkness check (§6 test 6); a save and load with a waiting (blinking) loader and a loader with an order in progress; whether the log shows errors after loading.
+- Tuning of radius and colours (all in the def XML).
+- A large-scale test with many blinking loaders, later.
+- The large elevator's light position was a check item (the glow source is its `Position` cell, not the exact centre); the human sees it centred, so nothing to do.
