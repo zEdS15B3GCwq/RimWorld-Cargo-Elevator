@@ -10,7 +10,7 @@
     <description>Sends a chosen list of items, and people and animals, through the elevator next to it, using the same window as other portals. Items ride the elevator; people and animals step out at the other end. Needs no power. Build it beside an elevator; it links to that elevator by itself, or use "Connect to..." when several elevators are adjacent.</description>
     <thingClass>DeepElevator.Building_TransportLoader</thingClass>
     <graphicData>
-      <texPath>Things/Buildings/DeepElevator/TransportLoader</texPath>
+      <texPath>Things/Buildings/DeepElevator/DeepElevatorLoader</texPath>
       <graphicClass>Graphic_Single</graphicClass>
       <drawSize>(1,1)</drawSize>
     </graphicData>
