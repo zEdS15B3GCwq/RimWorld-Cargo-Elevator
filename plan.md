@@ -168,7 +168,7 @@ After each step the human user tests, then the next step is planned.
   - **Accepted:** the glow follows a status change within 30 ticks; after a power loss or a load it may show the stored colour for up to 30 ticks (reasoned, not seen); the first blink step after a load may be short.
   - **Not tested:** many blinking loaders at once (each re-registers its light twice a second); fallback: keep the loader glow on while waiting instead of blinking it.
 - **Step G (done; tested in game by the human, no code):** VFE conveyors push into the elevator, and the elevator delivers allowed items into adjacent hoppers.
-- **Step H (proposed): mod settings**, see §7.
+- **Step H (proposed): mod settings**, optional verbose-logging setting and build menu patch; findings in `pre_stepH.md` (build menu categories, performance review, preview image, settings examples).
 - **Later:** see §7.
 
 ## 2. Verified facts
@@ -305,7 +305,7 @@ UI: inspect string status line (`Status: …, connected to <level>`; candidates 
 
 ## 5. Assets
 
-Available: base sprites, lights-only overlays, the 1x1 menu icon, the loader sprite and the gizmo icons (§4; full list in `pre_stepF.md` §1). Missing: `About/Preview.png` (640x360). Later: optional send animation (overlay lerp or vanilla effecter), vanilla SoundDefs.
+Available: base sprites, lights-only overlays, the 1x1 menu icon, the loader sprite and the gizmo icons (§4; full list in `pre_stepF.md` §1). Missing: `About/Preview.png` (supplied by the human; 16:9, 1280x720 or 1920x1080, under 1 MB for Steam, `pre_stepH.md` §3). Later: optional send animation (overlay lerp or vanilla effecter), vanilla SoundDefs.
 
 ## 6. Verification
 
