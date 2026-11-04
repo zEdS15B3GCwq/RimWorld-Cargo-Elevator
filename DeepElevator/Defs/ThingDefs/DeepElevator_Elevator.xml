@@ -88,8 +88,8 @@
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
         <defaultAllowInsert>true</defaultAllowInsert>
-        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green</greenTexPath>
-        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red</redTexPath>
+        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Green</greenTexPath>
+        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Red</redTexPath>
       </li>
     </modExtensions>
   </ThingDef>
@@ -100,10 +100,9 @@
     <label>large deep elevator</label>
     <description>A large deep elevator. Works like the small one, but has four intake cells, delivers to the twelve cells around it and transfers items four times as fast. Pairs only with another large deep elevator at the same position on another level.</description>
     <graphicData>
-      <texPath>Things/Buildings/DeepElevator/DeepElevator_large</texPath>
+      <texPath>Things/Buildings/DeepElevator/DeepElevator_Large</texPath>
       <drawSize>(2,2)</drawSize>
     </graphicData>
-    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon_large</uiIconPath>
     <size>(2,2)</size>
     <statBases>
       <MaxHitPoints>400</MaxHitPoints>
@@ -134,8 +133,8 @@
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
         <defaultAllowInsert>true</defaultAllowInsert>
-        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_large_green</greenTexPath>
-        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_large_red</redTexPath>
+        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Green</greenTexPath>
+        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Red</redTexPath>
       </li>
     </modExtensions>
   </ThingDef>

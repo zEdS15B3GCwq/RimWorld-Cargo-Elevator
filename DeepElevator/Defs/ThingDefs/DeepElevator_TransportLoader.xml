@@ -44,7 +44,7 @@
     </placeWorkers>
     <modExtensions>
       <li Class="DeepElevator.LoaderSettingsExtension">
-        <loadingTexPath>Things/Buildings/DeepElevator/DeepElevatorLoader_orange</loadingTexPath>
+        <loadingTexPath>Things/Buildings/DeepElevator/DeepElevatorLoader_Orange</loadingTexPath>
       </li>
     </modExtensions>
   </ThingDef>
