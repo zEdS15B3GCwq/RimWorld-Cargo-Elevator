@@ -585,23 +585,45 @@ public class Building_TransportLoader : MapPortal, IThingHolder
 
     // ---------------------------------------------------------------- drawing
 
-    // The "loading" look, loaded on first use; the flag keeps a missing texture from being looked up every frame.
+    /// <summary>One full blink (orange, then normal) of the waiting look takes this long: about one second at normal speed.</summary>
+    private const int WaitingBlinkPeriodTicks = 60;
+
+    // The orange look, loaded on first use; the flag keeps a missing texture from being looked up every frame.
     private Graphic loadingGraphic;
     private bool loadingGraphicLoaded;
 
     /// <summary>
-    /// MapMeshAndRealTime, like the elevator: the base sprite is already in the map mesh, so only the "loading"
-    /// look is drawn here, over it, while an order is in progress. Runs every frame, so it only reads fields.
+    /// MapMeshAndRealTime, like the elevator: the base sprite is already in the map mesh, so only the orange look
+    /// is drawn here, over it. Runs every frame, so it only reads fields. The look follows what the loader is doing:
+    /// <list type="bullet">
+    /// <item>an order is in progress (items still to be sent): constant orange;</item>
+    /// <item>no order, but items wait in the container for the elevator: orange and normal alternate;</item>
+    /// <item>nothing to send and nothing waiting: normal.</item>
+    /// </list>
     /// </summary>
     protected override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
         base.DrawAt(drawLoc, flip);
 
-        if (LoadInProgress && LoadingGraphic != null)
+        if (ShowsOrangeLook() && LoadingGraphic != null)
         {
             // Half an altitude step: just above the base sprite and still below items lying on the cell.
             LoadingGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.5f, Rot4.North, this);
         }
+    }
+
+    private bool ShowsOrangeLook()
+    {
+        if (LoadInProgress)
+        {
+            return true;
+        }
+        if (Container.Any)
+        {
+            // Game ticks, so the blink stops while paused; the first half of each period is orange.
+            return Find.TickManager.TicksGame % WaitingBlinkPeriodTicks < WaitingBlinkPeriodTicks / 2;
+        }
+        return false;
     }
 
     private Graphic LoadingGraphic

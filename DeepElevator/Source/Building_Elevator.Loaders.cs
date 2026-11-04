@@ -71,7 +71,7 @@ public partial class Building_Elevator
 
     /// <summary>
     /// The linked loaders as the directions they stand in from this elevator, clockwise from north, e.g.
-    /// "loaders: N, ESE". Null when no loader is linked. The direction comes from the offset between the centers:
+    /// "2 loaders: N, ESE". Null when no loader is linked. The direction comes from the offset between the centers:
     /// next to a 2x2 elevator a loader sits at 18 degrees off a side's middle, which rounds to the in-between point.
     /// </summary>
     private string DescribeLoaderDirections()
@@ -88,7 +88,7 @@ public partial class Building_Elevator
             .OrderBy(compassPointIndex => compassPointIndex)
             .Select(compassPointIndex => CompassPointText(CompassPointLetters[compassPointIndex]))
             .ToList();
-        return "DeepElevator_StatusLoaders".Translate(string.Join(", ", directionTexts)).Resolve();
+        return "DeepElevator_StatusLoaders".Translate(directionTexts.Count, string.Join(", ", directionTexts)).Resolve();
     }
 
     /// <summary>Index into <see cref="CompassPointLetters"/> of the point nearest to the direction of <paramref name="offset"/> (x east, z north).</summary>

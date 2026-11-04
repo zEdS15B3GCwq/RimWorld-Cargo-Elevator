@@ -107,3 +107,11 @@ From the human's second report (notes 1-3, tests 1-11). Builds with 0 errors. No
 - Tests 1, 2, 5, 6, 8, 11: as expected. Test 4: the Enter command's disabled state follows the elevator's connection, not power. Test 7: no automatic relink after a loss, "Connect to..." works (the intended rule from §7). Test 8: pawn orders pause when the elevator is lost, resume when a connected elevator is linked, and the walking job is cancelled when the distant partner is destroyed; the order stays in the Loading tab.
 
 **Not testable by the human: loader as an exit (test 9).** Whether pawns on a pocket map would pick the loader as an exit cannot be reproduced in game. It stays untested (the two exit patches from §6 are unproven in practice). For the plan: add it to the untested features section; `plan.md` line 328 ("Exit logic on pocket maps ... Decide after test 1 of E2") should become "decided: the loader is excluded from exit searches (two Harmony patches, E2 §6); not verified in game".
+
+## 9. Changes after the third round of tests
+
+Builds with 0 errors. Not re-tested in game.
+
+- **Orange look rules (tests 1).** `Building_TransportLoader.DrawAt` / `ShowsOrangeLook`: an order in progress (`LoadInProgress`) shows constant orange; no order but something in the container shows orange and normal alternating (one full blink per `WaitingBlinkPeriodTicks` = 60 game ticks, half orange, half normal; it stops while the game is paused); nothing to send and nothing waiting shows the normal look. The orange texture is now `DeepElevatorLoader_Orange` (the def path was updated by the human to match the renamed file).
+- **Elevator status line (test 3).** Now "<count> loaders: <directions>", e.g. "2 loaders: N, ESE" (`DeepElevator_StatusLoaders` takes the count and the directions). One loader reads "1 loaders"; say if you want a singular form.
+- **Patches (test 2).** The elevator's and the loader's Harmony patches stay separate.

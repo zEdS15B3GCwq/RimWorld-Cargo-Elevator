@@ -102,8 +102,8 @@
   <DeepElevator_LoaderStatusTransferOn>transfer on</DeepElevator_LoaderStatusTransferOn>
   <!-- {0} = the current priority level. -->
   <DeepElevator_LoaderStatusPriority>priority: {0}</DeepElevator_LoaderStatusPriority>
-  <!-- Closes the elevator's status line. {0} = the directions of the linked loaders, e.g. "N, ESE". -->
-  <DeepElevator_StatusLoaders>loaders: {0}</DeepElevator_StatusLoaders>
+  <!-- Closes the elevator's status line. {0} = number of linked loaders, {1} = their directions, e.g. "N, ESE". -->
+  <DeepElevator_StatusLoaders>{0} loaders: {1}</DeepElevator_StatusLoaders>
   <!-- Compass letters; a direction is these put together (NNW, ESE, ...). -->
   <DeepElevator_CompassN>N</DeepElevator_CompassN>
   <DeepElevator_CompassE>E</DeepElevator_CompassE>
