@@ -71,3 +71,13 @@ Requested after the elevator part was accepted: the loader gets the same glow an
 ### Loader blink offset
 
 Each loader's blink is shifted by `BlinkOffsetTicks` (0–29 ticks, from `thingIDNumber`), so loaders do not all flip, and re-register their light, on the same tick. The drawn overlay and the glow use the same offset, so they stay in step. It is derived from the thing id rather than random-and-saved: it differs per loader, stays the same after loading, and needs no save field. The spread is over half a period, which is enough to separate the flips, since each loader flips every 30 ticks.
+
+### Loader blink in real time (replaces the tick-based blink and offset above)
+
+Game-tick blinking sped up with the game speed (6 times as fast at speed 3). The blink period is now **1 second of real time** (`BlinkPeriodSeconds`), at every speed.
+
+- `Tick` reads `UnityEngine.Time.realtimeSinceStartup` (only while items wait and no order is in progress), steps a runtime field `blinkOn`, and calls `UpdateGlow()` when the step changes. `ShowsOrangeLook()` returns `blinkOn` for the waiting look, so the drawn overlay and the glow always show the same step. Paused game: no ticks, so the blink and the glow both hold their step; the blink does not run on while the game is paused.
+- At high speeds several ticks run per frame, so the step is seen at most one tick late; at normal speed that is about 17 ms.
+- The per-loader shift is kept, now in seconds: `BlinkOffsetSeconds` = 0–0.49 of a period, from `thingIDNumber`, so loaders do not flip on the same tick.
+- Other look changes (order starts or ends, items arrive or leave) are still caught every 30 ticks (`IsHashIntervalTick`); the glow can lag them by up to 30 ticks.
+- If wanted, the alternative is a slower tick period: 360 ticks per blink gives about 1 blink per second at speed 3 (6x), but 6 seconds per blink at normal speed.

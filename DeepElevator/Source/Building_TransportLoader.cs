@@ -212,8 +212,20 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     {
         base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
 
-        // On this loader's own blink beat, so the glow flips on the same tick as the drawn look.
-        if ((Find.TickManager.TicksGame + BlinkOffsetTicks) % GlowUpdateInterval == 0)
+        // The blink runs on real time (constant at every game speed) but is stepped here, so it stops while paused
+        // and the drawn look and the glow always show the same step.
+        if (Container.Any && !LoadInProgress)
+        {
+            bool blinkPhase = (UnityEngine.Time.realtimeSinceStartup + BlinkOffsetSeconds) % BlinkPeriodSeconds < BlinkPeriodSeconds / 2f;
+            if (blinkPhase != blinkOn)
+            {
+                blinkOn = blinkPhase;
+                UpdateGlow();
+            }
+        }
+
+        // Other changes of the look (an order starts or ends, items arrive or leave).
+        if (this.IsHashIntervalTick(GlowUpdateInterval))
         {
             UpdateGlow();
         }
@@ -597,21 +609,28 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
 
     // ---------------------------------------------------------------- drawing
 
-    /// <summary>One full blink (orange, then normal) of the waiting look takes this long: about one second at normal speed.</summary>
-    private const int WaitingBlinkPeriodTicks = 60;
+    /// <summary>
+    /// One full blink (orange, then normal) of the waiting look takes this long in real time, so the rate is the
+    /// same at every game speed (game ticks would blink six times faster at speed 3).
+    /// </summary>
+    private const float BlinkPeriodSeconds = 1f;
 
-    /// <summary>The look can change every half blink period, so the glow is re-evaluated that often.</summary>
-    private const int GlowUpdateInterval = WaitingBlinkPeriodTicks / 2;
+    /// <summary>How often (in ticks) the glow is re-checked for changes of the look other than the blink step.</summary>
+    private const int GlowUpdateInterval = 30;
 
     // The orange light overlay, loaded on first use; the flag keeps a missing texture from being looked up every frame.
     private Graphic loadingGraphic;
     private bool loadingGraphicLoaded;
 
     /// <summary>
-    /// Shifts this loader's blink so that loaders do not all change phase (and re-register their light) on the same
-    /// tick. Derived from the thing id: it differs per loader and is the same after loading, so nothing is saved.
+    /// Shifts this loader's blink (up to half a period) so that loaders do not all change phase, and re-register
+    /// their light, in the same tick. Derived from the thing id: it differs per loader and is the same after loading,
+    /// so nothing is saved.
     /// </summary>
-    private int BlinkOffsetTicks => ((thingIDNumber * 7919) & int.MaxValue) % GlowUpdateInterval;
+    private float BlinkOffsetSeconds => ((thingIDNumber * 7919) & int.MaxValue) % 50 / 100f * BlinkPeriodSeconds;
+
+    // Runtime only: the current blink step, written in Tick only.
+    private bool blinkOn;
 
     // Runtime only. The glow follows the same look as the overlay (ShowsOrangeLook), including the blink.
     private CompGlower glowComp;
@@ -646,8 +665,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
         }
         if (Container.Any)
         {
-            // Game ticks, so the blink stops while paused; the first half of each (shifted) period is orange.
-            return (Find.TickManager.TicksGame + BlinkOffsetTicks) % WaitingBlinkPeriodTicks < WaitingBlinkPeriodTicks / 2;
+            return blinkOn;
         }
         return false;
     }
