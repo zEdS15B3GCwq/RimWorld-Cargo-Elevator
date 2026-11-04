@@ -442,7 +442,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
                 {
                     defaultLabel = "DeepElevator_Connect".Translate(),
                     defaultDesc = "DeepElevator_LoaderConnectDesc".Translate(),
-                    icon = ElevatorTextures.Connect,
+                    icon = ElevatorTextures.LoaderConnect,
                     action = () => OpenConnectMenu(candidates)
                 };
             }
@@ -498,7 +498,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         {
             defaultLabel = "CommandUnload".Translate(),
             defaultDesc = "CommandUnloadDesc".Translate(LabelShort),
-            icon = CompTransporter.CancelLoadCommandTex,
+            icon = ElevatorTextures.Unload,
             action = () =>
             {
                 SoundDefOf.Designate_Cancel.PlayOneShotOnCamera();

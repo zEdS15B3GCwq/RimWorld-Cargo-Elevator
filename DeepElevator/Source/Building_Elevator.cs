@@ -357,7 +357,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
                 {
                     defaultLabel = "DeepElevator_Connect".Translate(),
                     defaultDesc = "DeepElevator_ConnectDesc".Translate(),
-                    icon = ElevatorTextures.Connect,
+                    icon = ElevatorTextures.ElevatorConnect,
                     action = () => OpenConnectMenu(candidates)
                 };
             }

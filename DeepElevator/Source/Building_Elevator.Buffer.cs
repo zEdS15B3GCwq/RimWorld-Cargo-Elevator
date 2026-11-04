@@ -403,7 +403,7 @@ public partial class Building_Elevator
         {
             defaultLabel = "DeepElevator_Unload".Translate(),
             defaultDesc = "DeepElevator_UnloadDesc".Translate(),
-            icon = TexButton.Drop,
+            icon = ElevatorTextures.Unload,
             action = UnloadBuffer
         };
         if (BufferEntryCount == 0)
@@ -412,14 +412,13 @@ public partial class Building_Elevator
         }
         yield return unloadCommand;
 
-        yield return CreateToggle("DeepElevator_ToggleFifo", "DeepElevator_ToggleFifoDesc", TexCommand.HoldOpen,
+        yield return CreateToggle("DeepElevator_ToggleFifo", "DeepElevator_ToggleFifoDesc", ElevatorTextures.ToggleFifo,
             () => fifoMode, () => fifoMode = !fifoMode, "fifo");
-        yield return CreateToggle("DeepElevator_ToggleMerge", "DeepElevator_ToggleMergeDesc", TexCommand.GatherSpotActive,
+        yield return CreateToggle("DeepElevator_ToggleMerge", "DeepElevator_ToggleMergeDesc", ElevatorTextures.ToggleMerge,
             () => mergeStacks, () => mergeStacks = !mergeStacks, "merge");
-        yield return CreateToggle("DeepElevator_ToggleDrop", "DeepElevator_ToggleDropDesc", TexCommand.ForbidOff,
+        yield return CreateToggle("DeepElevator_ToggleDrop", "DeepElevator_ToggleDropDesc", ElevatorTextures.ToggleDrop,
             () => allowDrop, () => allowDrop = !allowDrop, "allowDrop");
-        // Placeholder icon (vanilla "install"); a dedicated texture can replace it.
-        yield return CreateToggle("DeepElevator_ToggleInsert", "DeepElevator_ToggleInsertDesc", TexCommand.Install,
+        yield return CreateToggle("DeepElevator_ToggleInsert", "DeepElevator_ToggleInsertDesc", ElevatorTextures.ToggleInsert,
             () => allowInsert, () => allowInsert = !allowInsert, "allowInsert");
 
         yield return CreateSlotsCommand("DeepElevator_SlotsLess", TexButton.Minus, -1);
