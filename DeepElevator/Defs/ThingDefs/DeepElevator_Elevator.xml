@@ -134,8 +134,8 @@
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
         <defaultAllowInsert>true</defaultAllowInsert>
-        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_green_large</greenTexPath>
-        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_red_large</redTexPath>
+        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_large_green</greenTexPath>
+        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_large_red</redTexPath>
       </li>
     </modExtensions>
   </ThingDef>
