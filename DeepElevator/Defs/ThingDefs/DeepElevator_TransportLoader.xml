@@ -35,6 +35,12 @@
       <Steel>50</Steel>
       <ComponentIndustrial>1</ComponentIndustrial>
     </costList>
+    <comps>
+      <li Class="CompProperties_Glower">
+        <glowRadius>3</glowRadius> <!-- a weak lamp while the orange look shows (blinks with it); tune in game -->
+        <glowColor>(200,120,40,0)</glowColor>
+      </li>
+    </comps>
     <inspectorTabs>
       <li>DeepElevator.ITab_LoaderOrder</li> <!-- "Loading": the order (vanilla portal tab, renamed), visible only while an order is in progress -->
       <li>DeepElevator.ITab_LoaderContents</li> <!-- what waits in the container for the elevator -->
@@ -44,7 +50,7 @@
     </placeWorkers>
     <modExtensions>
       <li Class="DeepElevator.LoaderSettingsExtension">
-        <loadingTexPath>Things/Buildings/DeepElevator/DeepElevatorLoader_Orange</loadingTexPath>
+        <lightTexPath>Things/Buildings/DeepElevator/DeepElevatorLoader_OrangeLight</lightTexPath> <!-- lights-only overlay, stays bright at night -->
       </li>
     </modExtensions>
   </ThingDef>

@@ -55,3 +55,15 @@ Reason: the full `Green`/`Red` state sprites already showed a lamp, and the `*Li
 ### Decision (human, after testing in game)
 
 Kept: the elevator's states are the **base sprite plus the lights-only `*Light` overlay**, drawn with `TransparentPostLight`. The full `Green`/`Red` state sprites are not used any more (plan: `greenTexPath`/`redTexPath` → `greenLightTexPath`/`redLightTexPath`; the PNGs `DeepElevator_Green`, `_Red`, `_Large_Green`, `_Large_Red` and the unused `_Orange` can be deleted). The glow works in both colours on both sizes. Fold into `plan.md`.
+
+## Addition: loader glow and overlay
+
+Requested after the elevator part was accepted: the loader gets the same glow and lights-only overlay, following the same rules as its orange look, including the blink. Built (0 errors, 0 warnings); **not tested in game**.
+
+- **Overlay:** `DeepElevatorLoader_OrangeLight.png` (256x256, supplied) replaces the full `DeepElevatorLoader_Orange` sprite, loaded with `TransparentPostLight` and drawn at `AltIncVect * 0.5f` as before. `LoaderSettingsExtension.loadingTexPath` → `lightTexPath` (XML updated). `DeepElevatorLoader_Orange.png` is now unused.
+- **Same rules as the look:** `ShowsOrangeLook()` is the single rule: an order in progress → constant orange; items waiting without an order → orange and normal alternating (60-tick period); otherwise normal. `Building_TransportLoader : IThingGlower` returns it, so the glow is on exactly when the overlay is drawn.
+- **Glow:** `CompProperties_Glower` in the loader def: radius 3, colour `(200,120,40,0)`. The sampled lamp in the PNG is about (223,142,57) (pixels with alpha ≥ 200; 698 of them), so the glow colour is the same hue, a little dimmer, like the elevator values. No colour override at runtime; the loader has one colour. Radius and colour are first values to tune.
+- **Blink timing:** `UpdateGlow()` runs on the global beat `TicksGame % 30 == 0` from `Tick` (not a per-thing hash interval), so the glow flips on the same tick as the drawn look. It calls `UpdateLit(Map)` only when the on/off value changes. Cost: one registration change (a small Burst re-flood plus mesh rebuild in the radius, as in `plan_stepF.md` §2) per half blink for each blinking loader. This is more frequent than anything on the elevator, so watch it with several waiting loaders. A coarser glow (no blink, lit for the whole waiting time) is the fallback if it costs too much.
+- **Other changes of look** (an order starts or ends, items arrive or leave) reach the glow within 30 ticks; the drawn overlay follows at once.
+- **Log:** `Glow: <ThingID> <old> → <new>` where the look is `loading`, `waiting (blinking)` or `idle`. The blink steps are not logged, to avoid a line every half second.
+- `UpdateGlow()` also runs at the end of `SpawnSetup`. The comp is cached there; a def without it logs a warning. No power comp, so the glower's own power check does not apply.

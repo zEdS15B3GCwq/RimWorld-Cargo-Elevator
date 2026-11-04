@@ -22,7 +22,7 @@ namespace DeepElevator;
 /// The loader needs no power and has no power-related state. The link to the elevator is saved here and only
 /// here; the elevator keeps a runtime list.
 /// </summary>
-public class Building_TransportLoader : MapPortal, IThingHolder
+public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
 {
     /// <summary>How long after the last pull the status line still counts the elevator as accepting (avoids flicker).</summary>
     private const int PullGraceTicks = 120;
@@ -143,6 +143,11 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     public override void SpawnSetup(Map map, bool respawningAfterLoad)
     {
         base.SpawnSetup(map, respawningAfterLoad);
+        glowComp = GetComp<CompGlower>();
+        if (glowComp == null)
+        {
+            ElevatorUtil.LogWarn($"{ThingID}: the def has no CompGlower; the loader does not glow.");
+        }
 
         // Replaces the vanilla proxy the base just created, so deposits go through the loader's rules.
         containerProxy = new LoaderContainerProxy { portal = this, loader = this };
@@ -159,6 +164,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
             TryAutoLink();
         }
         ElevatorUtil.Log($"SpawnSetup: {ThingID} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"} transfer={transferAllowed} priority={priority}");
+        UpdateGlow();
     }
 
     // Deconstructed or destroyed while the map stays. The base class leaves the lord and the order as they are,
@@ -205,6 +211,12 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     protected override void Tick()
     {
         base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
+
+        // On the global blink beat, not a per-thing hash: the glow flips on the same tick as the drawn look.
+        if (Find.TickManager.TicksGame % GlowUpdateInterval == 0)
+        {
+            UpdateGlow();
+        }
 
         if (!this.IsHashIntervalTick(Building_Elevator.PeriodicInterval))
         {
@@ -588,13 +600,21 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     /// <summary>One full blink (orange, then normal) of the waiting look takes this long: about one second at normal speed.</summary>
     private const int WaitingBlinkPeriodTicks = 60;
 
-    // The orange look, loaded on first use; the flag keeps a missing texture from being looked up every frame.
+    /// <summary>The look can change every half blink period, so the glow is re-evaluated that often.</summary>
+    private const int GlowUpdateInterval = WaitingBlinkPeriodTicks / 2;
+
+    // The orange light overlay, loaded on first use; the flag keeps a missing texture from being looked up every frame.
     private Graphic loadingGraphic;
     private bool loadingGraphicLoaded;
 
+    // Runtime only. The glow follows the same look as the overlay (ShowsOrangeLook), including the blink.
+    private CompGlower glowComp;
+    private bool? lastGlowOn;
+    private string lastLoggedLook;
+
     /// <summary>
-    /// MapMeshAndRealTime, like the elevator: the base sprite is already in the map mesh, so only the orange look
-    /// is drawn here, over it. Runs every frame, so it only reads fields. The look follows what the loader is doing:
+    /// MapMeshAndRealTime, like the elevator: the base sprite is already in the map mesh, so only the lights-only
+    /// orange overlay (it ignores darkness) is drawn here, over it. Runs every frame, so it only reads fields. The look follows what the loader is doing:
     /// <list type="bullet">
     /// <item>an order is in progress (items still to be sent): constant orange;</item>
     /// <item>no order, but items wait in the container for the elevator: orange and normal alternate;</item>
@@ -626,6 +646,35 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         return false;
     }
 
+    // The glower asks whether the lamp is on (it has no power or flick comp, so this is the only condition).
+    bool IThingGlower.ShouldBeLitNow() => ShowsOrangeLook();
+
+    /// <summary>
+    /// Brings the glower in line with the look, including each blink step. UpdateLit only changes the registration
+    /// when the state differs (a small, Burst-flooded change). Logs when the look kind changes, not every blink step.
+    /// </summary>
+    private void UpdateGlow()
+    {
+        if (glowComp == null || !Spawned)
+        {
+            return;
+        }
+
+        bool on = ShowsOrangeLook();
+        if (on != lastGlowOn)
+        {
+            lastGlowOn = on;
+            glowComp.UpdateLit(Map);
+        }
+
+        string look = LoadInProgress ? "loading" : (Container.Any ? "waiting (blinking)" : "idle");
+        if (look != lastLoggedLook)
+        {
+            ElevatorUtil.Log($"Glow: {ThingID} {lastLoggedLook ?? "-"} → {look}");
+            lastLoggedLook = look;
+        }
+    }
+
     private Graphic LoadingGraphic
     {
         get
@@ -633,7 +682,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
             if (!loadingGraphicLoaded)
             {
                 loadingGraphicLoaded = true;
-                loadingGraphic = ElevatorUtil.LoadOverlayGraphic(def, def.GetModExtension<LoaderSettingsExtension>()?.loadingTexPath);
+                loadingGraphic = ElevatorUtil.LoadOverlayGraphic(def, def.GetModExtension<LoaderSettingsExtension>()?.lightTexPath, ShaderDatabase.TransparentPostLight);
             }
             return loadingGraphic;
         }
