@@ -41,8 +41,7 @@ Implemented from `plan_stepE2.md` on branch `stepE`. Builds with MSBuild (`dotne
 - **Deposit and the order**: `Notify_ThingAdded` runs before the add, as specified. A merge into an existing container entry is therefore counted once. Test 6 (changing the order mid-load) checks that.
 - **Transfer off keeps accepting hauled items.** The order and the work giver ignore the toggle, so items keep being hauled into the loader and wait there, while pawns still walk in (§4 planner decision to confirm, test 7).
 - **Partner lost mid-order**: items are still deposited; walking pawns wait (`IsEnterable` false); a carried pawn is put down with the message. The existing "lost its elevator" message text still fits.
-- **Exit logic on pocket maps is untested** (§8 test 1). Nothing in the code addresses it. If a pawn picks the loader as its exit portal, stop and decide on a patch; none exists in this step.
-- Old E1 saves: a loader saved with the transporter comp may log errors on load (no migration, as agreed).
+- **Exit logic on pocket maps** is handled by two Harmony patches, added after the first hand-over (§6). They are not tested in game; test 1 now checks that nothing uses the loader as an exit.
 - `Notify_Pulled(Thing)` keeps its signature and parameter although it now only records the tick.
 
 ## 5. Suggested plan updates for the reviewing agent
@@ -50,3 +49,22 @@ Implemented from `plan_stepE2.md` on branch `stepE`. Builds with MSBuild (`dotne
 - `plan.md` §3/§4: new files `LoaderContainerHolder.cs`, `LoaderContainerProxy.cs`, `ITab_LoaderContents.cs`; the loader is a `MapPortal`, no transporter comp; `ElevatorTextures.LoaderEnter`.
 - `plan.md` §7: pawns and animals arrive directly through the vanilla portal path (no buffer, slots or send rate); routing them through the elevator stays a later option.
 - Language keys: `DeepElevator_LoaderPairDown`, `DeepElevator_MsgLoaderPawnReturned`, `DeepElevator_LoaderUnloadIncomplete` added; `DeepElevator_LoaderStatusComplete` removed.
+
+## 6. Loader excluded from exit searches (added after hand-over)
+
+**Decision (human):** the loader is never an exit. It is not a means of transportation for pawns that nobody sent: pawns could end up on a level they could not otherwise reach and, as elevators only link pairs, might never get away. Pawns use it only on request (portal dialog order, right-click "Enter"). This also covers guests and traders, even with the pair working.
+
+**What searches for an exit** (everything in the decompiled game that touches `ThingRequestGroup.MapPortal`, `JobDefOf.EnterPortal` or `CarryDownedPawnToPortal`; none of the example mods use these either):
+1. `JobGiver_ExitMap.TryGiveJob`: on a pocket map (`!CanEverExit`), `EnterPortal` on the first reachable MapPortal, without checking `IsEnterable`. Subclasses `JobGiver_ExitMapBest`, `JobGiver_ExitMapNearDutyTarget` and `JobGiver_ExitMapRandom` only override `TryFindGoodExitDest`; `JobGiver_ExitMapFollowOverseer` (player mechs escorting their overseer) calls the base method. All of them are covered by one patch.
+2. `RCellFinder.TryFindExitPortal`: the nearest MapPortal on a pocket map. Its only caller is the right-click "Carry to exit" (`FloatMenuOptionProvider_CarryPawnToExit`), whose job `CarryDownedPawnToPortal` then enters that portal.
+3. Not exit searches, left alone: `WorkGiver_HaulToPortal` (the order), `JobGiver_EnterPortal` and `LordToil_LoadAndEnterPortal` (duty from the order's lord, set only by the dialog), `FloatMenuOptionProvider_EnterMapPortal` (explicit right-click on the loader), `PocketMapExit` and the generation steps (their own portals).
+
+**Patches** (new file `Source/LoaderExitPatches.cs`; the project already applies its Harmony patches with `PatchAll`):
+- `PortalExitRules.IsExcludedFromExitSearch(Thing)`: the one rule, currently `portal is Building_TransportLoader`. Extend it for future buildings.
+- `Patch_JobGiver_ExitMap_TryGiveJob` (postfix): if the result is `EnterPortal` on an excluded portal, it is replaced by the same job for the first reachable portal that is not excluded, or by no job.
+- `Patch_RCellFinder_TryFindExitPortal` (postfix): if the result is excluded, the nearest portal that is not excluded is used, or `false` (vanilla then shows "no path").
+- Both only change the result when vanilla picked a loader, so nothing else changes. No log lines: the AI giver runs often and would flood the log.
+
+**Not covered:** other mods that choose exit portals themselves. A mod that sends a pawn straight into the loader would still work, because the loader remains an ordinary enterable portal.
+
+**Test 1 now reads:** with a linked loader on a level (pair working and pair down), no pawn that wants to leave (guest, trader, released prisoner or slave, escorting mech) uses the loader; "Carry to exit" picks a stairs portal, or shows "no path" when there is none.
