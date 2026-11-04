@@ -16,7 +16,7 @@ namespace DeepElevator;
 /// (power and status) and Building_Elevator.Loaders.cs (linked transport loaders).
 /// </summary>
 // ISlotGroupParent and IHaulDestination are listed again so that interface calls bind to our own Accepts.
-public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination, IStorageGroupMember, IThingHolder, ISearchableContents
+public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGroupParent, IHaulDestination, IStorageGroupMember, IThingHolder, ISearchableContents, IThingGlower
 {
     /// <summary>Interval for periodic work; matches the Rare ticker so switching tickerType is XML-only.</summary>
     public const int PeriodicInterval = GenTicks.TickRareInterval;
@@ -107,6 +107,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     {
         base.SpawnSetup(map, respawningAfterLoad);
         CachePower();
+        CacheGlow();
         ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
         if (respawningAfterLoad)
@@ -123,6 +124,8 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             }
             LinkWaitingLoaders();
         }
+
+        UpdateGlow();
     }
 
     /// <summary>
@@ -167,6 +170,8 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         other.partnerMap = Map;
 
         ElevatorUtil.Log($"Linked: {LogId} ({ElevatorUtil.MapDesc(Map)}) <-> {other.LogId} ({ElevatorUtil.MapDesc(other.Map)})");
+        UpdateGlow();
+        other.UpdateGlow();
         Messages.Message("DeepElevator_MsgLinked".Translate(LevelLabels.ElevatorLabel(other)), this, MessageTypeDefOf.PositiveEvent, historical: false);
     }
 
@@ -191,6 +196,8 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         }
 
         ElevatorUtil.Log($"Unlinked ({reason}): {LogId} x {formerPartner.LogId} (partner map {ElevatorUtil.MapDesc(formerPartnerMap)})");
+        UpdateGlow();
+        formerPartner.UpdateGlow();
 
         // Tell the player about whichever end survived, if any.
         Building_Elevator survivor = Spawned ? this : (formerPartner.Spawned ? formerPartner : null);
@@ -282,6 +289,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         {
             UpdatePowerDraw();
             LogStatusIfChanged();
+            UpdateGlow();
         }
     }
 

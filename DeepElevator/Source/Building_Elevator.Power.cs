@@ -170,55 +170,137 @@ public partial class Building_Elevator
 
     // ---------------------------------------------------------------- state light
 
+    /// <summary>What the lamp shows. The single rule for the sprite light and the glow, so they cannot diverge.</summary>
+    private enum LightState
+    {
+        Off,
+        Green,
+        Red
+    }
+
+    private LightState CurrentLightState
+    {
+        get
+        {
+            switch (Status)
+            {
+                case ElevatorStatus.Disconnected:
+                case ElevatorStatus.NoPower:
+                case ElevatorStatus.PartnerUnpowered:
+                    return LightState.Off;
+                case ElevatorStatus.Blocked:
+                    return LightState.Red;
+                default:
+                    return LightState.Green;
+            }
+        }
+    }
+
     private const int GreenLightIndex = 0;
     private const int RedLightIndex = 1;
     private const int LightCount = 2;
 
     // Per def: light graphics by index above; an entry is null where the extension names no (loadable) texture.
+    // The night lights are lights-only overlays drawn with a shader that ignores darkness.
     private static readonly Dictionary<ThingDef, Graphic[]> lightGraphicsByDef = new Dictionary<ThingDef, Graphic[]>();
+    private static readonly Dictionary<ThingDef, Graphic[]> nightLightGraphicsByDef = new Dictionary<ThingDef, Graphic[]>();
 
     /// <summary>
     /// MapMeshAndRealTime: the base sprite is already in the map mesh, so only the light is drawn here.
-    /// Runs every frame, so it only reads fields and a cached graphic.
+    /// Runs every frame, so it only reads fields and cached graphics.
     /// </summary>
     protected override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
         base.DrawAt(drawLoc, flip);
 
-        Graphic lightGraphic = CurrentLightGraphic();
+        LightState lightState = CurrentLightState;
+        if (lightState == LightState.Off)
+        {
+            return;
+        }
+
+        int lightIndex = lightState == LightState.Red ? RedLightIndex : GreenLightIndex;
+
+        Graphic lightGraphic = GetLightGraphics(lightGraphicsByDef, null, Settings.greenTexPath, Settings.redTexPath)[lightIndex];
         if (lightGraphic != null)
         {
             // Half an altitude step: just above the base sprite and still below items lying on the cell.
             lightGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.5f, Rot4.North, this);
         }
+
+        Graphic nightGraphic = GetLightGraphics(nightLightGraphicsByDef, ShaderDatabase.TransparentPostLight, Settings.greenNightTexPath, Settings.redNightTexPath)[lightIndex];
+        if (nightGraphic != null)
+        {
+            // A little above the state light, so the lamp pixels come out on top of it.
+            nightGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.6f, Rot4.North, this);
+        }
     }
 
     /// <summary>
-    /// Null = no light (the off look is the base sprite). Operational: green, or red when blocked.
+    /// Lazily loads the def's graphics for one cache (first use is in DrawAt, on the main thread after content
+    /// loading). A null shader means the default (Cutout).
     /// </summary>
-    private Graphic CurrentLightGraphic()
+    private Graphic[] GetLightGraphics(Dictionary<ThingDef, Graphic[]> cache, Shader shader, string greenPath, string redPath)
     {
-        ElevatorStatus status = Status;
-        if (status == ElevatorStatus.Disconnected || status == ElevatorStatus.NoPower || status == ElevatorStatus.PartnerUnpowered)
-        {
-            return null;
-        }
-
-        return GetLightGraphics()[status == ElevatorStatus.Blocked ? RedLightIndex : GreenLightIndex];
-    }
-
-    /// <summary>Lazily loads the def's light graphics (first use is in DrawAt, on the main thread after content loading).</summary>
-    private Graphic[] GetLightGraphics()
-    {
-        if (lightGraphicsByDef.TryGetValue(def, out Graphic[] lightGraphics))
+        if (cache.TryGetValue(def, out Graphic[] lightGraphics))
         {
             return lightGraphics;
         }
 
         lightGraphics = new Graphic[LightCount];
-        lightGraphics[GreenLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.greenTexPath);
-        lightGraphics[RedLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.redTexPath);
-        lightGraphicsByDef[def] = lightGraphics;
+        lightGraphics[GreenLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, greenPath, shader);
+        lightGraphics[RedLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, redPath, shader);
+        cache[def] = lightGraphics;
         return lightGraphics;
+    }
+
+    // ---------------------------------------------------------------- glow
+
+    // Runtime only. Null = not applied yet, so the first UpdateGlow after spawning always writes the comp.
+    private CompGlower glowComp;
+    private LightState? lastGlowState;
+
+    // The glower asks whether the lamp is on (alongside its own checks: spawned, flick, power).
+    bool IThingGlower.ShouldBeLitNow() => CurrentLightState != LightState.Off;
+
+    private void CacheGlow()
+    {
+        glowComp = GetComp<CompGlower>();
+        if (glowComp == null)
+        {
+            ElevatorUtil.LogWarn($"{LogId}: the def has no CompGlower; the elevator does not glow.");
+        }
+    }
+
+    /// <summary>
+    /// Brings the glower in line with the light state. Does nothing while the state is unchanged. Order matters:
+    /// UpdateLit first (makes the registration agree with ShouldBeLitNow), then the colour (its setter
+    /// re-registers a lit light). Called from the periodic tick and on spawn and link changes; never per frame.
+    /// </summary>
+    private void UpdateGlow()
+    {
+        if (glowComp == null || !Spawned)
+        {
+            return;
+        }
+
+        LightState state = CurrentLightState;
+        if (state == lastGlowState)
+        {
+            return;
+        }
+
+        glowComp.UpdateLit(Map);
+        if (state != LightState.Off)
+        {
+            ColorInt color = state == LightState.Red ? Settings.redGlowColor : Settings.greenGlowColor;
+            if (glowComp.GlowColor != color)
+            {
+                glowComp.GlowColor = color;
+            }
+        }
+
+        ElevatorUtil.Log($"Glow: {LogId} {(lastGlowState.HasValue ? lastGlowState.Value.ToString() : "-")} → {state}");
+        lastGlowState = state;
     }
 }

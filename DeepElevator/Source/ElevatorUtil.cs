@@ -40,9 +40,10 @@ public static class ElevatorUtil
     /// <summary>
     /// Loads a full-sprite overlay (same canvas and size as the def's base sprite, drawn over it), or null when the
     /// path is empty or the texture does not exist. Used for the elevator's state lights and the loader's
-    /// "loading" look. Call from gameplay code only (graphics are not available while defs load).
+    /// "loading" look. The shader is Cutout (darkens at night like the building) unless the caller passes another.
+    /// Call from gameplay code only (graphics are not available while defs load).
     /// </summary>
-    public static Graphic LoadOverlayGraphic(ThingDef def, string texturePath)
+    public static Graphic LoadOverlayGraphic(ThingDef def, string texturePath, UnityEngine.Shader shader = null)
     {
         if (texturePath.NullOrEmpty())
         {
@@ -55,7 +56,7 @@ public static class ElevatorUtil
             LogWarn($"{def.defName}: overlay texture '{texturePath}' not found; it is not drawn.");
             return null;
         }
-        return GraphicDatabase.Get<Graphic_Single>(texturePath, ShaderDatabase.Cutout, def.graphicData.drawSize, UnityEngine.Color.white);
+        return GraphicDatabase.Get<Graphic_Single>(texturePath, shader ?? ShaderDatabase.Cutout, def.graphicData.drawSize, UnityEngine.Color.white);
     }
 
     // ---------------------------------------------------------------- level groups

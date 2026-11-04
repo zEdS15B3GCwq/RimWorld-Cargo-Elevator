@@ -33,6 +33,14 @@ public class ElevatorSettingsExtension : DefModExtension
     // State light overlays: full sprites on the same canvas as the base sprite, drawn over it. Null = no light.
     public string greenTexPath, redTexPath;
 
+    // Night-visible lights: lights-only overlays (transparent except the lamp pixels), drawn on top of the state
+    // light with a shader that ignores darkness. Null = no night light.
+    public string greenNightTexPath, redNightTexPath;
+
+    // Glow colour (and so brightness) per state; the radius is on the CompProperties_Glower. Alpha stays 0 like vanilla.
+    public ColorInt greenGlowColor = new ColorInt(60, 200, 80, 0);
+    public ColorInt redGlowColor = new ColorInt(220, 60, 50, 0);
+
     public int HeldRetryTicks => heldRetryTicks > 0 ? heldRetryTicks : ticksPerStack;
 
     public int ActiveHoldTicks => activeHoldTicks > 0 ? activeHoldTicks : ticksPerStack + ActiveMarginTicks;

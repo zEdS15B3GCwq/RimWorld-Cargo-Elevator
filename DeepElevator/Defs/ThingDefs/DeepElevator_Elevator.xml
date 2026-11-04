@@ -76,6 +76,10 @@
         <idlePowerDraw>10</idlePowerDraw>
         <shortCircuitInRain>false</shortCircuitInRain>
       </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>4</glowRadius> <!-- a weak lamp; tune in game -->
+        <glowColor>(60,200,80,0)</glowColor> <!-- the green; the elevator sets green or red per state -->
+      </li>
     </comps>
     <modExtensions>
       <li Class="DeepElevator.ElevatorSettingsExtension">
@@ -90,6 +94,10 @@
         <defaultAllowInsert>true</defaultAllowInsert>
         <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Green</greenTexPath>
         <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Red</redTexPath>
+        <greenNightTexPath>Things/Buildings/DeepElevator/DeepElevator_GreenLight</greenNightTexPath> <!-- lights-only, stays bright at night -->
+        <redNightTexPath>Things/Buildings/DeepElevator/DeepElevator_RedLight</redNightTexPath>
+        <greenGlowColor>(60,200,80,0)</greenGlowColor>
+        <redGlowColor>(220,60,50,0)</redGlowColor>
       </li>
     </modExtensions>
   </ThingDef>
@@ -121,6 +129,10 @@
         <idlePowerDraw>30</idlePowerDraw>
         <shortCircuitInRain>false</shortCircuitInRain>
       </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>5</glowRadius>
+        <glowColor>(60,200,80,0)</glowColor>
+      </li>
     </comps>
     <modExtensions>
       <li Class="DeepElevator.ElevatorSettingsExtension">
@@ -135,6 +147,10 @@
         <defaultAllowInsert>true</defaultAllowInsert>
         <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Green</greenTexPath>
         <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Red</redTexPath>
+        <greenNightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_GreenLight</greenNightTexPath>
+        <redNightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_RedLight</redNightTexPath>
+        <greenGlowColor>(60,200,80,0)</greenGlowColor>
+        <redGlowColor>(220,60,50,0)</redGlowColor>
       </li>
     </modExtensions>
   </ThingDef>
