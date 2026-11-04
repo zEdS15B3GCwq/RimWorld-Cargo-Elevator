@@ -50,6 +50,7 @@ The glow colours have the same hue as the lamps but are dimmer, since the glow b
 
 ## Notes and known behaviour
 
+- **Blocked state across a save (fixed):** the human saved a red elevator and after loading saw green with the status Idle, then red and Blocked again after a short while. The cause was `blockedSinceTick` being runtime-only: it was -1 after loading, so `IsBlocked` was false until the next failed send set it again and two send intervals passed. The light only followed the status. `blockedSinceTick` is now saved (`Scribe_Values.Look`, default -1; it is an absolute game tick, which stays valid after loading), so a blocked elevator loads as blocked. The held-entry list used for the inspect text stays empty until the first retry. Not retested in game.
 - **Short wrong colour:** a glower relights itself on the power signals with its stored colour. After a power loss during a red state, it may light green for up to half a second before `UpdateGlow` corrects it. The same applies for up to 30 ticks after loading a save (the glower registers in `PostSpawnSetup` before `CachePower()` runs). Reasoned, not seen.
 - **Despawn and map removal:** `Unlink` calls `UpdateGlow()` for this end while it is still spawned; `CompGlower.PostDeSpawn` then finds the light already off. Not specifically tested on map removal; if the log shows an error there, guard `UpdateGlow` in `Notify_MyMapRemoved`.
 - **Paused game:** the loader blink and glow hold their step. A look change made while paused shows on the overlay at once but on the glow only after unpausing.
@@ -61,9 +62,13 @@ The glow colours have the same hue as the lamps but are dimmer, since the glow b
 
 `Building_Elevator.cs`, `Building_Elevator.Power.cs`, `Building_TransportLoader.cs`, `ElevatorSettingsExtension.cs`, `LoaderSettingsExtension.cs`, `ElevatorUtil.cs`, `ElevatorDiagnostics.cs`, `Defs/ThingDefs/DeepElevator_Elevator.xml`, `Defs/ThingDefs/DeepElevator_TransportLoader.xml`, the rebuilt `DeepElevator.dll`; `DeepElevatorLoader_OrangeLight.png` added; six unused state sprites removed. No new Harmony patches, no language keys.
 
+## Light reach measured by the human
+
+Brightness of the glow with distance (cells out from the elevator): large (radius 5) 50%, 50%, 43%, 4%, so a visible reach of about 3 cells; 1x1 (radius 4) 50%, 50%, 5%, about 2 cells. The visible reach is shorter than the radius because the last cells before the cutoff are almost dark. **Decision (human): the radii stay as they are** (4, 5, and 3 for the loader); they look appropriate.
+
 ## Open for the human
 
-- Not yet reported: the room and darkness check (§6 test 6); a save and load with a waiting (blinking) loader and a loader with an order in progress; whether the log shows errors after loading.
-- Tuning of radius and colours (all in the def XML).
+- Not yet reported: a save and load with a blocked elevator after the `blockedSinceTick` fix; a save and load with a waiting (blinking) loader and a loader with an order in progress; whether the log shows errors after loading.
+- Colour tuning only, if wanted (all in the def XML).
 - A large-scale test with many blinking loaders, later.
-- The large elevator's light position was a check item (the glow source is its `Position` cell, not the exact centre); the human sees it centred, so nothing to do.
+- The large elevator's light position was a check item (the glow source is its `Position` cell, not the exact centre); the human cannot tell, so it is closed.

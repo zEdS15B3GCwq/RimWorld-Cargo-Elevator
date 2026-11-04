@@ -26,11 +26,11 @@ public partial class Building_Elevator
     /// <summary>How often (in ticks) the draw state and the logged status are re-evaluated.</summary>
     private const int PowerUpdateInterval = 30;
 
-    // Runtime only; power state is recomputed after load.
+    // Runtime only (except blockedSinceTick, which is saved); power state is recomputed after load.
     private CompPowerTrader powerComp;
     private int lastActiveTick = -99999;   // last transfer involving this pair
     private bool powerActive;              // current draw state
-    private int blockedSinceTick = -1;     // when the current uninterrupted hold started; -1 = not holding
+    private int blockedSinceTick = -1;     // when the current uninterrupted hold started; -1 = not holding (saved: an absolute game tick)
 
     // Change detection for log messages.
     private string lastLoggedPauseReason;

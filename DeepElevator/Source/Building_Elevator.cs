@@ -85,6 +85,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         Scribe_Values.Look(ref mergeStacks, "mergeStacks", Settings.defaultMerge);
         Scribe_Values.Look(ref allowDrop, "allowDrop", Settings.defaultAllowDrop);
         Scribe_Values.Look(ref allowInsert, "allowInsert", Settings.defaultAllowInsert);
+        Scribe_Values.Look(ref blockedSinceTick, "blockedSinceTick", -1); // absolute game tick, still valid after loading
         Scribe_Deep.Look(ref buffer, "innerContainer", this);
 
         // A save without that node (an elevator from before the buffer existed) leaves the field null.
