@@ -1,6 +1,6 @@
 # DeepElevator – Step F results: glow and night-visible lights
 
-Status: implemented, built (0 errors, 0 warnings) and looked at in game by the human, who reported the glow working in red and green on both sizes, the lights good underground, and "all OK so far" for the loader additions. The human also reported: green and red come back unchanged after save and load (including a blocked elevator, after the `blockedSinceTick` fix), and a glowing building that is deleted loses its light. Not reported: the room and darkness check (§6 test 6), the loader after a save and load, and the log after loading. Branch `stepF` (from `stepE`). This document is the final state; it replaces the earlier per-change notes. The plan documents are to be updated from the **Decisions** section.
+Status: **complete and tested in game by the human.** Built with 0 errors and 0 warnings. Branch `stepF` (from `stepE`). Verified: the glow in red and green on both sizes; the lights good underground; the light reach (measured, see below); green, red and Blocked restored after a save and load; a deleted glowing building loses its light; the loader's waiting (blinking) look and its order-in-progress look restored after a save and load; no log errors. Not tested: a large number of blinking loaders (planned for later). This document is the final state; it replaces the earlier per-change notes. The plan documents are to be updated from the **Decisions** section.
 
 ## Decisions (for the plan update)
 
@@ -53,6 +53,7 @@ The glow colours have the same hue as the lamps but are dimmer, since the glow b
 - **Blocked state across a save (fixed):** the human saved a red elevator and after loading saw green with the status Idle, then red and Blocked again after a short while. The cause was `blockedSinceTick` being runtime-only: it was -1 after loading, so `IsBlocked` was false until the next failed send set it again and two send intervals passed. The light only followed the status. `blockedSinceTick` is now saved (`Scribe_Values.Look`, default -1; it is an absolute game tick, which stays valid after loading), so a blocked elevator loads as blocked. The held-entry list used for the inspect text stays empty until the first retry. Confirmed in game by the human: after a save and load the red light and the Blocked status are there at once.
 - **Short wrong colour:** a glower relights itself on the power signals with its stored colour. After a power loss during a red state, it may light green for up to half a second before `UpdateGlow` corrects it. The same applies for up to 30 ticks after loading a save (the glower registers in `PostSpawnSetup` before `CachePower()` runs). Reasoned, not seen.
 - **Despawn and map removal:** `Unlink` calls `UpdateGlow()` for this end while it is still spawned; `CompGlower.PostDeSpawn` then finds the light already off. Not specifically tested on map removal; if the log shows an error there, guard `UpdateGlow` in `Notify_MyMapRemoved`.
+- **First blink step after a load:** the first orange or normal step of a waiting loader can be shorter than the others, since the blink phase comes from the wall clock and `blinkOn` starts as false. Seen by the human, accepted as negligible.
 - **Paused game:** the loader blink and glow hold their step. A look change made while paused shows on the overlay at once but on the glow only after unpausing.
 - **Cost:** a registration change re-floods that light in a Burst job and rebuilds the glow and roof mesh sections in its radius. The elevator changes rarely. The loader changes twice a second per blinking loader, so it is the thing to watch with many waiting loaders. The fallback is to hold the glow on for the whole waiting time instead of blinking it.
 - **Rejected:** a game-tick blink with a long period (360 ticks gives about 1 blink per second at speed 3, but 6 seconds per blink at normal speed). Fading the overlay by ambient light (`GroundGlowAt`) was offered as an option for the daylight brightness and not needed once the full state sprites were dropped.
@@ -66,9 +67,8 @@ The glow colours have the same hue as the lamps but are dimmer, since the glow b
 
 Brightness of the glow with distance (cells out from the elevator): large (radius 5) 50%, 50%, 43%, 4%, so a visible reach of about 3 cells; 1x1 (radius 4) 50%, 50%, 5%, about 2 cells. The visible reach is shorter than the radius because the last cells before the cutoff are almost dark. **Decision (human): the radii stay as they are** (4, 5, and 3 for the loader); they look appropriate.
 
-## Open for the human
+## Open items
 
-- Not yet reported: a save and load with a waiting (blinking) loader and a loader with an order in progress; whether the log shows errors after loading.
-- Colour tuning only, if wanted (all in the def XML).
-- A large-scale test with many blinking loaders, later.
-- The large elevator's light position was a check item (the glow source is its `Position` cell, not the exact centre); the human cannot tell, so it is closed.
+- **Large-scale test, later:** many blinking loaders at once, to see the cost of the light registration changes (twice a second per blinking loader). The fallback is to hold the loader glow on for the whole waiting time instead of blinking it.
+- **Colours:** the human does not want colour tuning; the values stay as in the XML.
+- **Plan update:** apply the **Decisions** section to `plan.md` and `pre_stepF.md` (texture tables, extension fields, the real-time loader blink).
