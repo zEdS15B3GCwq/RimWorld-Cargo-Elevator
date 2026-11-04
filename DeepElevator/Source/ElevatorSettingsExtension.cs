@@ -30,12 +30,9 @@ public class ElevatorSettingsExtension : DefModExtension
     // "Blocked" (red light) needs this many send intervals without a delivery while items are held.
     public int blockedAfterSendIntervals = 2;
 
-    // State light overlays: full sprites on the same canvas as the base sprite, drawn over it. Null = no light.
-    public string greenTexPath, redTexPath;
-
-    // Night-visible lights: lights-only overlays (transparent except the lamp pixels), drawn on top of the state
-    // light with a shader that ignores darkness. Null = no night light.
-    public string greenNightTexPath, redNightTexPath;
+    // State lights: lights-only overlays on the same canvas as the base sprite (transparent except the lamp pixels),
+    // drawn over it with a shader that ignores darkness, so they stay bright at night. Null = no light.
+    public string greenLightTexPath, redLightTexPath;
 
     // Glow colour (and so brightness) per state; the radius is on the CompProperties_Glower. Alpha stays 0 like vanilla.
     public ColorInt greenGlowColor = new ColorInt(60, 200, 80, 0);

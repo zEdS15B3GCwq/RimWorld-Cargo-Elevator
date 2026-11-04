@@ -42,3 +42,12 @@ The spec's starting glow values, green `(60,200,80,0)` and red `(220,60,50,0)`, 
 - All in-game tests (§6 of `plan_stepF.md`).
 - Tuning of radius and colour; whether the large elevator's light looks off-centre.
 - No language keys were added (none needed).
+
+## Follow-up: states = base sprite + lights-only overlay (experiment, revert-able)
+
+Reason: the full `Green`/`Red` state sprites already showed a lamp, and the `*Light` overlay (drawn after lighting, so always full strength) added to it, which was too bright in daylight.
+
+- The full state sprites (`DeepElevator_Green`, `_Red`, `_Large_Green`, `_Large_Red`, `Cutout`) are no longer drawn. A state is now the base sprite plus the matching `*Light` overlay only, drawn at `AltIncVect * 0.5f`.
+- Renamed the extension fields `greenTexPath/redTexPath/greenNightTexPath/redNightTexPath` to `greenLightTexPath/redLightTexPath` (they now point at the `*Light` PNGs); one graphic cache instead of two. XML and the diagnostics line follow. The old state PNGs stay on disk, unused.
+- This is a separate commit. To go back to the previous look, revert it.
+- Open: whether the base sprite alone (the off look) plus the overlay looks right by day; the base sprite may need its own dim lamp or none.

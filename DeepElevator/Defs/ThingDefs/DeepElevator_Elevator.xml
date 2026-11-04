@@ -92,10 +92,8 @@
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
         <defaultAllowInsert>true</defaultAllowInsert>
-        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Green</greenTexPath>
-        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Red</redTexPath>
-        <greenNightTexPath>Things/Buildings/DeepElevator/DeepElevator_GreenLight</greenNightTexPath> <!-- lights-only, stays bright at night -->
-        <redNightTexPath>Things/Buildings/DeepElevator/DeepElevator_RedLight</redNightTexPath>
+        <greenLightTexPath>Things/Buildings/DeepElevator/DeepElevator_GreenLight</greenLightTexPath> <!-- lights-only overlay, stays bright at night -->
+        <redLightTexPath>Things/Buildings/DeepElevator/DeepElevator_RedLight</redLightTexPath>
         <greenGlowColor>(60,200,80,0)</greenGlowColor>
         <redGlowColor>(220,60,50,0)</redGlowColor>
       </li>
@@ -145,10 +143,8 @@
         <defaultMerge>true</defaultMerge>
         <defaultAllowDrop>true</defaultAllowDrop>
         <defaultAllowInsert>true</defaultAllowInsert>
-        <greenTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Green</greenTexPath>
-        <redTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_Red</redTexPath>
-        <greenNightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_GreenLight</greenNightTexPath>
-        <redNightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_RedLight</redNightTexPath>
+        <greenLightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_GreenLight</greenLightTexPath>
+        <redLightTexPath>Things/Buildings/DeepElevator/DeepElevator_Large_RedLight</redLightTexPath>
         <greenGlowColor>(60,200,80,0)</greenGlowColor>
         <redGlowColor>(220,60,50,0)</redGlowColor>
       </li>

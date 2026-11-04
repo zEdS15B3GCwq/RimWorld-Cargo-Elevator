@@ -19,7 +19,7 @@ public enum ElevatorStatus
 /// <summary>
 /// Power, status and the state light. Power: idle/active draw synced across the pair, and a pair only
 /// works while both ends are powered. Status: one value derived from link, power, holds and activity.
-/// Light: a full-size overlay sprite drawn over the base sprite every frame.
+/// Light: a lights-only overlay (lamp pixels only, drawn after lighting) over the base sprite every frame; plus the glow.
 /// </summary>
 public partial class Building_Elevator
 {
@@ -201,9 +201,8 @@ public partial class Building_Elevator
     private const int LightCount = 2;
 
     // Per def: light graphics by index above; an entry is null where the extension names no (loadable) texture.
-    // The night lights are lights-only overlays drawn with a shader that ignores darkness.
+    // The lights are lights-only overlays (transparent except the lamp) drawn with a shader that ignores darkness.
     private static readonly Dictionary<ThingDef, Graphic[]> lightGraphicsByDef = new Dictionary<ThingDef, Graphic[]>();
-    private static readonly Dictionary<ThingDef, Graphic[]> nightLightGraphicsByDef = new Dictionary<ThingDef, Graphic[]>();
 
     /// <summary>
     /// MapMeshAndRealTime: the base sprite is already in the map mesh, so only the light is drawn here.
@@ -221,36 +220,26 @@ public partial class Building_Elevator
 
         int lightIndex = lightState == LightState.Red ? RedLightIndex : GreenLightIndex;
 
-        Graphic lightGraphic = GetLightGraphics(lightGraphicsByDef, null, Settings.greenTexPath, Settings.redTexPath)[lightIndex];
+        Graphic lightGraphic = GetLightGraphics()[lightIndex];
         if (lightGraphic != null)
         {
             // Half an altitude step: just above the base sprite and still below items lying on the cell.
             lightGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.5f, Rot4.North, this);
         }
-
-        Graphic nightGraphic = GetLightGraphics(nightLightGraphicsByDef, ShaderDatabase.TransparentPostLight, Settings.greenNightTexPath, Settings.redNightTexPath)[lightIndex];
-        if (nightGraphic != null)
-        {
-            // A little above the state light, so the lamp pixels come out on top of it.
-            nightGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.6f, Rot4.North, this);
-        }
     }
 
-    /// <summary>
-    /// Lazily loads the def's graphics for one cache (first use is in DrawAt, on the main thread after content
-    /// loading). A null shader means the default (Cutout).
-    /// </summary>
-    private Graphic[] GetLightGraphics(Dictionary<ThingDef, Graphic[]> cache, Shader shader, string greenPath, string redPath)
+    /// <summary>Lazily loads the def's light graphics (first use is in DrawAt, on the main thread after content loading).</summary>
+    private Graphic[] GetLightGraphics()
     {
-        if (cache.TryGetValue(def, out Graphic[] lightGraphics))
+        if (lightGraphicsByDef.TryGetValue(def, out Graphic[] lightGraphics))
         {
             return lightGraphics;
         }
 
         lightGraphics = new Graphic[LightCount];
-        lightGraphics[GreenLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, greenPath, shader);
-        lightGraphics[RedLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, redPath, shader);
-        cache[def] = lightGraphics;
+        lightGraphics[GreenLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.greenLightTexPath, ShaderDatabase.TransparentPostLight);
+        lightGraphics[RedLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.redLightTexPath, ShaderDatabase.TransparentPostLight);
+        lightGraphicsByDef[def] = lightGraphics;
         return lightGraphics;
     }
 

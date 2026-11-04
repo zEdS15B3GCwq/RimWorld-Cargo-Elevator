@@ -44,7 +44,7 @@ public static class ElevatorDiagnostics
             : $"slots {settingsExtension.defaultSlots} ({settingsExtension.minSlots}-{settingsExtension.maxSlots}), ticksPerStack={settingsExtension.ticksPerStack}, " +
               $"heldRetryTicks={settingsExtension.HeldRetryTicks}, fifo={settingsExtension.defaultFifo}, merge={settingsExtension.defaultMerge}, drop={settingsExtension.defaultAllowDrop}, insert={settingsExtension.defaultAllowInsert}, " +
               $"activeHoldTicks={settingsExtension.ActiveHoldTicks}, blockedAfterSendIntervals={settingsExtension.blockedAfterSendIntervals}, " +
-              $"lights=[{settingsExtension.greenTexPath}, {settingsExtension.redTexPath}] nightLights=[{settingsExtension.greenNightTexPath}, {settingsExtension.redNightTexPath}]";
+              $"lights=[{settingsExtension.greenLightTexPath}, {settingsExtension.redLightTexPath}]";
 
         var powerProperties = elevatorDef.GetCompProperties<CompProperties_Power>();
         string powerText = powerProperties == null
