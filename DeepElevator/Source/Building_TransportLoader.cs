@@ -212,8 +212,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     {
         base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
 
-        // On the global blink beat, not a per-thing hash: the glow flips on the same tick as the drawn look.
-        if (Find.TickManager.TicksGame % GlowUpdateInterval == 0)
+        // On this loader's own blink beat, so the glow flips on the same tick as the drawn look.
+        if ((Find.TickManager.TicksGame + BlinkOffsetTicks) % GlowUpdateInterval == 0)
         {
             UpdateGlow();
         }
@@ -607,6 +607,12 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     private Graphic loadingGraphic;
     private bool loadingGraphicLoaded;
 
+    /// <summary>
+    /// Shifts this loader's blink so that loaders do not all change phase (and re-register their light) on the same
+    /// tick. Derived from the thing id: it differs per loader and is the same after loading, so nothing is saved.
+    /// </summary>
+    private int BlinkOffsetTicks => ((thingIDNumber * 7919) & int.MaxValue) % GlowUpdateInterval;
+
     // Runtime only. The glow follows the same look as the overlay (ShowsOrangeLook), including the blink.
     private CompGlower glowComp;
     private bool? lastGlowOn;
@@ -640,8 +646,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
         }
         if (Container.Any)
         {
-            // Game ticks, so the blink stops while paused; the first half of each period is orange.
-            return Find.TickManager.TicksGame % WaitingBlinkPeriodTicks < WaitingBlinkPeriodTicks / 2;
+            // Game ticks, so the blink stops while paused; the first half of each (shifted) period is orange.
+            return (Find.TickManager.TicksGame + BlinkOffsetTicks) % WaitingBlinkPeriodTicks < WaitingBlinkPeriodTicks / 2;
         }
         return false;
     }

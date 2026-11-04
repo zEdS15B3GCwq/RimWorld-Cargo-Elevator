@@ -67,3 +67,7 @@ Requested after the elevator part was accepted: the loader gets the same glow an
 - **Other changes of look** (an order starts or ends, items arrive or leave) reach the glow within 30 ticks; the drawn overlay follows at once.
 - **Log:** `Glow: <ThingID> <old> → <new>` where the look is `loading`, `waiting (blinking)` or `idle`. The blink steps are not logged, to avoid a line every half second.
 - `UpdateGlow()` also runs at the end of `SpawnSetup`. The comp is cached there; a def without it logs a warning. No power comp, so the glower's own power check does not apply.
+
+### Loader blink offset
+
+Each loader's blink is shifted by `BlinkOffsetTicks` (0–29 ticks, from `thingIDNumber`), so loaders do not all flip, and re-register their light, on the same tick. The drawn overlay and the glow use the same offset, so they stay in step. It is derived from the thing id rather than random-and-saved: it differs per loader, stays the same after loading, and needs no save field. The spread is over half a period, which is enough to separate the flips, since each loader flips every 30 ticks.
