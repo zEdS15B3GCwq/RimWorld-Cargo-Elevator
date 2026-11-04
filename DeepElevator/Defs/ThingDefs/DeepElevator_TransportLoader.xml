@@ -17,6 +17,7 @@
     <size>(1,1)</size>
     <rotatable>false</rotatable>
     <tickerType>Normal</tickerType> <!-- needed: the game ticks the container contents through the building (food keeps rotting) -->
+    <drawerType>MapMeshAndRealTime</drawerType> <!-- base sprite in the map mesh, the "loading" look drawn every frame -->
     <altitudeLayer>Building</altitudeLayer>
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
@@ -41,5 +42,10 @@
     <placeWorkers>
       <li>DeepElevator.PlaceWorker_TransportLoader</li>
     </placeWorkers>
+    <modExtensions>
+      <li Class="DeepElevator.LoaderSettingsExtension">
+        <loadingTexPath>Things/Buildings/DeepElevator/DeepElevatorLoader_orange</loadingTexPath>
+      </li>
+    </modExtensions>
   </ThingDef>
 </Defs>

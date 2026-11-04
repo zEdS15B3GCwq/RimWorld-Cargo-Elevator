@@ -379,19 +379,6 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         }
     }
 
-    // A line to every linked loader while the elevator is selected, like the link lines of vanilla facilities.
-    public override void DrawExtraSelectionOverlays()
-    {
-        base.DrawExtraSelectionOverlays();
-        foreach (Building_TransportLoader loader in linkedLoaders)
-        {
-            if (loader.Spawned)
-            {
-                GenDraw.DrawLineBetween(this.TrueCenter(), loader.TrueCenter());
-            }
-        }
-    }
-
     /// <summary>Lets the player choose which of several ambiguous candidates to link with.</summary>
     private void OpenConnectMenu(List<Building_Elevator> candidates)
     {
@@ -438,7 +425,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
 
         // The linked loaders are part of what this elevator is connected to, so they close the status line.
         string statusText = DescribeStatus();
-        string loadersText = linkedLoaders.Count > 0 ? "DeepElevator_StatusLoaders".Translate(linkedLoaders.Count).Resolve() : null;
+        string loadersText = DescribeLoaderDirections();
         if (partner != null)
         {
             string linkedLine = "DeepElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner)).Resolve();

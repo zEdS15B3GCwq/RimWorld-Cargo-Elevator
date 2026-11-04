@@ -460,13 +460,17 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     }
 
     /// <summary>
-    /// When the dialog may be opened. A new order needs a linked elevator that is connected to its partner on another
+    /// Wording of the command and when the dialog may be opened. The vanilla label says "enter", but the dialog is
+    /// also how an order in progress is changed, so the command is called a menu. A new order needs a linked elevator that is connected to its partner on another
     /// level (otherwise there is nowhere to send anything). An unpowered pair is fine: the order waits for power.
     /// While an order is in progress the command stays available whatever the link says, so the order can still
     /// be changed or reduced. Vanilla's own rule (the portal must be enterable) is replaced by this one.
     /// </summary>
     private void ApplyEnterCommandRules(Command_Action enterCommand)
     {
+        enterCommand.defaultLabel = "DeepElevator_LoaderOpenMenu".Translate();
+        enterCommand.defaultDesc = "DeepElevator_LoaderOpenMenuDesc".Translate();
+
         string blockedReasonKey = null;
         if (!LoadInProgress)
         {
@@ -579,15 +583,37 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         Find.WindowStack.Add(new FloatMenu(options));
     }
 
-    // ---------------------------------------------------------------- selection overlay
+    // ---------------------------------------------------------------- drawing
 
-    // A line to the linked elevator while the loader is selected, like the link lines of vanilla facilities.
-    public override void DrawExtraSelectionOverlays()
+    // The "loading" look, loaded on first use; the flag keeps a missing texture from being looked up every frame.
+    private Graphic loadingGraphic;
+    private bool loadingGraphicLoaded;
+
+    /// <summary>
+    /// MapMeshAndRealTime, like the elevator: the base sprite is already in the map mesh, so only the "loading"
+    /// look is drawn here, over it, while an order is in progress. Runs every frame, so it only reads fields.
+    /// </summary>
+    protected override void DrawAt(Vector3 drawLoc, bool flip = false)
     {
-        base.DrawExtraSelectionOverlays();
-        if (partner is { Spawned: true })
+        base.DrawAt(drawLoc, flip);
+
+        if (LoadInProgress && LoadingGraphic != null)
         {
-            GenDraw.DrawLineBetween(this.TrueCenter(), partner.TrueCenter());
+            // Half an altitude step: just above the base sprite and still below items lying on the cell.
+            LoadingGraphic.Draw(drawLoc + Altitudes.AltIncVect * 0.5f, Rot4.North, this);
+        }
+    }
+
+    private Graphic LoadingGraphic
+    {
+        get
+        {
+            if (!loadingGraphicLoaded)
+            {
+                loadingGraphicLoaded = true;
+                loadingGraphic = ElevatorUtil.LoadOverlayGraphic(def, def.GetModExtension<LoaderSettingsExtension>()?.loadingTexPath);
+            }
+            return loadingGraphic;
         }
     }
 

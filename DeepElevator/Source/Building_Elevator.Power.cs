@@ -216,25 +216,9 @@ public partial class Building_Elevator
         }
 
         lightGraphics = new Graphic[LightCount];
-        lightGraphics[GreenLightIndex] = LoadLightGraphic(Settings.greenTexPath);
-        lightGraphics[RedLightIndex] = LoadLightGraphic(Settings.redTexPath);
+        lightGraphics[GreenLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.greenTexPath);
+        lightGraphics[RedLightIndex] = ElevatorUtil.LoadOverlayGraphic(def, Settings.redTexPath);
         lightGraphicsByDef[def] = lightGraphics;
         return lightGraphics;
-    }
-
-    private Graphic LoadLightGraphic(string texturePath)
-    {
-        if (texturePath.NullOrEmpty())
-        {
-            return null;
-        }
-
-        // Checked first: GraphicDatabase would return a "bad" placeholder graphic and log an error.
-        if (ContentFinder<Texture2D>.Get(texturePath, reportFailure: false) == null)
-        {
-            ElevatorUtil.LogWarn($"{def.defName}: light texture '{texturePath}' not found; that light is not drawn.");
-            return null;
-        }
-        return GraphicDatabase.Get<Graphic_Single>(texturePath, ShaderDatabase.Cutout, def.graphicData.drawSize, Color.white);
     }
 }

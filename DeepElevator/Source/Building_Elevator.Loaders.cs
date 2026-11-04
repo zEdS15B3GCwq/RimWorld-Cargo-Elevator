@@ -58,6 +58,58 @@ public partial class Building_Elevator
         linkedLoaders.AddRange(sortedLoaders);
     }
 
+    // ---------------------------------------------------------------- loader directions (status line)
+
+    // The 16 compass points, clockwise from north, as letters (each letter is translated on its own).
+    // A 1x1 elevator only has the four cardinal ones; a 2x2 has two loader spots per side, which are the "in between" ones.
+    private static readonly string[] CompassPointLetters =
+    {
+        "N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"
+    };
+
+    private const float DegreesPerCompassPoint = 360f / 16f;
+
+    /// <summary>
+    /// The linked loaders as the directions they stand in from this elevator, clockwise from north, e.g.
+    /// "loaders: N, ESE". Null when no loader is linked. The direction comes from the offset between the centers:
+    /// next to a 2x2 elevator a loader sits at 18 degrees off a side's middle, which rounds to the in-between point.
+    /// </summary>
+    private string DescribeLoaderDirections()
+    {
+        if (linkedLoaders.Count == 0)
+        {
+            return null;
+        }
+
+        Vector3 elevatorCenter = this.TrueCenter();
+        List<string> directionTexts = linkedLoaders
+            .Where(loader => loader.Spawned)
+            .Select(loader => CompassPointIndex(loader.TrueCenter() - elevatorCenter))
+            .OrderBy(compassPointIndex => compassPointIndex)
+            .Select(compassPointIndex => CompassPointText(CompassPointLetters[compassPointIndex]))
+            .ToList();
+        return "DeepElevator_StatusLoaders".Translate(string.Join(", ", directionTexts)).Resolve();
+    }
+
+    /// <summary>Index into <see cref="CompassPointLetters"/> of the point nearest to the direction of <paramref name="offset"/> (x east, z north).</summary>
+    private static int CompassPointIndex(Vector3 offset)
+    {
+        float degreesClockwiseFromNorth = Mathf.Atan2(offset.x, offset.z) * Mathf.Rad2Deg;
+        int pointIndex = Mathf.RoundToInt(degreesClockwiseFromNorth / DegreesPerCompassPoint);
+        return (pointIndex % CompassPointLetters.Length + CompassPointLetters.Length) % CompassPointLetters.Length;
+    }
+
+    /// <summary>Translates the letters of a compass point one by one (own keys, so a language can use its own letters).</summary>
+    private static string CompassPointText(string letters)
+    {
+        var text = new System.Text.StringBuilder();
+        foreach (char letter in letters)
+        {
+            text.Append($"DeepElevator_Compass{letter}".Translate());
+        }
+        return text.ToString();
+    }
+
     // ---------------------------------------------------------------- loader lifecycle
 
     /// <summary>A new elevator offers itself to the loaders standing next to it that have no elevator yet.</summary>
@@ -74,7 +126,7 @@ public partial class Building_Elevator
 
     /// <summary>
     /// This elevator is gone from its map (called after the base DeSpawn, so it no longer counts as a link
-    /// candidate): every linked loader loses its partner and may link to another elevator.
+    /// candidate): every linked loader loses its partner (and is not relinked automatically).
     /// </summary>
     private void ReleaseLoaders()
     {

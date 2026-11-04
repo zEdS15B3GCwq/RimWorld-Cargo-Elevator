@@ -35,6 +35,29 @@ public static class ElevatorUtil
 
     public static void LogWarn(string message) => Verse.Log.Warning(LogPrefix + message);
 
+    // ---------------------------------------------------------------- overlay graphics
+
+    /// <summary>
+    /// Loads a full-sprite overlay (same canvas and size as the def's base sprite, drawn over it), or null when the
+    /// path is empty or the texture does not exist. Used for the elevator's state lights and the loader's
+    /// "loading" look. Call from gameplay code only (graphics are not available while defs load).
+    /// </summary>
+    public static Graphic LoadOverlayGraphic(ThingDef def, string texturePath)
+    {
+        if (texturePath.NullOrEmpty())
+        {
+            return null;
+        }
+
+        // Checked first: GraphicDatabase would return a "bad" placeholder graphic and log an error.
+        if (ContentFinder<UnityEngine.Texture2D>.Get(texturePath, reportFailure: false) == null)
+        {
+            LogWarn($"{def.defName}: overlay texture '{texturePath}' not found; it is not drawn.");
+            return null;
+        }
+        return GraphicDatabase.Get<Graphic_Single>(texturePath, ShaderDatabase.Cutout, def.graphicData.drawSize, UnityEngine.Color.white);
+    }
+
     // ---------------------------------------------------------------- level groups
 
     /// <summary>
