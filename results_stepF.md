@@ -51,3 +51,7 @@ Reason: the full `Green`/`Red` state sprites already showed a lamp, and the `*Li
 - Renamed the extension fields `greenTexPath/redTexPath/greenNightTexPath/redNightTexPath` to `greenLightTexPath/redLightTexPath` (they now point at the `*Light` PNGs); one graphic cache instead of two. XML and the diagnostics line follow. The old state PNGs stay on disk, unused.
 - This is a separate commit. To go back to the previous look, revert it.
 - Open: whether the base sprite alone (the off look) plus the overlay looks right by day; the base sprite may need its own dim lamp or none.
+
+### Decision (human, after testing in game)
+
+Kept: the elevator's states are the **base sprite plus the lights-only `*Light` overlay**, drawn with `TransparentPostLight`. The full `Green`/`Red` state sprites are not used any more (plan: `greenTexPath`/`redTexPath` → `greenLightTexPath`/`redLightTexPath`; the PNGs `DeepElevator_Green`, `_Red`, `_Large_Green`, `_Large_Red` and the unused `_Orange` can be deleted). The glow works in both colours on both sizes. Fold into `plan.md`.
