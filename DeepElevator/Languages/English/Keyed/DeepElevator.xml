@@ -104,6 +104,7 @@
   <DeepElevator_LoaderStatusPriority>priority: {0}</DeepElevator_LoaderStatusPriority>
   <!-- Closes the elevator's status line. {0} = number of linked loaders, {1} = their directions, e.g. "N, ESE". -->
   <DeepElevator_StatusLoaders>{0} loaders: {1}</DeepElevator_StatusLoaders>
+  <DeepElevator_StatusLoaderSingle>{0} loader: {1}</DeepElevator_StatusLoaderSingle>
   <!-- Compass letters; a direction is these put together (NNW, ESE, ...). -->
   <DeepElevator_CompassN>N</DeepElevator_CompassN>
   <DeepElevator_CompassE>E</DeepElevator_CompassE>

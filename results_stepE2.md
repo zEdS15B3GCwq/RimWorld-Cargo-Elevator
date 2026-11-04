@@ -113,5 +113,5 @@ From the human's second report (notes 1-3, tests 1-11). Builds with 0 errors. No
 Builds with 0 errors. Not re-tested in game.
 
 - **Orange look rules (tests 1).** `Building_TransportLoader.DrawAt` / `ShowsOrangeLook`: an order in progress (`LoadInProgress`) shows constant orange; no order but something in the container shows orange and normal alternating (one full blink per `WaitingBlinkPeriodTicks` = 60 game ticks, half orange, half normal; it stops while the game is paused); nothing to send and nothing waiting shows the normal look. The orange texture is now `DeepElevatorLoader_Orange` (the def path was updated by the human to match the renamed file).
-- **Elevator status line (test 3).** Now "<count> loaders: <directions>", e.g. "2 loaders: N, ESE" (`DeepElevator_StatusLoaders` takes the count and the directions). One loader reads "1 loaders"; say if you want a singular form.
+- **Elevator status line (test 3).** Now "<count> loaders: <directions>", e.g. "2 loaders: N, ESE" (`DeepElevator_StatusLoaders` takes the count and the directions). One loader uses its own key, `DeepElevator_StatusLoaderSingle`: "1 loader: N".
 - **Patches (test 2).** The elevator's and the loader's Harmony patches stay separate.

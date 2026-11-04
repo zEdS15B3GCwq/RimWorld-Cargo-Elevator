@@ -88,7 +88,8 @@ public partial class Building_Elevator
             .OrderBy(compassPointIndex => compassPointIndex)
             .Select(compassPointIndex => CompassPointText(CompassPointLetters[compassPointIndex]))
             .ToList();
-        return "DeepElevator_StatusLoaders".Translate(directionTexts.Count, string.Join(", ", directionTexts)).Resolve();
+        string statusKey = directionTexts.Count == 1 ? "DeepElevator_StatusLoaderSingle" : "DeepElevator_StatusLoaders";
+        return statusKey.Translate(directionTexts.Count, string.Join(", ", directionTexts)).Resolve();
     }
 
     /// <summary>Index into <see cref="CompassPointLetters"/> of the point nearest to the direction of <paramref name="offset"/> (x east, z north).</summary>
