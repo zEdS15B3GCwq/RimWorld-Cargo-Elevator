@@ -1,6 +1,6 @@
 # DeepElevator – Step F preparation: visuals
 
-Findings for the human's decisions before `plan_stepF.md` was written. **Decisions (human):** icons wired as supplied; one vanilla unload icon on both buildings; slots ±, Open transport menu, Cancel loading and the large menu icon stay vanilla or as they are; the unused large orange overlay moved out; glow option C; night lights wired in Step F; the files are supplied. See `plan_stepF.md`. Basis: the `stepE` branch as of `5446e38`, the texture folder, and decompiled RimWorld 1.6 (`include/decompiled`). No game data folder was available on this machine, so vanilla def values below are from memory and marked as such. Nothing was run in game.
+Findings for the human's decisions before `plan_stepF.md` was written. **Decisions (human):** icons wired as supplied (done before Step F, tested in game); one vanilla unload icon on both buildings; slots ±, Open transport menu, Cancel loading and the large menu icon stay vanilla or as they are; glow option C and the night-visible lights, whose files are supplied, are Step F (`plan_stepF.md`). The tables below show the current state. Basis: the `stepE` branch as of `5446e38`, the texture folder, and decompiled RimWorld 1.6 (`include/decompiled`). No game data folder was available on this machine, so vanilla def values below are from memory and marked as such. Nothing was run in game.
 
 ## 1. Textures and icons
 
@@ -17,55 +17,55 @@ All mod textures are in `DeepElevator/Textures/Things/Buildings/DeepElevator/`. 
 | Large elevator: green / red state | `.../DeepElevator_Large_Green`, `.../DeepElevator_Large_Red` | 512x512 | def extension |
 | Loader: base | `.../DeepElevatorLoader` | 256x256 | def `texPath` |
 | Loader: loading look | `.../DeepElevatorLoader_Orange` | 256x256 | `LoaderSettingsExtension` |
-| Unused (kept for reuse) | `.../DeepElevator_Orange`, `.../DeepElevator_Large_Orage` | | nothing. **Typo:** `Orage` should be `Orange` if it's kept |
+| Lights-only night overlays (§2.4) | `.../DeepElevator_GreenLight`, `.../DeepElevator_RedLight` | 256x256 | Step F |
+| Large lights-only night overlays | `.../DeepElevator_Large_GreenLight`, `.../DeepElevator_Large_RedLight` | 512x512 | Step F |
+| Unused (kept for reuse) | `.../DeepElevator_Orange` | | nothing |
 
 ### 1.2 Gizmo icons
 
-"Supplied" means the file exists. None of the supplied gizmo files is wired yet except the priority icons. The code uses the vanilla placeholders in the second column.
+Every supplied icon is wired and tested in game. Each loads with a fallback to the vanilla icon in the second column if its file is missing.
 
 **Elevator**
 
-| Gizmo | Placeholder in code now | File | Status |
+| Gizmo | Vanilla fallback or icon | File | Status |
 | --- | --- | --- | --- |
-| Connect to... | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.Connect`) | `DeepElevator_ConnectToIcon` | supplied, not wired |
-| Go to partner | vanilla `UI/Widgets/Search` | `DeepElevator_GoToPartnerIcon` | supplied, not wired |
-| Unload | vanilla `TexButton.Drop` | **`DeepElevator_UnloadIcon`** | **missing** |
-| FIFO toggle | vanilla `TexCommand.HoldOpen` | `DeepElevator_FIFOIcon` | supplied, not wired |
-| Merge toggle | vanilla `TexCommand.GatherSpotActive` | `DeepElevator_MergeIcon` | supplied, not wired |
-| Drop on floor toggle | vanilla `TexCommand.ForbidOff` | `DeepElevator_DropNearbyIcon` | supplied, not wired |
-| Allow insert toggle | vanilla `TexCommand.Install` | `DeepElevator_InsertIcon` | supplied, not wired |
-| Slots − | vanilla `TexButton.Minus` | **`DeepElevator_SlotsLessIcon`** | **missing** |
-| Slots + | vanilla `TexButton.Plus` | **`DeepElevator_SlotsMoreIcon`** | **missing** |
-| Build loader | the loader's build-menu icon, which is its sprite (no `uiIconPath`) | optional **`DeepElevatorLoader_MenuIcon`** | changes the build menu and this gizmo together |
+| Connect to... | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.ElevatorConnect`) | `DeepElevator_ConnectToIcon` | wired, tested |
+| Go to partner | vanilla `UI/Widgets/Search` | `DeepElevator_GoToPartnerIcon` | wired, tested |
+| Unload | vanilla pod and shuttle unload icon (`CompTransporter.CancelLoadCommandTex`) | none | vanilla, decided |
+| FIFO toggle | vanilla `TexCommand.HoldOpen` | `DeepElevator_FIFOIcon` | wired, tested |
+| Merge toggle | vanilla `TexCommand.GatherSpotActive` | `DeepElevator_MergeIcon` | wired, tested |
+| Drop on floor toggle | vanilla `TexCommand.ForbidOff` | `DeepElevator_DropNearbyIcon` | wired, tested |
+| Allow insert toggle | vanilla `TexCommand.Install` | `DeepElevator_InsertIcon` | wired, tested |
+| Slots − | vanilla `TexButton.Minus` | none | vanilla, decided |
+| Slots + | vanilla `TexButton.Plus` | none | vanilla, decided |
+| Build loader | the loader's build-menu icon, which is its sprite (no `uiIconPath`) | none | as is |
 | DEV gizmos | none | none | vanilla dev gizmos have no icon |
 
 **Loader**
 
-| Gizmo | Placeholder in code now | File | Status |
+| Gizmo | Vanilla fallback or icon | File | Status |
 | --- | --- | --- | --- |
-| Open transport menu | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.LoaderEnter`) | **`DeepElevatorLoader_OpenMenuIcon`** | **missing**. The code recognises this command by its icon reference, which keeps working as long as one cached texture is used |
-| Cancel loading | vanilla `MapPortal` cancel icon (private, red X) | optional **`DeepElevatorLoader_CancelLoadingIcon`** | vanilla gizmo; replacing its icon needs a small match by label in `GetGizmos` |
-| Unload all | vanilla `CompTransporter.CancelLoadCommandTex` (red X) | **`DeepElevatorLoader_UnloadIcon`**, or reuse `DeepElevator_UnloadIcon` | **missing** |
-| Transfer items to elevator | vanilla `TexCommand.SelectCarriedThing` | `DeepElevatorLoader_TransferToElevatorIcon` | supplied, not wired (`results_stepE2.md` names it without `Icon`; the file has it) |
-| Priority (5 levels) | wired; vanilla `TexButton.ReorderUp` only if a file is missing | `DeepElevatorLoader_Priority{Low,Normal,Preferred,Important,Critical}` | supplied and in use |
-| Connect to... | shares the elevator's placeholder | `DeepElevatorLoader_ConnectToIcon` | supplied, not wired; needs its own reference |
+| Open transport menu | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.LoaderEnter`) | none | vanilla, decided. The code recognises this command by its icon reference |
+| Cancel loading | vanilla `MapPortal` cancel icon (private, red X) | none | vanilla, decided |
+| Unload all | vanilla pod and shuttle unload icon, as on the elevator | none | vanilla, decided |
+| Transfer items to elevator | vanilla `TexCommand.SelectCarriedThing` | `DeepElevatorLoader_TransferToElevatorIcon` | wired, tested |
+| Priority (5 levels) | vanilla `TexButton.ReorderUp` | `DeepElevatorLoader_Priority{Low,Normal,Preferred,Important,Critical}` | wired, tested |
+| Connect to... | the same as the elevator's Connect to... | `DeepElevatorLoader_ConnectToIcon` | wired, tested |
 | DEV gizmo | none | none | |
 
 **Other**
 
 | Use | File | Status |
 | --- | --- | --- |
-| Large elevator build-menu icon | **`DeepElevator_Large_MenuIcon`** (`uiIconPath` on the large def) | **missing**. The large def has no `uiIconPath`, so the menu shows the sprite. The plan listed `DeepElevator_MenuIcon_large` before the textures were replaced |
-| Mod preview in the mod list | **`About/Preview.png`** (640x360 per `plan.md` §5) | **missing** |
-| Optional: lights-only state overlays | §2.4 | only if the self-lit lights are wanted |
+| Large elevator build-menu icon | none | the sprite, decided |
+| Mod preview in the mod list | **`About/Preview.png`** (640x360 per `plan.md` §5) | missing; not part of Step F |
+| Lights-only state overlays | §2.4 | supplied; wired in Step F |
 
-**Missing, required for "no placeholders":** `DeepElevator_UnloadIcon`, `DeepElevator_SlotsLessIcon`, `DeepElevator_SlotsMoreIcon`, `DeepElevatorLoader_OpenMenuIcon`, `DeepElevatorLoader_UnloadIcon` (or reuse), `DeepElevator_Large_MenuIcon`, `About/Preview.png`.
-**Optional:** `DeepElevatorLoader_MenuIcon`, `DeepElevatorLoader_CancelLoadingIcon`, a light-toggle icon if §2 adds one (`DeepElevator_LightIcon`).
+**Missing:** only `About/Preview.png`, outside Step F.
 
 **Notes**
 - **Size:** 256x256 is fine for gizmos; the game scales them down.
-- **Location:** the icons live next to the building sprites. Vanilla keeps gizmo icons under `UI/Commands/`. Moving them is optional and has no functional effect; I'd keep the current folder unless you prefer the convention.
-- **Code work:** small. Each icon becomes one `ElevatorTextures` field loaded with a fallback to the current placeholder, the same pattern as the priority icons, and each gizmo uses its field. About 30 lines, plus `uiIconPath` on the large def.
+- **Location:** the icons stay next to the building sprites (decided).
 
 ## 2. Glow: the elevator as a weak lamp
 
@@ -101,10 +101,9 @@ All mod textures are in `DeepElevator/Textures/Things/Buildings/DeepElevator/`. 
 
 The state overlays are drawn with the `Cutout` shader (`ElevatorUtil.LoadOverlayGraphic`), so they darken at night like the rest of the sprite. A light that should look bright in the dark needs a self-lit shader, `ShaderDatabase.TransparentPostLight`, which exists in 1.6 and is drawn after lighting.
 
-But the overlays are full sprites of the whole building. A full sprite drawn with that shader would make the whole elevator look lit. This needs **lights-only overlays**: same canvas, transparent except the lamp pixels. That's the existing `plan.md` §7 option. The expected files would be:
+But the overlays are full sprites of the whole building. A full sprite drawn with that shader would make the whole elevator look lit. This needs **lights-only overlays**: same canvas, transparent except the lamp pixels and a faint spill. The human supplied them:
 - `DeepElevator_GreenLight`, `DeepElevator_RedLight` (256x256)
 - `DeepElevator_Large_GreenLight`, `DeepElevator_Large_RedLight` (512x512)
-- optionally `DeepElevatorLoader_OrangeLight` (256x256)
 
 The code change is small: the overlay loader takes the shader, and the def extension takes the new paths. This is independent of the glow and can be combined with any option above.
 
@@ -112,10 +111,9 @@ The code change is small: the overlay loader takes the shader, and the def exten
 
 A or C. A costs only XML and gives the lamp. C adds the status colour with small code and still no new assets. Add D only if players should be able to switch it off before the settings step exists. §2.4 is separate polish that needs four new PNGs.
 
-## 3. Decisions needed
+## 3. Decisions (human)
 
-1. Which glow option (A–D, or none), and whether to add §2.4's night-visible lights.
-2. Icon location: keep the current folder, or move gizmo icons to `UI/Commands/`.
-3. Loader "Unload all": its own icon, or reuse the elevator's Unload icon.
-4. Whether to replace the vanilla "Cancel loading" icon (optional file).
-5. Renaming `DeepElevator_Large_Orage.png` to `..._Orange.png`, or deleting the unused orange overlays.
+1. Glow option C, plus §2.4's night-visible lights: Step F.
+2. Icon location: the current folder.
+3. Loader "Unload all": the same vanilla unload icon as the elevator.
+4. The vanilla "Cancel loading" icon stays.
