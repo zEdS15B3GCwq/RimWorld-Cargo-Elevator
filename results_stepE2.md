@@ -1,8 +1,10 @@
 # DeepElevator – Step E2 results (portal loader: vanilla portal dialog; pawns and animals)
 
-Implemented from `plan_stepE2.md` on branch `stepE`. Builds with MSBuild (`dotnet msbuild`, Release): 0 errors, 0 warnings. **Not tested in game yet** (the tests in `plan_stepE2.md` §8 are for the human). Other documentation files are untouched.
+Implemented from `plan_stepE2.md` on branch `stepE`. Builds with MSBuild (Release): 0 errors, 0 warnings. **Status: complete.** The human tested the step in game in three rounds (§7-§9) and confirmed all changes correct; the only untested feature is the loader as a pocket-map exit (§10). Sections 2-5 describe the first hand-over; where later rounds changed something, §7-§9 are the current truth (§10 lists the final state). Other documentation files are untouched.
 
 ## 1. Commits on `stepE`
+
+First hand-over (later commits: §6 `679cd4e`, §7 `da90d7a`, §8 `5ddc6ee`, §9 `03c6766` and `b0d1c30`; the human's own texture, icon and def commits are in between):
 
 1. `Docs before step E2`: the uncommitted plans and results that were in the working tree when this step started (`plan_stepE2.md`, `results_stepE1.md`, `comparison_multifloors.md`, plan updates). Committed first, so the E2 commit holds only code.
 2. `E2: transport loader becomes a vanilla map portal`: everything below (includes the rebuilt, tracked `DeepElevator.dll`).
@@ -71,7 +73,7 @@ Implemented from `plan_stepE2.md` on branch `stepE`. Builds with MSBuild (`dotne
 
 ## 7. Changes after the first in-game tests
 
-From the human's test report (44 numbered observations). Not re-tested yet.
+From the human's test report (44 numbered observations). Re-tested in the second round (§8): confirmed.
 
 **Fixed or changed**
 - **Test 11, 24: Enter command rules.** A new order needs a linked elevator that is connected to its partner (`partner.IsConnected`); otherwise the command is disabled with the reason `DeepElevator_LoaderNeedsLink` or the new `DeepElevator_LoaderElevatorNotConnected`. While an order is in progress the command stays enabled whatever the link says, so the order can be changed or cancelled. An unpowered pair does not disable it (the order waits for power). Implemented in `ApplyEnterCommandRules`.
@@ -91,7 +93,7 @@ From the human's test report (44 numbered observations). Not re-tested yet.
 
 ## 8. Changes after the second round of tests
 
-From the human's second report (notes 1-3, tests 1-11). Builds with 0 errors. Not re-tested in game.
+From the human's second report (notes 1-3, tests 1-11). Builds with 0 errors. Confirmed correct in game in the third round (§9).
 
 **Changed**
 - **Loading look (note 3).** The loader now has two looks: `DeepElevatorLoader.png` normally and `DeepElevatorLoader_orange.png` while an order is in progress (`LoadInProgress`), switched live. Done like the elevator's state light: the def uses `drawerType MapMeshAndRealTime`, the base sprite stays in the map mesh, and `Building_TransportLoader.DrawAt` draws the orange sprite over it (full sprite, same canvas) while loading. The path comes from a new def extension, `LoaderSettingsExtension.loadingTexPath` (`Source/LoaderSettingsExtension.cs`). The loading code was shared: `ElevatorUtil.LoadOverlayGraphic` replaces the elevator's private `LoadLightGraphic`, which now calls it (same behaviour; the warning text says "overlay texture" instead of "light texture"). No redraw call is needed because `DrawAt` runs every frame.
@@ -110,8 +112,27 @@ From the human's second report (notes 1-3, tests 1-11). Builds with 0 errors. No
 
 ## 9. Changes after the third round of tests
 
-Builds with 0 errors. Not re-tested in game.
+Builds with 0 errors. Confirmed correct in game by the human.
 
 - **Orange look rules (tests 1).** `Building_TransportLoader.DrawAt` / `ShowsOrangeLook`: an order in progress (`LoadInProgress`) shows constant orange; no order but something in the container shows orange and normal alternating (one full blink per `WaitingBlinkPeriodTicks` = 60 game ticks, half orange, half normal; it stops while the game is paused); nothing to send and nothing waiting shows the normal look. The orange texture is now `DeepElevatorLoader_Orange` (the def path was updated by the human to match the renamed file).
 - **Elevator status line (test 3).** Now "<count> loaders: <directions>", e.g. "2 loaders: N, ESE" (`DeepElevator_StatusLoaders` takes the count and the directions). One loader uses its own key, `DeepElevator_StatusLoaderSingle`: "1 loader: N".
 - **Patches (test 2).** The elevator's and the loader's Harmony patches stay separate.
+
+## 10. Final state of step E2
+
+**Tested in game and confirmed by the human:** items hauled into the loader and pulled by the elevator; pawn and animal orders through the vanilla portal dialog; Enter command rules and wording; order tab, cancel and emptied-order cleanup; pause and resume of an order when the elevator is lost, replaced or its partner destroyed; no automatic relink after a loss; loader status line; elevator status line (count and directions, singular and plural); build-loader gizmo on the elevator; the loader's constant orange and blinking looks.
+
+**Not verified in game:** the loader as a pocket-map exit (the two exit patches, §6). It cannot be reproduced in practice. The `EnterPortal` job patch was exercised by the order pause test, but the exact idle behaviour of a waiting pawn was only observed as "does not attempt to go".
+
+**Known, not fixed:** vanilla's remove button for one pawn of several in an order looks for the wrong lord job class, so that pawn may still walk in (§7). Other mods that pick exit portals themselves are not covered by the exit patches.
+
+**Harmony patches in the mod (four):** `Patch_StoreUtility_IsGoodStoreCell` (elevator), `Patch_JobGiver_ExitMap_TryGiveJob` and `Patch_RCellFinder_TryFindExitPortal` (exit, `LoaderExitPatches.cs`), `Patch_JobGiver_EnterPortal_TryGiveJob` (`LoaderEnterPatches.cs`). The elevator's and the loader's enter patch stay separate (§8).
+
+**Still placeholders (planned, postponed):** gizmo icons. The human has since added the icon files (priority levels, connect, transfer) to the textures folder; the code does not use them yet.
+
+**Suggested plan updates for the reviewing agent** (in addition to §5)
+- `plan.md` line ~328: "decided: the loader is excluded from exit searches (E2 §6); not verified in game". Add the exit behaviour to the untested features section.
+- New files: `LoaderSettingsExtension.cs` (loading texture path), `LoaderExitPatches.cs`, `LoaderEnterPatches.cs`, `ITab_LoaderOrder.cs`; new helper `ElevatorUtil.LoadOverlayGraphic` (shared by the elevator's lights and the loader's orange look). The loader def uses `drawerType MapMeshAndRealTime`.
+- The loader's look: constant orange while an order is in progress, a 1 second blink while only the container holds items, normal otherwise. The elevator's orange overlays stay unused (§1 of `plan.md` file list).
+- Language keys added after §5: see §7-§9 (order tab and button wording, compass letters, `DeepElevator_StatusLoaders` / `DeepElevator_StatusLoaderSingle`, "Open transport menu").
+- Next: wire the supplied icons into the gizmos (Connect to..., transfer toggle, five priority levels, Enter command) in one go.
