@@ -328,6 +328,15 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             yield return bufferGizmo;
         }
 
+        // Like the "build linkable facility" buttons of beds and workbenches: a loader is not a facility to the game,
+        // but it is built next to the elevator and links to it, so the elevator offers its build command too.
+        // Null when the loader cannot be built (not unlocked, hidden).
+        Designator_Build buildLoaderCommand = BuildCopyCommandUtility.FindAllowedDesignator(DeepElevatorDefOf.DeepElevator_TransportLoader);
+        if (buildLoaderCommand != null)
+        {
+            yield return buildLoaderCommand;
+        }
+
         if (partner != null)
         {
             // Jumps the camera to the linked elevator (switching maps if needed) and selects it.
@@ -367,6 +376,19 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
                 defaultLabel = "DEV: log buffer state",
                 action = LogBufferState
             };
+        }
+    }
+
+    // A line to every linked loader while the elevator is selected, like the link lines of vanilla facilities.
+    public override void DrawExtraSelectionOverlays()
+    {
+        base.DrawExtraSelectionOverlays();
+        foreach (Building_TransportLoader loader in linkedLoaders)
+        {
+            if (loader.Spawned)
+            {
+                GenDraw.DrawLineBetween(this.TrueCenter(), loader.TrueCenter());
+            }
         }
     }
 
@@ -414,14 +436,18 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
             text.AppendLine(baseText);
         }
 
+        // The linked loaders are part of what this elevator is connected to, so they close the status line.
         string statusText = DescribeStatus();
+        string loadersText = linkedLoaders.Count > 0 ? "DeepElevator_StatusLoaders".Translate(linkedLoaders.Count).Resolve() : null;
         if (partner != null)
         {
-            text.AppendLine("DeepElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner)));
+            string linkedLine = "DeepElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner)).Resolve();
+            text.AppendLine(loadersText == null ? linkedLine : linkedLine + ", " + loadersText);
         }
         else
         {
-            text.AppendLine("DeepElevator_StatusUnlinked".Translate(statusText));
+            string unlinkedLine = "DeepElevator_StatusUnlinked".Translate(statusText).Resolve();
+            text.AppendLine(loadersText == null ? unlinkedLine : unlinkedLine + ", " + loadersText);
             // Auto-pairing only runs on build, so show the hint for any candidate count above zero.
             int candidateCount = ElevatorUtil.UnconnectedCandidates(this).Count;
             if (candidateCount > 0)

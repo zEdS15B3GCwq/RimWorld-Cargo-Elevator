@@ -35,7 +35,7 @@
       <ComponentIndustrial>1</ComponentIndustrial>
     </costList>
     <inspectorTabs>
-      <li>ITab_ContentsMapPortal</li> <!-- "Travel": the order, visible only while loading -->
+      <li>DeepElevator.ITab_LoaderOrder</li> <!-- "Loading": the order (vanilla portal tab, renamed), visible only while an order is in progress -->
       <li>DeepElevator.ITab_LoaderContents</li> <!-- what waits in the container for the elevator -->
     </inspectorTabs>
     <placeWorkers>

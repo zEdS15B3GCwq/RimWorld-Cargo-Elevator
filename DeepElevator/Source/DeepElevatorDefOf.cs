@@ -9,6 +9,7 @@ public static class DeepElevatorDefOf
 {
     public static ThingDef DeepElevator_Elevator;
     public static ThingDef DeepElevator_ElevatorLarge;
+    public static ThingDef DeepElevator_TransportLoader;
 
     static DeepElevatorDefOf()
     {

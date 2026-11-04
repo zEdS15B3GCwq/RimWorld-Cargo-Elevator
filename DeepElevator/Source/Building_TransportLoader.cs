@@ -38,6 +38,10 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     private bool transferAllowed = true;   // "Transfer items to elevator"; default on, also for a loader without a link yet
     private StoragePriority priority = StoragePriority.Normal;
 
+    // Automatic linking happens only until the loader has been linked once (by any means). After a loss the player
+    // reconnects by hand, so a rebuilt or remaining elevator never takes over a loader unasked.
+    private bool autoLinkAllowed = true;
+
     // The container and the holder that presents it to the game; created in the constructor, never null.
     private readonly LoaderContainerHolder containerHolder;
 
@@ -72,6 +76,12 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     // ---------------------------------------------------------------- portal behaviour
 
     protected override Texture2D EnterTex => ElevatorTextures.LoaderEnter;
+
+    // Wording: the portal's order is a loading order here, nobody "enters" anything.
+    public override string CancelEnterString => "DeepElevator_LoaderCancelOrder".Translate();
+
+    // Header of the order list in the loading tab.
+    public override string EnteringString => "DeepElevator_LoaderOrderHeader".Translate();
 
     /// <summary>The other end of the trip: the level of the partner elevator's partner, or null while the pair is not connected.</summary>
     public override Map GetOtherMap() => partner?.Partner?.Map;
@@ -125,6 +135,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         Scribe_References.Look(ref partner, "partner");
         Scribe_Values.Look(ref transferAllowed, "transferAllowed", true);
         Scribe_Values.Look(ref priority, "priority", StoragePriority.Normal);
+        Scribe_Values.Look(ref autoLinkAllowed, "autoLinkAllowed", true);
     }
 
     // ---------------------------------------------------------------- lifecycle
@@ -141,6 +152,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
             // The reference is resolved before anything spawns. Registering only touches a runtime list on the
             // elevator, so it does not matter whether the elevator has spawned yet.
             partner?.RegisterLoader(this);
+            autoLinkAllowed &= partner == null; // a loader that is linked has been linked once
         }
         else
         {
@@ -194,10 +206,38 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     {
         base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
 
-        if (partner != null && this.IsHashIntervalTick(Building_Elevator.PeriodicInterval) && !IsPartnerStillValid(out string invalidReason))
+        if (!this.IsHashIntervalTick(Building_Elevator.PeriodicInterval))
+        {
+            return;
+        }
+
+        PruneFinishedOrder();
+
+        if (partner != null && !IsPartnerStillValid(out string invalidReason))
         {
             ElevatorUtil.LogWarn($"Validation: {ThingID} partner {partner.LogId} invalid ({invalidReason}).");
             Notify_PartnerLost();
+        }
+    }
+
+    /// <summary>
+    /// Removes order entries that have nothing left to send, and ends the order when none are left. Vanilla's
+    /// "remove" button in the order tab only sets an entry's count to zero, so an emptied order would stay "in
+    /// progress" (tab and cancel button remain) because the portal counts entries, not items. Called by the loading
+    /// tab right after it is drawn, and periodically as a safety net.
+    /// </summary>
+    public void PruneFinishedOrder()
+    {
+        if (leftToLoad == null || leftToLoad.Count == 0)
+        {
+            return;
+        }
+
+        leftToLoad.RemoveAll(entry => entry.CountToTransfer <= 0 || !entry.HasAnyThing);
+        if (leftToLoad.Count == 0 && Spawned)
+        {
+            CancelLoad(); // also ends the lord, so nobody waits for an order that no longer exists
+            ElevatorUtil.Log($"Order ended: {ThingID} nothing left to send.");
         }
     }
 
@@ -223,6 +263,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     /// <summary>
     /// The elevator is gone, or the link became invalid. The order continues; the transfer switch turns off and
     /// stays off after relinking, so a new elevator never starts taking items the player did not expect to move.
+    /// There is no automatic relinking: the player reconnects with "Connect to...".
     /// </summary>
     public void Notify_PartnerLost()
     {
@@ -233,8 +274,6 @@ public class Building_TransportLoader : MapPortal, IThingHolder
 
         ElevatorUtil.Log($"Partner lost: {ThingID} lost {formerPartner?.LogId ?? "none"}; transfer switched off.");
         Messages.Message("DeepElevator_MsgLoaderUnlinked".Translate(), this, MessageTypeDefOf.NeutralEvent, historical: false);
-
-        TryAutoLink();
     }
 
     // ---------------------------------------------------------------- linking
@@ -263,10 +302,13 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         return candidates;
     }
 
-    /// <summary>Links automatically only when there is exactly one candidate and no partner yet. Leaves the transfer switch alone.</summary>
+    /// <summary>
+    /// Links automatically only when there is exactly one candidate, no partner yet, and the loader has never
+    /// been linked before (<see cref="autoLinkAllowed"/>). Leaves the transfer switch alone.
+    /// </summary>
     public void TryAutoLink()
     {
-        if (partner != null)
+        if (partner != null || !autoLinkAllowed)
         {
             return;
         }
@@ -282,6 +324,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     private void LinkTo(Building_Elevator elevator)
     {
         partner = elevator;
+        autoLinkAllowed = false; // from now on only the player relinks
         elevator.RegisterLoader(this);
 
         ElevatorUtil.Log($"Loader linked: {ThingID} -> {elevator.LogId}");
@@ -373,13 +416,11 @@ public class Building_TransportLoader : MapPortal, IThingHolder
     {
         foreach (Gizmo gizmo in base.GetGizmos())
         {
-            // The vanilla Enter command is disabled whenever IsEnterable is false (including an unpowered pair).
-            // The dialog only needs a link: the order can be made while the pair is down, and pawns in it then
-            // wait until the pair works. EnterTex is our own cached texture, so the reference match is reliable.
+            // The vanilla Enter command is disabled whenever IsEnterable is false (including an unpowered pair);
+            // EnterTex is our own cached texture, so the reference match is reliable.
             if (gizmo is Command_Action enterCommand && enterCommand.icon == EnterTex)
             {
-                enterCommand.Disabled = partner == null;
-                enterCommand.disabledReason = partner == null ? "DeepElevator_LoaderNeedsLink".Translate().Resolve() : null;
+                ApplyEnterCommandRules(enterCommand);
             }
             yield return gizmo;
         }
@@ -416,6 +457,31 @@ public class Building_TransportLoader : MapPortal, IThingHolder
                 action = LogLoaderState
             };
         }
+    }
+
+    /// <summary>
+    /// When the dialog may be opened. A new order needs a linked elevator that is connected to its partner on another
+    /// level (otherwise there is nowhere to send anything). An unpowered pair is fine: the order waits for power.
+    /// While an order is in progress the command stays available whatever the link says, so the order can still
+    /// be changed or reduced. Vanilla's own rule (the portal must be enterable) is replaced by this one.
+    /// </summary>
+    private void ApplyEnterCommandRules(Command_Action enterCommand)
+    {
+        string blockedReasonKey = null;
+        if (!LoadInProgress)
+        {
+            if (partner == null)
+            {
+                blockedReasonKey = "DeepElevator_LoaderNeedsLink";
+            }
+            else if (!partner.IsConnected)
+            {
+                blockedReasonKey = "DeepElevator_LoaderElevatorNotConnected";
+            }
+        }
+
+        enterCommand.Disabled = blockedReasonKey != null;
+        enterCommand.disabledReason = blockedReasonKey?.Translate().Resolve();
     }
 
     /// <summary>
@@ -469,7 +535,7 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         {
             defaultLabel = "DeepElevator_LoaderPriority".Translate(priority.Label()),
             defaultDesc = "DeepElevator_LoaderPriorityDesc".Translate(),
-            icon = ElevatorTextures.LoaderPriority,
+            icon = ElevatorTextures.LoaderPriorityIcon(priority),
             action = () =>
             {
                 List<FloatMenuOption> options = SelectablePriorities
@@ -513,6 +579,18 @@ public class Building_TransportLoader : MapPortal, IThingHolder
         Find.WindowStack.Add(new FloatMenu(options));
     }
 
+    // ---------------------------------------------------------------- selection overlay
+
+    // A line to the linked elevator while the loader is selected, like the link lines of vanilla facilities.
+    public override void DrawExtraSelectionOverlays()
+    {
+        base.DrawExtraSelectionOverlays();
+        if (partner is { Spawned: true })
+        {
+            GenDraw.DrawLineBetween(this.TrueCenter(), partner.TrueCenter());
+        }
+    }
+
     // ---------------------------------------------------------------- inspect string
 
     public override string GetInspectString()
@@ -541,8 +619,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder
 
     /// <summary>
     /// The loader's own state, parts joined with "; ": the loading part, then the transfer part (first match
-    /// wins). Elevator states such as a full buffer or no power are not described here, only whether the
-    /// elevator can take what is waiting. Null when there is nothing to say.
+    /// wins), then the priority once linked. Elevator states such as a full buffer or no power are not described
+    /// here, only whether the elevator can take what is waiting. Never empty: the transfer part always says something.
     /// </summary>
     private string DescribeStatus()
     {
@@ -554,12 +632,13 @@ public class Building_TransportLoader : MapPortal, IThingHolder
             statusParts.Add("DeepElevator_LoaderStatusLoading".Translate());
         }
 
-        string transferPart = DescribeTransferPart(isLoading);
-        if (transferPart != null)
+        statusParts.Add(DescribeTransferPart(isLoading));
+
+        if (partner != null)
         {
-            statusParts.Add(transferPart);
+            statusParts.Add("DeepElevator_LoaderStatusPriority".Translate(priority.Label()));
         }
-        return statusParts.Count > 0 ? string.Join("; ", statusParts) : null;
+        return string.Join("; ", statusParts);
     }
 
     private string DescribeTransferPart(bool isLoading)
@@ -573,10 +652,10 @@ public class Building_TransportLoader : MapPortal, IThingHolder
             return "DeepElevator_LoaderStatusTransferOff".Translate();
         }
 
-        // Nothing to transfer and nothing coming: idle, say nothing.
+        // Nothing to transfer and nothing coming: idle, but ready.
         if (!isLoading && !Container.Any)
         {
-            return null;
+            return "DeepElevator_LoaderStatusTransferOn".Translate();
         }
 
         // The grace period keeps the line steady: in steady transfer the buffer is full between sends, and the

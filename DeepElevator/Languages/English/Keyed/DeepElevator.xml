@@ -94,5 +94,15 @@
   <DeepElevator_MsgLoaderPawnReturned>{0} could not go through {1}: the elevator is not connected or has no power. Put down next to the loader.</DeepElevator_MsgLoaderPawnReturned>
   <!-- {0} = loader label, {1} = number of stacks. -->
   <DeepElevator_LoaderUnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the loader.</DeepElevator_LoaderUnloadIncomplete>
+  <!-- Step E2 tests: wording. The order tab and its cancel button belong to the vanilla portal; these replace "Travel" and "Cancel entering". -->
+  <DeepElevator_TabLoaderOrder>Loading</DeepElevator_TabLoaderOrder>
+  <DeepElevator_LoaderCancelOrder>Cancel loading</DeepElevator_LoaderCancelOrder>
+  <DeepElevator_LoaderOrderHeader>Still to be sent</DeepElevator_LoaderOrderHeader>
+  <DeepElevator_LoaderElevatorNotConnected>The linked elevator is not connected to an elevator on another level.</DeepElevator_LoaderElevatorNotConnected>
+  <DeepElevator_LoaderStatusTransferOn>transfer on</DeepElevator_LoaderStatusTransferOn>
+  <!-- {0} = the current priority level. -->
+  <DeepElevator_LoaderStatusPriority>priority: {0}</DeepElevator_LoaderStatusPriority>
+  <!-- Closes the elevator's status line. {0} = number of linked loaders. -->
+  <DeepElevator_StatusLoaders>loaders: {0}</DeepElevator_StatusLoaders>
   <DeepElevator_HelperSeveralElevators>Several elevators: use Connect to...</DeepElevator_HelperSeveralElevators>
 </LanguageData>
