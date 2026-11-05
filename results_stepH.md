@@ -7,15 +7,17 @@ Task order (human): 6 (name change) first, then the human tests, then 1–5, 7, 
 | # | Task | State | Section |
 | --- | --- | --- | --- |
 | 6 | Name change DeepElevator → CargoElevator | done, **tested** | §1 |
-| 1 | Extant tasks of `pre_stepH.md` (settings, logging setting, build menu) | done, builds; not tested | §2, §4, §5 |
-| 2 | Remove repetitive logging | **dropped** (human): replaced by the verbose-logging setting | §2, §4 |
-| 3 | Remove the profiler | done, builds | §3 |
+| 1 | Extant tasks of `pre_stepH.md` (settings, logging setting, build menu) | done, **tested** | §2, §4, §5, §13 |
+| 2 | Remove repetitive logging | **dropped** (human): replaced by the verbose-logging setting, **tested** | §2, §4 |
+| 3 | Remove the profiler | done | §3 |
 | 4 | Performance review | done: `performance_review.md` | §8 |
-| 5 | Own build menu category + BAM patch | done, builds; not tested | §5 |
-| 7 | Useful building XML nodes from the examples | done: review, three nodes added, the rest proposed | §7 |
-| 8 | Own research project | done, builds; not tested | §6 |
+| 5 | Own build menu category + BAM patch | done, **tested** in all three set-ups | §5, §11, §12, §16 |
+| 7 | Useful building XML nodes from the examples | done: review; shadows, menu order, Heavy terrain and loader minify added (human decisions), the rest not taken | §7, §11 |
+| 8 | Own research project | done, **tested** | §6, §13 |
 
-Every change after the rename is built (`dotnet build`, 0 warnings, 0 errors) but **not run in game**. The test list is in §9.
+Added during the step, from the human's decisions and tests: loader uninstall and reinstall (§11), Heavy terrain for the elevators (§11), slots kept above a lowered maximum (§13), and the even glow for the large elevator with its setting (§14, §15).
+
+**Final state:** everything is built (`dotnet build`, 0 warnings, 0 errors) and committed on `stepH`. Test results are in §13 and §16, and §16 also lists what wasn't reported tested. Some earlier sections describe a first version that was changed later; each one says where it changed.
 
 ## 1. Name change (task 6)
 
@@ -100,6 +102,7 @@ Options → Mod settings → **Cargo Elevator**. Changes take effect when the wi
 | Section | Setting | Default | Applies to |
 | --- | --- | --- | --- |
 | Lights | Elevators light up their surroundings | on | `IThingGlower.ShouldBeLitNow` of the elevator; the lamp on the sprite stays |
+| | Large elevators light up evenly (added in §14) | on | one light per cell instead of the def's single off-centre light (§14, §15, §16.2) |
 | | Transport loaders light up their surroundings | on | the same for the loader |
 | | Transport loaders blink while items wait | on | off = steady orange (lamp and light) for as long as items wait and no order runs (the human's new setting) |
 | one heading per elevator def (both sizes) | Ticks between sent pieces (with "N per second") | the def's value (60 / 15) | `ElevatorSettingsExtension.ticksPerStack`, range 1–600 |
@@ -113,7 +116,7 @@ How it works (the FasterBiosculpterPod pattern, pre_stepH §4.1):
 - `CargoElevatorMod : Mod` loads the settings in its constructor (before defs exist) and draws the page (`Listing_Standard` in a scroll view; numeric fields with edit buffers; tooltips with the allowed range). The settings file is the game's own `Config/Mod_<folder>_CargoElevatorMod.xml`.
 - `CargoElevatorSettings : ModSettings`. Per-def values are stored by defName, and **-1 means "not changed"**: the def keeps the value it had at startup, including other mods' patches. So the file only holds what the player changed, and "default" in the UI is the real def value, not a copy in code. The defaults are captured on first use, at startup, before anything is written.
 - `CargoElevatorStartup` (`[StaticConstructorOnStartup]`) writes the values into the defs, then logs the def facts (`ElevatorDiagnostics.LogDefs`, verbose only), so the diagnostics show the values in use. `ElevatorDiagnostics` lost its own static constructor for that.
-- After writing, every spawned elevator gets `Notify_ModSettingsChanged`: it lowers its slots to a reduced maximum (buffered items stay), sets the new wattage at once (`UpdatePowerDraw(force: true)`), and re-registers the glow. Every loader re-registers its glow. Elevators also lower their slots on spawn, for minified or saved ones. (The name avoids `Building_Storage.Notify_SettingsChanged`, which is vanilla's storage-settings callback.)
+- After writing, every spawned elevator gets `Notify_ModSettingsChanged`: it sets the new wattage at once (`UpdatePowerDraw(force: true)`), and re-registers the glow. Every loader re-registers its glow. The first version also lowered the elevators' slots to a reduced maximum, here and on spawn. That was **removed in §13**: an elevator now keeps its slots, and the player can only lower them. (The name avoids `Building_Storage.Notify_SettingsChanged`, which is vanilla's storage-settings callback.)
 - New elevators start with all their slots when the def does (both shipped defs do), so raising the maximum also raises what new elevators get.
 - The "(N per second)" readout and the active hold window (`ticksPerStack + 30`) follow the rate automatically, as they're computed from the def.
 
@@ -136,7 +139,7 @@ Implementation notes:
   - **BAM without MultiFloors**: moves them to **`Ferny_Elevation`**. That is BAM's own "Elevation" tab under Structure ("Build stairs, ladders, and elevators between levels."; As Above So Below uses it). Same place for the player, and no reference to MF's def when MF is missing.
   - Both patches also **remove our own tab**, so BAM doesn't show an empty one.
   - The patch replaces `designationCategory` on the abstract `CargoElevatorBase` and the loader (XML inheritance is resolved after patching).
-- `About.xml`: BAM is in **`loadBefore`** (human, §11; first it was in `loadAfter`).
+- `About.xml`: no BAM entry. It was first in `loadAfter`, then `loadBefore` (§11); the human removed it (§13), since the order doesn't matter (§12).
 - Not done (human): one drop-down button for both sizes.
 - When shipping: `Patches/` is copied with the rest (About, Defs, Languages, Patches, Textures, 1.6, loadFolders.xml).
 
@@ -168,9 +171,11 @@ Compared: every building `ThingDef` in DeepRim, MultiFloors, VFE Factory, Adapti
 
 ### 7.3 Proposed, not added (they change gameplay; your call)
 
+**Outcome (human, §11):** `Heavy` terrain **added** for the elevators; `minifiedDef` **added** for the loader only; `holdsRoof` **off** (§12); no construction skill. The rest of the table was not taken.
+
 | Node | Seen in | What it would do for us | Proposal |
 | --- | --- | --- | --- |
-| `terrainAffordanceNeeded` | MF elevators and stairs: `Heavy`; ours inherit `Light` from `BuildingBase` | `Heavy` = not on soil, sand or bridges, only stone, rough rock and heavy floors | `Medium` for the large elevator would fit its cost and size; `Heavy` like MF is plausible for a lift. Check that MF upper floors and DeepRim layers give it (MF builds `Heavy` elevators there, so they do) |
+| `terrainAffordanceNeeded` | MF elevators and stairs: `Heavy`; ours inherit `Light` from `BuildingBase` | `Heavy` = not on marsh, mud, soft sand, shallow water or bridges (corrected in §11; soil and sand do offer it) | `Medium` for the large elevator would fit its cost and size; `Heavy` like MF is plausible for a lift. Check that MF upper floors and DeepRim layers give it (MF builds `Heavy` elevators there, so they do) |
 | `holdsRoof` | MF elevators and stairs, DeepRim shaft | the building supports a roof like a column | fits a lift shaft; harmless. Mostly matters on the surface |
 | `constructionSkillPrerequisite` | MF, VFE (typically 4–8) | minimum Construction skill to build | e.g. 5 small, 8 large, none for the loader |
 | `minifiedDef` (+ `thingCategories`) | MF, VFE | uninstall and reinstall | possible: our `DeSpawn` already drops the buffer and unlinks, and spawning auto-pairs. Needs a test that a reinstalled elevator re-pairs and that loaders relink by hand |
@@ -193,11 +198,13 @@ Other points of `pre_stepH.md` reviewed:
 
 ## 9. Test list
 
+Results: §13 (round 1) and §16 (round 2, with what wasn't reported).
+
 1. Copy the whole `CargoElevator\` folder, **including the new `Patches\`**, to the game's Mods folder (delete a `Mods\` subfolder from the game's copy if one was copied earlier). A save made since the rename may log one error about the removed `MapComponent_ElevatorProbe`; that's expected once.
 2. **Research:** "cargo elevators" shows below Smokepop packs, cost 600, needs Electricity. Before it's done: no Cargo elevator tab, no buildings. After: the tab appears (after MultiFloors' tab if present, before Production) with small, large, loader in that order.
 3. **Settings page:** opens, scrolls, tooltips, the "(default: …)" values match the defs (60/4/100/10 and 15/8/300/30), and reset works. Then change and close:
    - rate (e.g. small 30 → 2 per second; check with verbose logging or by watching);
-   - max slots lowered below an elevator's current setting → it drops to the new maximum; raised → new elevators get all of it;
+   - max slots lowered below an elevator's current setting → it keeps its slots and can only be lowered (changed in §13); raised → new elevators get all of it;
    - power: the inspect pane's "Power needed" changes at once on built elevators, both idle and active;
    - glow off/on for elevators and loaders: the light on the floor goes and comes back, the lamp on the sprite stays;
    - loader blink off: a loader with items and no order shows a steady light; on again: it blinks.
@@ -231,7 +238,8 @@ Other points of `pre_stepH.md` reviewed:
 | `e841cb9` | (human) higher-quality loader textures |
 | `a0f21b8` | slots above a lowered maximum are kept; results §13 |
 | `0a6bd55` | even glow for the large elevator, with a setting; results §14 |
-| (next) | even glow retuned: full radius, 0.6 of the colour per cell; results §15 |
+| `592f7ea` | even glow retuned: full radius, 0.6 of the colour per cell; results §15 |
+| (next) | results final (§16), light equation; `performance_review.md` even glow |
 
 ## 11. Human decisions after the first round, and changes
 
@@ -382,3 +390,72 @@ The human asked for the four-light workaround of §13 (8), as an option players 
 **Change.** Each cell light keeps the def's radius (5) and gets **0.6** of the state colour (`CellGlowColorFactor`). That matches the single light's brighter side on every side. The faint fringe at four cells out is 1 % instead of 4 %, because each light's last cell before the radius cut-off is very weak. The red light is scaled the same way, so it keeps its brightness relative to the green.
 
 **To test:** the same walk-out from the elevator's side should give about 50, 50, 40, 1 % on all four sides, green and red. If it should reach a little further, 0.7 gives 50, 50, 48, 3.
+
+## 16. Final test round (human) and close
+
+### 16.1 Results
+
+| Test | Result |
+| --- | --- |
+| Even glow, retuned (§15) | looks right. Walking out from the large elevator's side gives **exactly the predicted 50, 50, 40, 1 %**, so the simulation below matches the game |
+| Build menu without BAM | the buildings are in our own **Cargo elevator** tab |
+| Build menu, BAM without MultiFloors | in **Elevation** (BAM's `Ferny_Elevation`) |
+| Build menu, BAM with MultiFloors | in **Elevation** (MultiFloors' tab, relabelled by BAM; also §13) |
+
+Tested over both rounds (§13, §16): the rename, research, the build menu in all three set-ups, verbose logging, power, ticks per piece, max slots (raising; lowering before the §13 change), the glow and blink switches, the loader's uninstall and reinstall with auto-link, and the even glow and its switch.
+
+**Not reported tested** (no known problem; worth a look in a later step):
+- max slots **lowered** after the §13 change: the elevator keeps its slots, "fewer" works one step at a time, "more" stays disabled until below the maximum;
+- the shadows in daylight (§7.1, §9 item 6);
+- Heavy terrain: refused on marsh, mud, soft sand, shallow water and bridges (§9 item 8);
+- settings surviving a restart, and the reset button (§9 item 3);
+- the even glow after save/load and after deconstructing a lit large elevator (§14);
+- the general regression pass: transfer, holds, loader orders, pawn trips (§9 item 7).
+
+Nothing is open on the code side.
+
+### 16.2 How the game computes light (for the even glow)
+
+From the decompiled 1.6 code: `Verse.Glow.ComputeGlowGridsJob` (per light), `GlowGrid.CombineColorsJob` (adding lights) and `GlowGrid.GroundGlowAt` (the light level). The level is the "light" percentage the inspect pane shows.
+
+**1. Distance, per light.** A flood fill from the light's cell (`GlowLight.position`: the thing's `Position`, always a whole cell):
+- the light's own cell starts at **d = 1**, not 0;
+- each straight step adds 1, each diagonal step 1.41 (the code uses integer hundredths, 100 and 141);
+- a cell keeps its shortest path, so d is a path length around walls, not a straight-line distance;
+- light blockers (walls, closed doors) stop the fill, and a diagonal step between two blockers is not taken;
+- the fill stops past the radius: a cell is reached only if **d ≤ glowRadius**.
+
+**2. Strength at distance d**, for d ≤ radius r (`SetGlowFromDist`):
+
+  `f(d) = lerp(1 − d/r, 1/d², 0.4) = 0.6 × (1 − d/r) + 0.4 / d²`
+
+  The cell's colour from this light is `glowColor × f(d)`, each channel cut to an integer (`ColorInt * float`). Beyond the radius it's 0, so there's a hard edge. Because d starts at 1, f(1) = 0.6 × (1 − 1/r) + 0.4. For r = 5 that's 0.88, not 1. The 1/d² term makes the first few cells fall off steeply.
+
+**3. Adding lights.** Every light whose area covers a cell adds its colour there, channel by channel (`AddColors`; the alpha channel only marks "overlit" for lights with an `overlightRadius`, which ours don't have).
+
+**4. Light level of a cell:**
+
+  `level = min(0.5, max(R, G, B) / 255 × 3.6)`
+
+  (the sky light outdoors is taken instead when it's brighter). Artificial light alone therefore tops out at **50 %**, which is why the measured rows start with 50, 50. With our green `(60, 200, 80)` the brightest channel is 200, so a single light gives `level = min(0.5, 2.82 × f(d))`, and it is capped at 50 % while f(d) > 0.177.
+
+**Worked example: large elevator, single light, r = 5**, on the side away from the light's cell (the 2×2's south-west cell). The adjacent cell is one step from the light, so d = 2:
+
+| Cell out | d | f(d) | 2.82 × f | Level |
+| --- | --- | --- | --- | --- |
+| 1 | 2 | 0.60 × 0.6 + 0.100 = 0.460 | 1.30 | 50 % |
+| 2 | 3 | 0.60 × 0.4 + 0.044 = 0.284 | 0.80 | 50 % |
+| 3 | 4 | 0.60 × 0.2 + 0.025 = 0.145 | 0.41 | 41 % (measured 41) |
+| 4 | 5 | 0 + 0.016 | 0.045 | 4 % (measured 4) |
+| 5 | 6 | beyond r | 0 | 0 |
+
+On the other side the cells are a cell further from the light, hence 50, 25, 0. The small elevator (r = 4, its own cell is the light): d = 2, 3, 4 gives 50, 50, 7 %.
+
+**The even glow.** Four lights, one on each cell of the 2×2, each with r = 5 and **0.6 × the colour** (`CellGlowColorFactor`), so 2.82 × 0.6 = 1.69 per unit of f. For the cell k steps out from a side, in line with one of its cells, the four distances are about k+1 and k+1.41 (the two near cells) and k+2 and k+2.41 (the two far cells). For k = 3 that's f = 0.145 + 0.091 + 0.016 + 0, which sums to 0.252 → 0.43 → 40 % (with the integer cuts). The full row is 50, 50, 40, 1 %, the same on every side.
+
+The first try used ¼ of the colour and r = 4.5. Its sums came out at about 0.85 → 50 %, 0.39 → 35 %, 0.09 → 7 %: the far lights add much less than a quarter each because of the steep falloff. So the colour share has to be well above 1/n. 0.6 was chosen by simulating the job (§15 table) and is confirmed in game (§16.1).
+
+**Rules of thumb for later tuning:**
+- The reach is set by the radius alone (the hard cut at d = r), counted from the light's cell with that cell at 1. A 1×1 light of radius r lights about r − 1 cells out in a straight line, and less diagonally.
+- The colour only matters below the 50 % cap. Brighter colours widen the 50 % zone and lift the outer ring, but don't reach further than the radius.
+- Colours add up linearly (apart from integer rounding), so several lights are a sum of these curves.

@@ -46,6 +46,7 @@ What remains when it's off: the call sites still build their interpolated messag
 - "Transport loaders blink while items wait" (default on). Off: the loader's lamp and light stay on steadily while items wait. The light is registered once when items arrive and removed once when the loader empties. No re-registration twice a second.
 - "Transport loaders light up their surroundings" (default on). Off: no light at all; the orange lamp on the sprite still shows the state.
 - The same switch for elevators. Their light changes only on a state change, so it isn't a performance item, just a look option.
+- **Even glow** for the large elevator (added later in Step H, `results_stepH.md` §14–§16; default on). It replaces the large elevator's single light with four (one per cell, radius 5). Nothing runs per tick. On each light change (green, red, off), the game now recomputes four small lights instead of one, and marks their cells dirty. That happens at most every 30 ticks per elevator, and only when the state changes, so it isn't a hot path. "Large elevators light up evenly" off goes back to the single light.
 
 ### 2.4 Removed (pre_stepH §2 item 9)
 
