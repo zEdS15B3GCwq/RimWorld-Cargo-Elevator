@@ -39,7 +39,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     private StoragePriority priority = StoragePriority.Normal;
 
     // Automatic linking happens only until the loader has been linked once (by any means). After a loss the player
-    // reconnects by hand, so a rebuilt or remaining elevator never takes over a loader unasked.
+    // reconnects by hand, so a rebuilt or remaining elevator never takes over a loader unasked. Reinstalling the loader
+    // (uninstall, then place it again) allows it again (DeSpawn).
     private bool autoLinkAllowed = true;
 
     // The container and the holder that presents it to the game; created in the constructor, never null.
@@ -172,6 +173,10 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     public override void DeSpawn(DestroyMode mode = DestroyMode.Vanish)
     {
         ReleasePartner("DeSpawn");
+
+        // A despawned loader only comes back by being reinstalled (it is minifiable). The player has placed it again,
+        // so it links by itself like a newly built one; the no-relink rule is for a loader that stays where it is.
+        autoLinkAllowed = true;
         if (Spawned)
         {
             if (LoadInProgress)

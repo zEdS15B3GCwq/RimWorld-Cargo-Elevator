@@ -23,7 +23,11 @@
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
     <castEdgeShadows>true</castEdgeShadows>
-    <staticSunShadowHeight>0.5</staticSunShadowHeight> <!-- stacked crates: like a shelf -->
+    <staticSunShadowHeight>0.35</staticSunShadowHeight> <!-- stacked crates, lower than the elevator's frame (tool cabinet height) -->
+    <minifiedDef>MinifiedThing</minifiedDef> <!-- can be uninstalled and reinstalled; it is emptied and unlinked first (DeSpawn) -->
+    <thingCategories>
+      <li>BuildingsMisc</li>
+    </thingCategories>
     <uiOrder>3142</uiOrder> <!-- after both elevators -->
     <designationCategory>CargoElevator</designationCategory>
     <researchPrerequisites>
