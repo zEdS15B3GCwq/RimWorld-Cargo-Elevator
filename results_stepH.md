@@ -125,21 +125,20 @@ Not included, on purpose:
 **Logging:** `ElevatorUtil.Log` writes only with verbose logging on; `LogWarn` always writes. Every existing line is kept (human decision; task 2's removal list is dropped). `LogTargetsIfChanged` returns before building its string when verbose is off (pre_stepH §2 item 3). With verbose off, a normal game logs nothing from us except warnings.
 
 Implementation notes:
-- `Text.Font`, `Text.Anchor` and `Widgets.ButtonText` need `UnityEngine.TextRenderingModule`, which the project doesn't reference. Rather than add a reference, the headings are coloured (`AsTipTitle`) instead of in a larger font, the labels are offset by hand, and the reset button is a `Listing_Standard.ButtonText` in a small footer listing. If you'd prefer the larger heading font, add `include\UnityEngine.TextRenderingModule.dll` (from `RimWorldWin64_Data\Managed`) and a reference to the csproj.
+- `Text.Font`, `Text.Anchor` and `Widgets.ButtonText` need `UnityEngine.TextRenderingModule`, which the project doesn't reference. Rather than add a reference, the headings are coloured (`AsTipTitle`) instead of in a larger font, the labels are offset by hand, and the reset button is a `Listing_Standard.ButtonText` in a small footer listing. Larger headings are not needed (human, §11).
 - Files: `CargoElevatorMod.cs`, `CargoElevatorSettings.cs`, `CargoElevatorStartup.cs` (new); `ElevatorUtil.cs`, `ElevatorDiagnostics.cs`, `ElevatorSettingsExtension.cs` (comment), `Building_Elevator.cs` / `.Buffer.cs` / `.Power.cs` / `.Send.cs`, `Building_TransportLoader.cs`, the language file.
 
 ## 5. Build menu category (task 5)
 
 - New `DesignationCategoryDef` **`CargoElevator`** ("Cargo elevator"; order 640, so right after MultiFloors' tab at 650 and before Production at 600; Cancel and Deconstruct). It needs our research (§6), like vanilla's Power tab needs Electricity, so it doesn't sit empty early in the game. Both elevators and the loader use it (was `Misc`).
-- **Better Architect Menu** (`ferny.BetterArchitect`), through `loadFolders.xml` (packageIds, not mod names):
-  - **BAM + MultiFloors** (`IfModActiveAll`): `Mods/BetterArchitectMenu_MultiFloors/Patches/` moves our three buildings to **`MultiFloors`**. That is MF's tab, which BAM's own MF patch relabels "Elevation" and nests under Structure. So we appear next to MF's stairs and elevators, as asked.
-  - **BAM without MultiFloors** (`IfModActive` + `IfModNotActive`): `Mods/BetterArchitectMenu/Patches/` moves them to **`Ferny_Elevation`**. That is BAM's own "Elevation" tab under Structure ("Build stairs, ladders, and elevators between levels."; As Above So Below uses it). Same place for the player, and no reference to MF's def when MF is missing.
+- **Better Architect Menu** (`ferny.BetterArchitect`): one patch, `Patches/CargoElevator_BetterArchitectMenu.xml` (reworked in §11; first built with load folders under `Mods/`):
+  - **BAM + MultiFloors**: moves our three buildings to **`MultiFloors`**. That is MF's tab, which BAM's own MF patch relabels "Elevation" and nests under Structure. So we appear next to MF's stairs and elevators, as asked.
+  - **BAM without MultiFloors**: moves them to **`Ferny_Elevation`**. That is BAM's own "Elevation" tab under Structure ("Build stairs, ladders, and elevators between levels."; As Above So Below uses it). Same place for the player, and no reference to MF's def when MF is missing.
   - Both patches also **remove our own tab**, so BAM doesn't show an empty one.
   - The patch replaces `designationCategory` on the abstract `CargoElevatorBase` and the loader (XML inheritance is resolved after patching).
-- `About.xml`: **`ferny.BetterArchitect` added to `loadAfter`** (human). The patches only touch our own defs, so the order isn't required for them to work, but it costs nothing.
-- Checked in the game code: `LoadFolder.ShouldLoad` ANDs `IfModActive`, `IfModActiveAll` and `IfModNotActive`; the mod check ignores case (BAM itself writes `telardo.multifloors`).
+- `About.xml`: BAM is in **`loadBefore`** (human, §11; first it was in `loadAfter`).
 - Not done (human): one drop-down button for both sizes.
-- When shipping: the `Mods/` folder must be copied with the rest (About, Defs, Languages, Textures, 1.6, loadFolders.xml).
+- When shipping: `Patches/` is copied with the rest (About, Defs, Languages, Patches, Textures, 1.6, loadFolders.xml).
 
 ## 6. Research project (task 8)
 
@@ -159,9 +158,9 @@ Compared: every building `ThingDef` in DeepRim, MultiFloors, VFE Factory, Adapti
 - **`castEdgeShadows`** (bool). `SectionLayer_EdgeShadows` draws the soft dark rim on the floor around the edifice. Shelves, benches and most furniture have it.
 - **Cost:** none per frame; both are part of the static section mesh, rebuilt only when that section changes.
 - **Do we need them? Will it look cooler?** Not needed for anything functional, but without them our buildings look flat next to vanilla furniture (a shelf has both). **Added** (cosmetic only, easy to change):
-  - elevators (both sizes): `castEdgeShadows` true, `staticSunShadowHeight` **0.35**. The sprite is a platform inside a frame, so it's lower than a shelf. 0.35 is the tool cabinet.
-  - loader: `castEdgeShadows` true, `staticSunShadowHeight` **0.5**, stacked crates like a full shelf.
-  - **To judge in game**, outdoors in daylight. Underground (DeepRim, roofed) there's little sun to cast them, but the edge shadow still shows. If the elevator should read as a flat platform, try 0.2; as a tall cage, 0.5.
+  - elevators (both sizes): `castEdgeShadows` true, `staticSunShadowHeight` **0.6** (changed from 0.35 in §11: the elevators are taller than the loader's crates). A tall frame: above shelves (0.5), below walls (1.0).
+  - loader: `castEdgeShadows` true, `staticSunShadowHeight` **0.35** (changed from 0.5 in §11), stacked crates at tool-cabinet height.
+  - **To judge in game**, outdoors in daylight. Underground (DeepRim, roofed) there's little sun to cast them, but the edge shadow still shows. The height sets how dark and how long the shadow is.
 
 ### 7.2 Also added
 
@@ -194,7 +193,7 @@ Other points of `pre_stepH.md` reviewed:
 
 ## 9. Test list
 
-1. Copy the whole `CargoElevator\` folder, **including the new `Mods\`**, to the game's Mods folder. A save made since the rename may log one error about the removed `MapComponent_ElevatorProbe`; that's expected once.
+1. Copy the whole `CargoElevator\` folder, **including the new `Patches\`**, to the game's Mods folder (delete a `Mods\` subfolder from the game's copy if one was copied earlier). A save made since the rename may log one error about the removed `MapComponent_ElevatorProbe`; that's expected once.
 2. **Research:** "cargo elevators" shows below Smokepop packs, cost 600, needs Electricity. Before it's done: no Cargo elevator tab, no buildings. After: the tab appears (after MultiFloors' tab if present, before Production) with small, large, loader in that order.
 3. **Settings page:** opens, scrolls, tooltips, the "(default: …)" values match the defs (60/4/100/10 and 15/8/300/30), and reset works. Then change and close:
    - rate (e.g. small 30 → 2 per second; check with verbose logging or by watching);
@@ -205,8 +204,10 @@ Other points of `pre_stepH.md` reviewed:
    - The values survive a game restart (settings file).
 4. **Verbose logging:** off (default): no `[CargoElevator]` message lines during normal use, only warnings if something goes wrong. On: the familiar lines come back (startup diagnostics show after a restart).
 5. **BAM** (`ferny.BetterArchitect`): with MultiFloors, our buildings sit in Structure > Elevation next to MF's; without MultiFloors, in BAM's Elevation; in both cases no separate Cargo elevator tab. Without BAM: our own tab.
-6. **Looks:** edge and sun shadows of the elevators and the loader in daylight; adjust 0.35 / 0.5 if wanted (§7.1).
+6. **Looks:** edge and sun shadows of the elevators (0.6) and the loader (0.35) in daylight (§7.1).
 7. Regression: transfer, holds, loader orders and pawn trips work as before (nothing in those paths changed except log gating).
+8. **Heavy terrain** (§11): the elevators can't be placed on marsh, mud, soft sand, shallow water or bridges. They still can on soil, sand, gravel, rough stone, built floors, DeepRim layers and MultiFloors upper floors.
+9. **Loader uninstall** (§11): uninstall a loader with items and an order in progress. The order is cancelled, the items are put down nearby, and the minified loader appears. Reinstall it next to an elevator: it links by itself (with the message), keeping its transfer switch and priority.
 
 ## 10. Commits (stepH)
 
@@ -220,4 +221,50 @@ Other points of `pre_stepH.md` reviewed:
 | `eb51cd1` | research project |
 | `8bdae90` | edge and sun shadows, menu order |
 | `99200e9` | `performance_review.md` |
-| (next) | results §4–§10 |
+| `6e6089a` | results §4–§10 |
+| `721fd1e` | BAM patch moved to `Patches/` as one conditional patch; BAM in `loadBefore` |
+| `a6dee9f` | loader minifiable, links by itself after a reinstall; loader shadow 0.35 |
+| `a3faa60` | elevators need Heavy terrain; elevator shadow 0.6 |
+| (next) | results §11 |
+
+## 11. Human decisions after the first round, and changes
+
+| # | Decision | Change |
+| --- | --- | --- |
+| 1 | No `loadAfter` BAM; load **before** BAM | `About.xml`: BAM moved from `loadAfter` to `loadBefore`. See the note below on why the order doesn't matter |
+| 2 | Patches go in the customary `Patches/` folder | `Mods/` and the two conditional `loadFolders` entries removed. One file `Patches/CargoElevator_BetterArchitectMenu.xml` does the same with `PatchOperationConditional` |
+| 3 | Uninstall/reinstall: **yes for the loader**, no for the elevators | loader: `minifiedDef MinifiedThing`, `thingCategories BuildingsMisc` |
+| 4 | Heavy floor requirement: **yes** | `terrainAffordanceNeeded Heavy` on `CargoElevatorBase` (both elevators); the loader stays `Light` |
+| 5 | Holding the roof: undecided | reasons below; nothing changed |
+| 6 | Minimum construction skill: **no** | – |
+| 7 | The elevators are taller than the crates | sun shadow: elevators **0.6**, loader **0.35** (they were 0.35 and 0.5, the wrong way round) |
+| 8 | No larger headings in the settings | – |
+
+**The BAM patch (1, 2).** It now checks what it refers to instead of mod names or packageIds:
+- `Defs/DesignationCategoryDef[defName="Ferny_Elevation"]` exists → BAM is active. Then:
+  - if `Defs/DesignationCategoryDef[defName="MultiFloors"]` exists → our buildings get `MultiFloors`, otherwise `Ferny_Elevation`;
+  - and our own tab is removed.
+- Without BAM, nothing happens and nothing is logged (a conditional with no match and no `nomatch` succeeds).
+- `PatchOperationFindMod` would have been the other customary way, but it matches mod names only (`ModLister.HasActiveModWithName`), and for "BAM and MultiFloors" or "BAM without MultiFloors" it would need two nested levels anyway.
+- The XPaths were checked with .NET `XmlDocument` (the same engine the game uses) on our defs: two `designationCategory` nodes, one tab.
+
+**On load order (1).** The game first joins the XML of **all** active mods into one document, then runs every mod's patches on it, in load order, and only then turns the XML into defs and resolves def references (`LoadedModManager`: `CombineIntoUnifiedXML` → `ApplyPatches` → `ParseAndProcessXML`). So:
+- Our patch sees BAM's and MultiFloors' defs whether we load before or after them.
+- BAM's MultiFloors patch changes MultiFloors' tab def (label "Elevation", order, nesting under Structure). It doesn't rewrite our buildings' `designationCategory`, which only names that def, and the name is resolved after all patches. So BAM's change applies to our buildings at any load order.
+- No patch of ours touches a node that BAM's patches touch, or the other way round.
+- Loading before BAM is fine and is now set. Loading after would have worked too.
+
+**Loader uninstall (3).** Uninstalling calls `DeSpawn` with mode `Vanish`, so the existing clean-up runs: the order is cancelled, the container is put down nearby, and the link is released. The minified loader is always empty. One code change: `DeSpawn` sets `autoLinkAllowed` back to true. A despawned loader only comes back by reinstalling, and a reinstalled loader then links by itself like a newly built one. The "never relink unasked" rule is still kept for a loader that stays where it is while its elevator is lost or rebuilt. The transfer switch and the priority are kept through the reinstall. The elevators are not minifiable (human).
+
+**Heavy (4).** Checked against the vanilla terrain defs. Heavy is offered by soil, rich soil, sand, gravel, packed dirt, ice, mossy terrain, riverbank, broken asphalt, every built floor (`FloorBase`) and rough or smooth stone. It is not offered by marsh, mud, soft sand, shallow water or bridges. MultiFloors' own elevators and stairs need Heavy and are built on its upper floors and DeepRim layers, so ours can go there too.
+
+**Holding the roof (5): reasons.** `holdsRoof` makes a building count as a roof support, like a wall or a column. Vanilla keeps a roof cell up only within about 6 cells of a support, and collapses unsupported roof when the last support in range goes away.
+
+| For | Against |
+| --- | --- |
+| It looks right: a lift shaft or frame is structural. MultiFloors' elevators and stairs and DeepRim's shaft all set it | No function of ours needs it |
+| An elevator in the middle of a big room would hold the roof there, so the player needs no extra column next to it | Removing or losing that elevator (deconstruction, a raid, fire) can **collapse the roof** it held. Collapse damages or kills pawns under it and destroys items, and the player may not expect it from a machine |
+| | Underground (DeepRim, under mountain) it makes no difference: overhead mountain never collapses. So it only matters on the surface and on MultiFloors levels |
+| | Not checked: whether MultiFloors uses roof supports for its upper levels (its stair placement checks the roof). Its own elevators hold the roof, so it is at least compatible |
+
+Recommendation: **leave it off**. The gain is a column you don't have to build; the risk is a surprise roof collapse when an elevator is removed. If you want it anyway, it's one line on `CargoElevatorBase`, best tested together with MultiFloors.
