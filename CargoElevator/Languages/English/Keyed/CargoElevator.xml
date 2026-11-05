@@ -135,7 +135,7 @@
   <CargoElevator_SettingTicksPerStack>Ticks between sent pieces</CargoElevator_SettingTicksPerStack>
   <CargoElevator_SettingTicksPerStackDesc>The elevator sends one piece (at most one full stack) every this many ticks. 60 ticks are one second at normal speed; fewer ticks means faster transfer.</CargoElevator_SettingTicksPerStackDesc>
   <CargoElevator_SettingMaxSlots>Buffer slots (maximum)</CargoElevator_SettingMaxSlots>
-  <CargoElevator_SettingMaxSlotsDesc>How many full stacks the elevator can hold while sending. New elevators start with all of them; elevators above a lowered maximum are lowered to it.</CargoElevator_SettingMaxSlotsDesc>
+  <CargoElevator_SettingMaxSlotsDesc>How many full stacks the elevator can hold while sending. New elevators start with all of them. Elevators already above a lowered maximum keep their slots; they can be reduced but not raised again past the maximum.</CargoElevator_SettingMaxSlotsDesc>
   <CargoElevator_SettingActivePower>Power while transferring (W)</CargoElevator_SettingActivePower>
   <CargoElevator_SettingActivePowerDesc>Power drawn at each end while items are being moved.</CargoElevator_SettingActivePowerDesc>
   <CargoElevator_SettingIdlePower>Power while idle (W)</CargoElevator_SettingIdlePower>

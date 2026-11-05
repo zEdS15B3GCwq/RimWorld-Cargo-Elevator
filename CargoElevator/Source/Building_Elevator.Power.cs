@@ -297,12 +297,12 @@ public partial class Building_Elevator
     // ---------------------------------------------------------------- mod settings
 
     /// <summary>
-    /// The mod settings changed (the def now holds the new values): lower the slots to a reduced maximum, apply the
-    /// new wattage now rather than at the next draw change, and re-register the glow (it may be switched off).
+    /// The mod settings changed (the def now holds the new values): apply the new wattage now rather than at the next
+    /// draw change, and re-register the glow (it may be switched off). The slots are left alone: a lowered maximum only
+    /// stops the player raising them (<see cref="CreateSlotsCommand"/>).
     /// </summary>
     public void Notify_ModSettingsChanged()
     {
-        ClampSlotsToMaximum();
         UpdatePowerDraw(force: true);
         lastGlowState = null;
         UpdateGlow();

@@ -84,16 +84,6 @@ public partial class Building_Elevator
 
     // ---------------------------------------------------------------- slots
 
-    /// <summary>A maximum lowered in the mod settings also lowers the player's choice. Items already buffered stay.</summary>
-    private void ClampSlotsToMaximum()
-    {
-        if (maxSlots > Settings.maxSlots)
-        {
-            ElevatorUtil.Log($"Slots: {LogId} {maxSlots} → {Settings.maxSlots} (maximum lowered in the settings)");
-            maxSlots = Settings.maxSlots;
-        }
-    }
-
     /// <summary>Slots in use: every buffer entry takes one slot per (started) full stack.</summary>
     public int UsedSlots()
     {
@@ -462,13 +452,15 @@ public partial class Building_Elevator
             action = () =>
             {
                 int oldSlots = maxSlots;
-                maxSlots = Mathf.Clamp(maxSlots + slotChange, Settings.minSlots, Settings.maxSlots);
+                maxSlots = slotChange < 0
+                    ? Mathf.Max(maxSlots + slotChange, Settings.minSlots)
+                    : Mathf.Min(maxSlots + slotChange, Settings.maxSlots);
                 ElevatorUtil.Log($"Slots: {LogId} {oldSlots} → {maxSlots}");
             }
         };
 
-        // A saved value above the def's maximum (older version or changed def) can still be reduced;
-        // the clamp above then brings it straight down to the maximum.
+        // A value above the maximum (lowered in the mod settings since) is kept: it can be reduced step by step,
+        // but not raised again until it is below the maximum.
         bool atLimit = slotChange < 0 ? maxSlots <= Settings.minSlots : maxSlots >= Settings.maxSlots;
         if (atLimit)
         {

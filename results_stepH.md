@@ -225,7 +225,11 @@ Other points of `pre_stepH.md` reviewed:
 | `721fd1e` | BAM patch moved to `Patches/` as one conditional patch; BAM in `loadBefore` |
 | `a6dee9f` | loader minifiable, links by itself after a reinstall; loader shadow 0.35 |
 | `a3faa60` | elevators need Heavy terrain; elevator shadow 0.6 |
-| (next) | results §11 |
+| `ac4fb9d` | results §11 |
+| `88a6292` | results §12 |
+| `89a50df` | (human) `loadBefore` BAM removed |
+| `e841cb9` | (human) higher-quality loader textures |
+| (next) | slots above a lowered maximum are kept; results §13 |
 
 ## 11. Human decisions after the first round, and changes
 
@@ -293,3 +297,31 @@ The game loads every active mod's `Defs` XML and joins it into one document (`Lo
 The one way this could break is a future BAM or MultiFloors version that renames or removes those defs. Then our patch quietly does nothing, and the buildings stay in our own tab. That's a safe failure.
 
 `loadBefore` BAM stays as set; it does no harm.
+
+## 13. In-game test results (human), round 1
+
+| # | Test | Result |
+| --- | --- | --- |
+| 1 | Load order | `loadBefore` BAM removed from `About.xml` by the human (`89a50df`): it isn't needed (§12), so it's left out until something needs it. In the test the mod sat before BAM in the mod list anyway |
+| 2 | Research | as expected: the buildings are locked until it's researched, then buildable |
+| 3 | Build menu with BAM + MultiFloors | elevators and loader are in Structure > Elevation. **Not yet tested:** without BAM, and BAM without MultiFloors |
+| 4 | Verbose logging switch | works |
+| 5 | Power settings | work |
+| 6 | Max slots | raising works (the player adds slots with the gizmo, as intended). Lowering it **forced** existing elevators down to the new maximum. Changed, see below |
+| 7 | Glow and blink switches | work (elevator glow, loader glow, loader blink) |
+| 8 | Elevator light | its origin is the building's position cell, and the light falls off faster on one side. See below |
+| 9 | Ticks per piece | work: 1 is very fast, 600 is about 10 s per piece |
+| 10 | Loader uninstall/reinstall | works; the reinstalled loader links by itself |
+
+**Max slots lowered (6).** The forced lowering was intended in the first version (`ClampSlotsToMaximum`, at spawn and when the settings closed). The human expected the other behaviour, so that's now how it works:
+- An elevator above a lowered maximum **keeps its slots**. The "fewer slots" gizmo lowers it one step at a time. The "more slots" gizmo stays disabled until the value is below the maximum, and then raises it at most to the maximum.
+- `ClampSlotsToMaximum` was removed. The gizmo used `Mathf.Clamp(value, min, max)`, which jumped straight down to the maximum on the first "fewer" click. It now clamps only in the direction of the change.
+- The setting's tooltip says so.
+
+**Items in slots that go away.** Nothing is lost, either with the old forced lowering or when the player lowers the slots below what's in use. The buffer holds the items regardless of the slot count. Only taking items in checks the slots ("buffer full" in `GetRefusalReason`), and the loaders' free-space count is `max(0, slots − used)`. So the elevator keeps sending what it holds and takes nothing new until it's below the new count.
+
+**Light offset (8).** Not possible with the game's light system:
+- A glower's light is a `GlowLight` whose `position` is an `IntVec3`, set from `parent.Position` (`Verse.Glow/GlowLight`). The falloff is computed from whole-cell distances in a Burst-compiled job (`ComputeGlowGridsJob`). There's no field for a fractional offset, and the job can't reasonably be Harmony-patched.
+- No vanilla light offsets by a fraction. The wall lamps (`WallLamp`, `TorchWallLamp`) only offset their **graphic** onto the wall (`drawOffsetNorth`…): the light itself sits in the cell in front of the wall, in the lamp's own cell. The `offsetNorth`… values on the torch wall lamp are for its fire overlay, not the light.
+- So a 1×1 elevator is lit evenly around its centre. A 2×2 elevator's position is its south-west cell (for an even size the game rounds the centre down), so the light reaches further south-west than north-east.
+- **Possible workaround** (not done): for the large elevator, register four weaker lights, one per cell, instead of one. Lights in the glow grid add up (`CombineColorsJob.AddColors`), so four lights at about a quarter of the colour each give a pattern that's symmetric about the 2×2 centre, with roughly the same brightness. It needs three glow sources besides the elevator's own `CompGlower`. Each one needs its own thing (the grid tells lights apart by `thingIDNumber`), so three unspawned helper things with their own glower comps would be registered and deregistered with the elevator's glow. That's about 60 lines, and four lights recompute instead of one on each light change (state changes only, not per tick).
