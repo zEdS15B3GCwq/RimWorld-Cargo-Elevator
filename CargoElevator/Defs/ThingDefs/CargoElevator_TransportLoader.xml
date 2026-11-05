@@ -22,7 +22,7 @@
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
-    <designationCategory>Misc</designationCategory>
+    <designationCategory>CargoElevator</designationCategory>
     <canOverlapZones>false</canOverlapZones>
     <constructEffect>ConstructMetal</constructEffect>
     <statBases>

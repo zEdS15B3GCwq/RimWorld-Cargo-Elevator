@@ -2,7 +2,8 @@
 	<v1.6>
 		<li>/</li>
 		<li>1.6</li>
+		<!-- Build menu placement under Better Architect Menu (ferny.BetterArchitect): MultiFloors' tab if it is active, else BAM's Elevation tab. -->
+		<li IfModActiveAll="ferny.BetterArchitect,telardo.MultiFloors">Mods/BetterArchitectMenu_MultiFloors</li>
+		<li IfModActive="ferny.BetterArchitect" IfModNotActive="telardo.MultiFloors">Mods/BetterArchitectMenu</li>
 	</v1.6>
 </loadFolders>
-
-

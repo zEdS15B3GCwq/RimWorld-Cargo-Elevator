@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Better Architect Menu and MultiFloors: our buildings join MultiFloors' tab, which Better Architect Menu turns into
+     Structure > Elevation, next to MultiFloors' stairs and elevators. Our own tab is removed. -->
+<Patch>
+  <Operation Class="PatchOperationReplace">
+    <xpath>Defs/ThingDef[@Name="CargoElevatorBase" or defName="CargoElevator_TransportLoader"]/designationCategory</xpath>
+    <value>
+      <designationCategory>MultiFloors</designationCategory>
+    </value>
+  </Operation>
+  <Operation Class="PatchOperationRemove">
+    <xpath>Defs/DesignationCategoryDef[defName="CargoElevator"]</xpath>
+  </Operation>
+</Patch>

@@ -21,7 +21,7 @@
       <li>CargoElevator.ITab_ElevatorContents</li>
     </inspectorTabs>
     <canOverlapZones>false</canOverlapZones>
-    <designationCategory>Misc</designationCategory>
+    <designationCategory>CargoElevator</designationCategory>
     <placeWorkers>
       <li>CargoElevator.PlaceWorker_Elevator</li>
     </placeWorkers>

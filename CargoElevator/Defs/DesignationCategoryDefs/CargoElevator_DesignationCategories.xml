@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Our own architect tab, like MultiFloors has one. With Better Architect Menu the buildings move to its
+       Elevation tab instead and this def is removed (Mods/BetterArchitectMenu*, see loadFolders.xml). -->
+  <DesignationCategoryDef>
+    <defName>CargoElevator</defName>
+    <label>cargo elevator</label>
+    <description>Build cargo elevators that carry items between levels, and transport loaders that send chosen items, people and animals through them.</description>
+    <order>640</order> <!-- after MultiFloors (650), before Production (600); Structure is 700 -->
+    <specialDesignatorClasses>
+      <li>Designator_Cancel</li>
+      <li>Designator_Deconstruct</li>
+    </specialDesignatorClasses>
+  </DesignationCategoryDef>
+</Defs>
