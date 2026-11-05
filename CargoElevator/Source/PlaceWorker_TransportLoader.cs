@@ -77,19 +77,16 @@ public class PlaceWorker_TransportLoader : PlaceWorker
 
     public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
     {
-        using (ElevatorProfiler.Measure("PlaceWorker_TransportLoader.DrawGhost"))
+        Map map = Find.CurrentMap;
+        if (map == null)
         {
-            Map map = Find.CurrentMap;
-            if (map == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            EnsureCache(map);
-            if (cellsNextToElevators.Count > 0)
-            {
-                GenDraw.DrawFieldEdges(cellsNextToElevators, Color.green);
-            }
+        EnsureCache(map);
+        if (cellsNextToElevators.Count > 0)
+        {
+            GenDraw.DrawFieldEdges(cellsNextToElevators, Color.green);
         }
     }
 
@@ -97,29 +94,26 @@ public class PlaceWorker_TransportLoader : PlaceWorker
 
     public override void DrawPlaceMouseAttachments(float curX, ref float curY, BuildableDef def, IntVec3 center, Rot4 rot)
     {
-        using (ElevatorProfiler.Measure("PlaceWorker_TransportLoader.DrawPlaceMouseAttachments"))
+        Map map = Find.CurrentMap;
+        if (map == null)
         {
-            Map map = Find.CurrentMap;
-            if (map == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            // center is the cell under the mouse (a loader is 1x1).
-            EnsureCache(map);
-            if (!elevatorsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
-            {
-                return;
-            }
+        // center is the cell under the mouse (a loader is 1x1).
+        EnsureCache(map);
+        if (!elevatorsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
+        {
+            return;
+        }
 
-            if (elevatorsAtCell.Count == 1)
-            {
-                PlaceWorker_Elevator.DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperConnectsTo".Translate(elevatorsAtCell[0].LabelCap), Color.green);
-            }
-            else
-            {
-                PlaceWorker_Elevator.DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperSeveralElevators".Translate(), Color.green);
-            }
+        if (elevatorsAtCell.Count == 1)
+        {
+            PlaceWorker_Elevator.DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperConnectsTo".Translate(elevatorsAtCell[0].LabelCap), Color.green);
+        }
+        else
+        {
+            PlaceWorker_Elevator.DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperSeveralElevators".Translate(), Color.green);
         }
     }
 }

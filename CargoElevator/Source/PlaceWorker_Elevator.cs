@@ -112,23 +112,20 @@ public class PlaceWorker_Elevator : PlaceWorker
 
     public override void DrawGhost(ThingDef def, IntVec3 center, Rot4 rot, Color ghostCol, Thing thing = null)
     {
-        using (ElevatorProfiler.Measure("PlaceWorker.DrawGhost"))
+        Map map = Find.CurrentMap;
+        if (map == null)
         {
-            Map map = Find.CurrentMap;
-            if (map == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            EnsureCache(map, def);
-            if (targetCells.Count > 0)
-            {
-                GenDraw.DrawFieldEdges(targetCells, Color.green);
-            }
-            foreach ((Map _, CellRect overlap) in partialOverlaps)
-            {
-                DrawRectOutline(overlap, SimpleColor.Yellow);
-            }
+        EnsureCache(map, def);
+        if (targetCells.Count > 0)
+        {
+            GenDraw.DrawFieldEdges(targetCells, Color.green);
+        }
+        foreach ((Map _, CellRect overlap) in partialOverlaps)
+        {
+            DrawRectOutline(overlap, SimpleColor.Yellow);
         }
     }
 
@@ -151,30 +148,27 @@ public class PlaceWorker_Elevator : PlaceWorker
 
     public override void DrawPlaceMouseAttachments(float curX, ref float curY, BuildableDef def, IntVec3 center, Rot4 rot)
     {
-        using (ElevatorProfiler.Measure("PlaceWorker.DrawPlaceMouseAttachments"))
+        Map map = Find.CurrentMap;
+        if (map == null)
         {
-            Map map = Find.CurrentMap;
-            if (map == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            // center is the cell under the mouse.
-            EnsureCache(map, def as ThingDef);
-            if (targetsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
+        // center is the cell under the mouse.
+        EnsureCache(map, def as ThingDef);
+        if (targetsByCell.TryGetValue(center, out List<Building_Elevator> elevatorsAtCell))
+        {
+            foreach (Building_Elevator elevator in elevatorsAtCell)
             {
-                foreach (Building_Elevator elevator in elevatorsAtCell)
-                {
-                    DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperConnectsTo".Translate(LevelLabels.ElevatorLabel(elevator)), Color.green);
-                }
+                DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperConnectsTo".Translate(LevelLabels.ElevatorLabel(elevator)), Color.green);
             }
+        }
 
-            foreach ((Map otherMap, CellRect overlap) in partialOverlaps)
+        foreach ((Map otherMap, CellRect overlap) in partialOverlaps)
+        {
+            if (!overlap.Contains(center))
             {
-                if (!overlap.Contains(center))
-                {
-                    DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperOutsideMap".Translate(LevelLabels.LevelLabel(otherMap)), Color.yellow);
-                }
+                DrawMouseTextLine(curX, ref curY, "CargoElevator_HelperOutsideMap".Translate(LevelLabels.LevelLabel(otherMap)), Color.yellow);
             }
         }
     }

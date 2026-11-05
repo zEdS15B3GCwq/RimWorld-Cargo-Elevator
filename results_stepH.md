@@ -61,3 +61,32 @@ All texture paths named in defs and code were checked against the files after th
 
 - `5c49417` (before; `stepF`)
 - `1d01e96` H: rename DeepElevator to CargoElevator (`stepH`)
+
+**Human test (after 1.3):** the rename works without problems. The empty leftover folder was removed by hand. The repo folder is renamed by the human between sessions, along with refreshing `obj/` and `.vs/`.
+
+## 2. Decisions on `pre_stepH.md` (human, after the rename test)
+
+| `pre_stepH.md` §6 | Decision |
+| --- | --- |
+| 1. Build menu | Own category; under BAM, move to where MultiFloors' buildings go (task 5). **Add BAM to `loadAfter`.** |
+| 2. One drop-down button for both sizes | **No.** Drop-downs are for one building in different materials; the small and large elevators stay separate buttons. |
+| 3. Settings | Most of §4.2, with verbose logging. **No retry-delay setting.** **New:** a setting to turn off the loader's blink: the light then stays on steadily while items wait in it. |
+| 4. Logging | **Verbose logging setting** (pre_stepH §4.3), keeping the existing log lines. This replaces task 2 (removing repetitive lines), which is dropped. |
+| 5. Idle-switch sync | **Not added.** |
+
+## 3. Profiler removed (task 3)
+
+Removed: `ElevatorProfiler.cs`, `MapComponent_ElevatorProbe.cs`, and the four `using (ElevatorProfiler.Measure(...))` wrappers in `PlaceWorker_Elevator` (`DrawGhost`, `DrawPlaceMouseAttachments`) and `PlaceWorker_TransportLoader` (the same two). The bodies are unchanged, only un-indented.
+
+**What it did** (a Step A probe, from the "20000 `AllowsPlacing` calls per frame" investigation, results_stepA §3.2):
+- `ElevatorProfiler`: a stopwatch per named code section (call count, total and max milliseconds, an optional note). Only the four place-worker draw methods were still measured.
+- The hitch detector in `MapComponent_ElevatorProbe.MapComponentUpdate` (every frame, for the visible map): if a frame took longer than 150 ms while a build designator was selected or our measured code had run, it logged a warning "Hitch: previous frame took … ms … Our code during that frame: …" with the profiler's numbers; otherwise it cleared them each frame.
+- The same map component also logged `MapComponent.MapRemoved: map#… tile=…` when a map was removed (to check the order of map-removal callbacks in Step A).
+
+**What will be missing:**
+- No automatic "Hitch" warnings any more. A freeze while placing an elevator or a loader is no longer tied to (or ruled out for) our place workers by the log. If one is suspected later, a profiler such as Dubs Performance Analyzer does the same job better.
+- No `MapComponent.MapRemoved` line. Each elevator still logs its own `Notify_MyMapRemoved` (verbose) and unlinks, so link handling on map removal stays visible.
+- A per-frame cost goes away: one `MapComponentUpdate` call and the Stopwatch reads in the place workers (tiny, but it was debug code).
+- **Saves made since the rename** still list the removed map component, so loading one may log one error about a missing type `CargoElevator.MapComponent_ElevatorProbe`; the game drops it and goes on. New saves don't have it.
+
+Kept on purpose: `ElevatorDiagnostics` (two lines per elevator def at startup; now verbose-only, §4), the disabled "Pawn delivery refused" probe comment in `AcceptsPawnDelivery`, and the `Discard` lifecycle log.
