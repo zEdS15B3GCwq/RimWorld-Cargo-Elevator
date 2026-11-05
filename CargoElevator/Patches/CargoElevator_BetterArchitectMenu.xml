@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Build menu placement under Better Architect Menu (BAM). Patches run on the XML of all active mods at once, so the
+     checks below find BAM's and MultiFloors' tab defs whatever the load order; BAM's own MultiFloors patch only changes
+     that tab's label and nesting, which our buildings then follow. -->
+<Patch>
+  <!-- BAM is active: its Structure > Elevation tab exists. -->
+  <Operation Class="PatchOperationConditional">
+    <xpath>Defs/DesignationCategoryDef[defName="Ferny_Elevation"]</xpath>
+    <match Class="PatchOperationSequence">
+      <operations>
+        <li Class="PatchOperationConditional">
+          <xpath>Defs/DesignationCategoryDef[defName="MultiFloors"]</xpath>
+          <!-- With MultiFloors: its tab, which BAM shows as Structure > Elevation, next to MultiFloors' stairs and elevators. -->
+          <match Class="PatchOperationReplace">
+            <xpath>Defs/ThingDef[@Name="CargoElevatorBase" or defName="CargoElevator_TransportLoader"]/designationCategory</xpath>
+            <value>
+              <designationCategory>MultiFloors</designationCategory>
+            </value>
+          </match>
+          <!-- Without MultiFloors: BAM's own Elevation tab, the same place for the player. -->
+          <nomatch Class="PatchOperationReplace">
+            <xpath>Defs/ThingDef[@Name="CargoElevatorBase" or defName="CargoElevator_TransportLoader"]/designationCategory</xpath>
+            <value>
+              <designationCategory>Ferny_Elevation</designationCategory>
+            </value>
+          </nomatch>
+        </li>
+        <!-- Our own tab would stay empty. -->
+        <li Class="PatchOperationRemove">
+          <xpath>Defs/DesignationCategoryDef[defName="CargoElevator"]</xpath>
+        </li>
+      </operations>
+    </match>
+  </Operation>
+</Patch>

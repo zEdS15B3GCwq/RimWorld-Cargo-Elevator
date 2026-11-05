@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
   <!-- Our own architect tab, like MultiFloors has one. With Better Architect Menu the buildings move to its
-       Elevation tab instead and this def is removed (Mods/BetterArchitectMenu*, see loadFolders.xml). -->
+       Elevation tab instead and this def is removed (Patches/CargoElevator_BetterArchitectMenu.xml). -->
   <DesignationCategoryDef>
     <defName>CargoElevator</defName>
     <label>cargo elevator</label>
