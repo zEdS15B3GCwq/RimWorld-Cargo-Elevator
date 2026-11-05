@@ -1,22 +1,22 @@
-# DeepElevator – Step F preparation: visuals
+# CargoElevator – Step F preparation: visuals
 
 Findings for the human's decisions before `plan_stepF.md` was written. **Decisions (human):** icons wired as supplied (done before Step F, tested in game); one vanilla unload icon on both buildings; slots ±, Open transport menu, Cancel loading and the large menu icon stay vanilla or as they are; glow option C and the night-visible lights, whose files are supplied, are Step F (`plan_stepF.md`). The tables below show the current state after Step F (`results_stepF.md`): the state looks are the base sprite plus a lights-only overlay, and the full state sprites were removed. Basis: the `stepE` branch as of `5446e38`, the texture folder, and decompiled RimWorld 1.6 (`include/decompiled`). No game data folder was available on this machine, so vanilla def values below are from memory and marked as such. Nothing was run in game.
 
 ## 1. Textures and icons
 
-All mod textures are in `DeepElevator/Textures/Things/Buildings/DeepElevator/`. Paths below are relative to `Textures/`, without `.png`.
+All mod textures are in `CargoElevator/Textures/Things/Buildings/CargoElevator/`. Paths below are relative to `Textures/`, without `.png`.
 
 ### 1.1 Building sprites (all present)
 
 | Use | Path | Size | Referenced by |
 | --- | --- | --- | --- |
-| 1x1 elevator: base (off look, blueprint, ghost) | `.../DeepElevator` | 256x256 | def `texPath` |
-| 1x1 elevator: green / red state (lights-only overlay) | `.../DeepElevator_GreenLight`, `.../DeepElevator_RedLight` | 256x256 | def extension (`greenLightTexPath`, `redLightTexPath`) |
-| 1x1 elevator: build-menu icon | `.../DeepElevator_MenuIcon` | 256x256 | def `uiIconPath` |
-| Large elevator: base | `.../DeepElevator_Large` | 512x512 | def `texPath` |
-| Large elevator: green / red state (lights-only overlay) | `.../DeepElevator_Large_GreenLight`, `.../DeepElevator_Large_RedLight` | 512x512 | def extension |
-| Loader: base | `.../DeepElevatorLoader` | 256x256 | def `texPath` |
-| Loader: loading and waiting look (lights-only overlay) | `.../DeepElevatorLoader_OrangeLight` | 256x256 | `LoaderSettingsExtension` (`lightTexPath`) |
+| 1x1 elevator: base (off look, blueprint, ghost) | `.../CargoElevator` | 256x256 | def `texPath` |
+| 1x1 elevator: green / red state (lights-only overlay) | `.../CargoElevator_GreenLight`, `.../CargoElevator_RedLight` | 256x256 | def extension (`greenLightTexPath`, `redLightTexPath`) |
+| 1x1 elevator: build-menu icon | `.../CargoElevator_MenuIcon` | 256x256 | def `uiIconPath` |
+| Large elevator: base | `.../CargoElevator_Large` | 512x512 | def `texPath` |
+| Large elevator: green / red state (lights-only overlay) | `.../CargoElevator_Large_GreenLight`, `.../CargoElevator_Large_RedLight` | 512x512 | def extension |
+| Loader: base | `.../CargoElevatorLoader` | 256x256 | def `texPath` |
+| Loader: loading and waiting look (lights-only overlay) | `.../CargoElevatorLoader_OrangeLight` | 256x256 | `LoaderSettingsExtension` (`lightTexPath`) |
 
 All overlays are drawn with `TransparentPostLight` (§2.4).
 
@@ -28,13 +28,13 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 
 | Gizmo | Vanilla fallback or icon | File | Status |
 | --- | --- | --- | --- |
-| Connect to... | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.ElevatorConnect`) | `DeepElevator_ConnectToIcon` | wired, tested |
-| Go to partner | vanilla `UI/Widgets/Search` | `DeepElevator_GoToPartnerIcon` | wired, tested |
+| Connect to... | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.ElevatorConnect`) | `CargoElevator_ConnectToIcon` | wired, tested |
+| Go to partner | vanilla `UI/Widgets/Search` | `CargoElevator_GoToPartnerIcon` | wired, tested |
 | Unload | vanilla pod and shuttle unload icon (`CompTransporter.CancelLoadCommandTex`) | none | vanilla, decided |
-| FIFO toggle | vanilla `TexCommand.HoldOpen` | `DeepElevator_FIFOIcon` | wired, tested |
-| Merge toggle | vanilla `TexCommand.GatherSpotActive` | `DeepElevator_MergeIcon` | wired, tested |
-| Drop on floor toggle | vanilla `TexCommand.ForbidOff` | `DeepElevator_DropNearbyIcon` | wired, tested |
-| Allow insert toggle | vanilla `TexCommand.Install` | `DeepElevator_InsertIcon` | wired, tested |
+| FIFO toggle | vanilla `TexCommand.HoldOpen` | `CargoElevator_FIFOIcon` | wired, tested |
+| Merge toggle | vanilla `TexCommand.GatherSpotActive` | `CargoElevator_MergeIcon` | wired, tested |
+| Drop on floor toggle | vanilla `TexCommand.ForbidOff` | `CargoElevator_DropNearbyIcon` | wired, tested |
+| Allow insert toggle | vanilla `TexCommand.Install` | `CargoElevator_InsertIcon` | wired, tested |
 | Slots − | vanilla `TexButton.Minus` | none | vanilla, decided |
 | Slots + | vanilla `TexButton.Plus` | none | vanilla, decided |
 | Build loader | the loader's build-menu icon, which is its sprite (no `uiIconPath`) | none | as is |
@@ -47,9 +47,9 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 | Open transport menu | vanilla `UI/Commands/LoadTransporter` (`ElevatorTextures.LoaderEnter`) | none | vanilla, decided. The code recognises this command by its icon reference |
 | Cancel loading | vanilla `MapPortal` cancel icon (private, red X) | none | vanilla, decided |
 | Unload all | vanilla pod and shuttle unload icon, as on the elevator | none | vanilla, decided |
-| Transfer items to elevator | vanilla `TexCommand.SelectCarriedThing` | `DeepElevatorLoader_TransferToElevatorIcon` | wired, tested |
-| Priority (5 levels) | vanilla `TexButton.ReorderUp` | `DeepElevatorLoader_Priority{Low,Normal,Preferred,Important,Critical}` | wired, tested |
-| Connect to... | the same as the elevator's Connect to... | `DeepElevatorLoader_ConnectToIcon` | wired, tested |
+| Transfer items to elevator | vanilla `TexCommand.SelectCarriedThing` | `CargoElevatorLoader_TransferToElevatorIcon` | wired, tested |
+| Priority (5 levels) | vanilla `TexButton.ReorderUp` | `CargoElevatorLoader_Priority{Low,Normal,Preferred,Important,Critical}` | wired, tested |
+| Connect to... | the same as the elevator's Connect to... | `CargoElevatorLoader_ConnectToIcon` | wired, tested |
 | DEV gizmo | none | none | |
 
 **Other**
@@ -80,10 +80,10 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 
 | Option | What it does | Code | Assets |
 | --- | --- | --- | --- |
-| **A. Steady lamp while powered** | Lit whenever the elevator has power, also when disconnected or idle | **None:** about 5 lines of XML in `DeepElevatorBase` | none |
+| **A. Steady lamp while powered** | Lit whenever the elevator has power, also when disconnected or idle | **None:** about 5 lines of XML in `CargoElevatorBase` | none |
 | B. Lamp while operational | Lit only when connected and both ends powered | small: `Building_Elevator` implements `IThingGlower`, and the status update calls `UpdateLit` when it changes | none |
 | C. Lamp in the status colour | Green while working, red while blocked; off when disconnected or unpowered | small: B plus `GlowColor` and `ForceRegister` on a status change, and a two-colour table | none. The colours must match the sprite lights, so they're chosen to match the PNGs |
-| D. Player toggle per elevator | A light on/off gizmo, saved | small, on top of A, B or C | **one icon**, `DeepElevator_LightIcon` |
+| D. Player toggle per elevator | A light on/off gizmo, saved | small, on top of A, B or C | **one icon**, `CargoElevator_LightIcon` |
 
 - **Blinking** isn't needed any more. Step D's glow notes planned it for the loading state, which E1 removed. The elevator's green and red are steady now.
 - **The loader** could glow orange while loading in the same way, but it has no power comp. It would need B-style code, and I'd leave it out unless you want it.
@@ -101,8 +101,8 @@ Every supplied icon is wired and tested in game. Each loads with a fallback to t
 Before Step F, the state overlays were drawn with the `Cutout` shader (`ElevatorUtil.LoadOverlayGraphic`), so they darkened at night like the rest of the sprite. A light that should look bright in the dark needs a self-lit shader, `ShaderDatabase.TransparentPostLight`, which exists in 1.6 and is drawn after lighting.
 
 But the overlays are full sprites of the whole building. A full sprite drawn with that shader would make the whole elevator look lit. This needs **lights-only overlays**: same canvas, transparent except the lamp pixels and a faint spill. The human supplied them:
-- `DeepElevator_GreenLight`, `DeepElevator_RedLight` (256x256)
-- `DeepElevator_Large_GreenLight`, `DeepElevator_Large_RedLight` (512x512)
+- `CargoElevator_GreenLight`, `CargoElevator_RedLight` (256x256)
+- `CargoElevator_Large_GreenLight`, `CargoElevator_Large_RedLight` (512x512)
 
 The code change is small: the overlay loader takes the shader, and the def extension takes the new paths. This is independent of the glow and can be combined with any option above.
 

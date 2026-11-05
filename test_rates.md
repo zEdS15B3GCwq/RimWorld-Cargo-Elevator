@@ -1,6 +1,6 @@
-# DeepElevator – rate test (Step D)
+# CargoElevator – rate test (Step D)
 
-Temporary measurement after Step D. The probe code lives on a git snapshot and is restored away afterwards (human). Raw log excerpts: `rate_test_small.log` (1x1, `DeepElevator_Elevator`), `rate_test_large.log` (2x2, `DeepElevator_ElevatorLarge`).
+Temporary measurement after Step D. The probe code lives on a git snapshot and is restored away afterwards (human). Raw log excerpts: `rate_test_small.log` (1x1, `CargoElevator_Elevator`), `rate_test_large.log` (2x2, `CargoElevator_ElevatorLarge`).
 
 ## 1. Goal
 Confirm the configured send rates in the game: 1 piece/s for the 1x1 (`ticksPerStack` 60), 4 pieces/s for the large one (15 ticks). Find out how fast pawns can deliver into the intake cells, in total and per cell, and whether the large elevator's 4 intake cells really allow parallel deliveries.

@@ -1,4 +1,4 @@
-# DeepElevator – Step C implementation spec (handoff)
+# CargoElevator – Step C implementation spec (handoff)
 
 > **Status: implemented and tested** (see `results_stepC.md`). Kept as the original spec. Differences from the as-built state:
 > - The rename goes through the vanilla `IRenameable` inspect-pane button (via an explicit `IStorageGroupMember` re-implementation); the Rename gizmo is gone.
@@ -18,11 +18,11 @@ Read `plan.md` (rev 7) first, especially §1 "Storage handling and requests", "T
 - There's Unload and a contents tab.
 - Every main step is logged.
 
-**Done when:** `dotnet build` (Debug) gives 0 errors / 0 warnings; `DeepElevator\1.6\Assemblies\` contains only `DeepElevator.dll` (+ `.pdb`); the human test checklist (§9) can be run. The human tests in game; the agent only builds. **No git commits.** Backwards compatibility with Step B saves is not required (start a new game, or remove and rebuild elevators).
+**Done when:** `dotnet build` (Debug) gives 0 errors / 0 warnings; `CargoElevator\1.6\Assemblies\` contains only `CargoElevator.dll` (+ `.pdb`); the human test checklist (§9) can be run. The human tests in game; the agent only builds. **No git commits.** Backwards compatibility with Step B saves is not required (start a new game, or remove and rebuild elevators).
 
 ## 0. Environment / conventions
-- Same as Step B: SDK-style `DeepElevator.csproj` (`net472`, LangVersion latest; references Assembly-CSharp, UnityEngine.CoreModule, UnityEngine.IMGUIModule). Build: `dotnet build DeepElevator.csproj`. Decompiler: `dotnet ilspycmd -t <Type> "C:\Games\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll"`, **run from the repo root**.
-- Follow the existing code style (file-scoped namespace `DeepElevator`, XML doc comments, section comments). Log through `ElevatorUtil.Log` / `LogWarn`, using `LogId` for the elevator, `LevelLabels.LevelLabel` / `ElevatorUtil.MapDesc` for maps, and `thing.LabelCap` + `stackCount` for items.
+- Same as Step B: SDK-style `CargoElevator.csproj` (`net472`, LangVersion latest; references Assembly-CSharp, UnityEngine.CoreModule, UnityEngine.IMGUIModule). Build: `dotnet build CargoElevator.csproj`. Decompiler: `dotnet ilspycmd -t <Type> "C:\Games\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll"`, **run from the repo root**.
+- Follow the existing code style (file-scoped namespace `CargoElevator`, XML doc comments, section comments). Log through `ElevatorUtil.Log` / `LogWarn`, using `LogId` for the elevator, `LevelLabels.LevelLabel` / `ElevatorUtil.MapDesc` for maps, and `thing.LabelCap` + `stackCount` for items.
 - **Performance rule:** `Accepts` is called by the game during haul searches; keep it O(number of buffer entries) at most, with no allocations and **no logging** except the change-detected refusal log (§5.2). `Tick()` must exit early when idle.
 
 ## 1. Facts this step relies on (verified, see plan.md §2)
@@ -44,14 +44,14 @@ Read `plan.md` (rev 7) first, especially §1 "Storage handling and requests", "T
 
 ## 2. Def / data changes
 
-### 2.1 `DeepElevator\Defs\ThingDefs\DeepElevator_Elevator.xml`
+### 2.1 `CargoElevator\Defs\ThingDefs\CargoElevator_Elevator.xml`
 Change / add (keep everything else from Step B):
 ```xml
 <tickerType>Normal</tickerType>
 <surfaceType>Item</surfaceType>
 <inspectorTabs>
   <li>ITab_Storage</li>
-  <li>DeepElevator.ITab_ElevatorContents</li>
+  <li>CargoElevator.ITab_ElevatorContents</li>
 </inspectorTabs>
 <building>
   <destroySound>BuildingDestroyed_Metal_Medium</destroySound>
@@ -81,7 +81,7 @@ Change / add (keep everything else from Step B):
   </li>
 </comps>
 <modExtensions>
-  <li Class="DeepElevator.ElevatorSettingsExtension">
+  <li Class="CargoElevator.ElevatorSettingsExtension">
     <defaultSlots>4</defaultSlots>
     <minSlots>1</minSlots>
     <maxSlots>20</maxSlots>
@@ -111,31 +111,31 @@ public class ElevatorSettingsExtension : DefModExtension
 ```
 `Building_Elevator.Settings => def.GetModExtension<ElevatorSettingsExtension>() ?? DefaultSettings` (static fallback instance, cached field).
 
-### 2.3 Language keys (add to `DeepElevator.xml`)
+### 2.3 Language keys (add to `CargoElevator.xml`)
 ```xml
-<DeepElevator_BufferSlots>Buffer: {0} / {1} slots</DeepElevator_BufferSlots>
-<DeepElevator_BufferMode>Order: {0}, stacks: {1}</DeepElevator_BufferMode>
-<DeepElevator_ModeFifo>first in, first out</DeepElevator_ModeFifo>
-<DeepElevator_ModeAnyOrder>first deliverable</DeepElevator_ModeAnyOrder>
-<DeepElevator_MergeOn>merged</DeepElevator_MergeOn>
-<DeepElevator_MergeOff>separate</DeepElevator_MergeOff>
-<DeepElevator_Holding>Holding {0}: {1}</DeepElevator_Holding>
-<DeepElevator_HoldTargetsFull>all accepting storage at the destination is full</DeepElevator_HoldTargetsFull>
-<DeepElevator_HoldNoDropCell>no free cell to put it down at the destination</DeepElevator_HoldNoDropCell>
-<DeepElevator_HoldNotConnected>not connected</DeepElevator_HoldNotConnected>
-<DeepElevator_HoldDropDisabled>no storage accepts it and dropping on the floor is off</DeepElevator_HoldDropDisabled>
-<DeepElevator_Unload>Unload</DeepElevator_Unload>
-<DeepElevator_UnloadDesc>Put everything in this elevator's buffer down nearby. Pawns will haul it to storage.</DeepElevator_UnloadDesc>
-<DeepElevator_UnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the elevator.</DeepElevator_UnloadIncomplete>
-<DeepElevator_ToggleFifo>First in, first out</DeepElevator_ToggleFifo>
-<DeepElevator_ToggleFifoDesc>On: the buffer is sent strictly in order; if the first entry can't be delivered, everything waits. Off: the first entry that can be delivered is sent.</DeepElevator_ToggleFifoDesc>
-<DeepElevator_ToggleMerge>Merge stacks</DeepElevator_ToggleMerge>
-<DeepElevator_ToggleMergeDesc>On: arriving items join any buffered stack of the same kind. Off: every arrival is kept as its own entry.</DeepElevator_ToggleMergeDesc>
-<DeepElevator_ToggleDrop>Drop on floor</DeepElevator_ToggleDrop>
-<DeepElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</DeepElevator_ToggleDropDesc>
-<DeepElevator_SlotsLess>Fewer slots</DeepElevator_SlotsLess>
-<DeepElevator_SlotsMore>More slots</DeepElevator_SlotsMore>
-<DeepElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</DeepElevator_SlotsDesc>
+<CargoElevator_BufferSlots>Buffer: {0} / {1} slots</CargoElevator_BufferSlots>
+<CargoElevator_BufferMode>Order: {0}, stacks: {1}</CargoElevator_BufferMode>
+<CargoElevator_ModeFifo>first in, first out</CargoElevator_ModeFifo>
+<CargoElevator_ModeAnyOrder>first deliverable</CargoElevator_ModeAnyOrder>
+<CargoElevator_MergeOn>merged</CargoElevator_MergeOn>
+<CargoElevator_MergeOff>separate</CargoElevator_MergeOff>
+<CargoElevator_Holding>Holding {0}: {1}</CargoElevator_Holding>
+<CargoElevator_HoldTargetsFull>all accepting storage at the destination is full</CargoElevator_HoldTargetsFull>
+<CargoElevator_HoldNoDropCell>no free cell to put it down at the destination</CargoElevator_HoldNoDropCell>
+<CargoElevator_HoldNotConnected>not connected</CargoElevator_HoldNotConnected>
+<CargoElevator_HoldDropDisabled>no storage accepts it and dropping on the floor is off</CargoElevator_HoldDropDisabled>
+<CargoElevator_Unload>Unload</CargoElevator_Unload>
+<CargoElevator_UnloadDesc>Put everything in this elevator's buffer down nearby. Pawns will haul it to storage.</CargoElevator_UnloadDesc>
+<CargoElevator_UnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the elevator.</CargoElevator_UnloadIncomplete>
+<CargoElevator_ToggleFifo>First in, first out</CargoElevator_ToggleFifo>
+<CargoElevator_ToggleFifoDesc>On: the buffer is sent strictly in order; if the first entry can't be delivered, everything waits. Off: the first entry that can be delivered is sent.</CargoElevator_ToggleFifoDesc>
+<CargoElevator_ToggleMerge>Merge stacks</CargoElevator_ToggleMerge>
+<CargoElevator_ToggleMergeDesc>On: arriving items join any buffered stack of the same kind. Off: every arrival is kept as its own entry.</CargoElevator_ToggleMergeDesc>
+<CargoElevator_ToggleDrop>Drop on floor</CargoElevator_ToggleDrop>
+<CargoElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</CargoElevator_ToggleDropDesc>
+<CargoElevator_SlotsLess>Fewer slots</CargoElevator_SlotsLess>
+<CargoElevator_SlotsMore>More slots</CargoElevator_SlotsMore>
+<CargoElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</CargoElevator_SlotsDesc>
 ```
 
 ## 3. `Building_Elevator` becomes storage
@@ -280,7 +280,7 @@ Disabled when the buffer is empty (`Disable("…")`). It works while disconnecte
 Implementation: for each entry, from the back, as `TryDropAll` does: `Buffer.TryDrop(e, Position, Map, ThingPlaceMode.Near, out _, null, UnloadValidator)`.
 - `UnloadValidator(c, map, thing)` = `!c.Fogged(map)`; never a cell of any `Building_Elevator` (it would absorb and send the item); and if `c` is a storage cell (stockpile zone or shelf), only if that storage accepts the item (`c.GetSlotGroup(map).parent.Accepts(thing)`). That's the same principle as for delivery: storage is only used when it would take the item. Plain floor and stacking onto same-kind items are allowed, as in vanilla. Unlike delivery drops (§7.1), it isn't limited to adjacent cells.
 - `TryDrop` splits stacks above `def.stackLimit` itself (it places stack by stack).
-- Afterwards, if the buffer still has entries: `Messages.Message("DeepElevator_UnloadIncomplete".Translate(LabelCap, Buffer.Count), this, MessageTypeDefOf.RejectInput, historical: false)` + `LogWarn`.
+- Afterwards, if the buffer still has entries: `Messages.Message("CargoElevator_UnloadIncomplete".Translate(LabelCap, Buffer.Count), this, MessageTypeDefOf.RejectInput, historical: false)` + `LogWarn`.
 - Log `Unloaded: {LogId} {placed} entr(y/ies) dropped, {left} left`.
 
 ### 7.3 New `Source\ITab_ElevatorContents.cs`
@@ -313,7 +313,7 @@ public class ITab_ElevatorContents : ITab_ContentsTransporter
   - Icons: vanilla placeholders (e.g. `TexButton.Drop`, `TexCommand.ForbidOff`-style). Final icons are on the to-do-later list.
   - **DEV: log buffer state:** entries with index, label, count, slots; used/max; mode; nextSendTick; hold reason; the current candidate list for the head entry.
 
-`GetInspectString()`: base (it includes the `CompTransporter` "Contents: …" line and the `Building_Storage` text) + the Step B link lines + `DeepElevator_BufferSlots` (used, max) + `DeepElevator_BufferMode` + `DeepElevator_Holding` when `holdReason != null`. All cheap: one pass over the entries.
+`GetInspectString()`: base (it includes the `CompTransporter` "Contents: …" line and the `Building_Storage` text) + the Step B link lines + `CargoElevator_BufferSlots` (used, max) + `CargoElevator_BufferMode` + `CargoElevator_Holding` when `holdReason != null`. All cheap: one pass over the entries.
 
 `ElevatorDiagnostics` startup line: also print `surfaceType`, `maxItemsInCell`, whether the def has `CompProperties_Transporter` and the extension values.
 

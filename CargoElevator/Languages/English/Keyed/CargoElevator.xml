@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <CargoElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other levels. Use "Connect to...".</CargoElevator_CandidatesAvailable>
+  <CargoElevator_Connect>Connect to...</CargoElevator_Connect>
+  <CargoElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another level. The link cannot be changed afterwards.</CargoElevator_ConnectDesc>
+  <CargoElevator_MsgLinked>Elevator connected to {0}.</CargoElevator_MsgLinked>
+  <CargoElevator_MsgUnlinked>Elevator lost its connection to {0}.</CargoElevator_MsgUnlinked>
+
+  <!-- Level labels: {0} = depth in metres, {1} = player-given layer name. -->
+  <CargoElevator_DeepRimDepth>{0}m</CargoElevator_DeepRimDepth>
+  <CargoElevator_DeepRimDepthNamed>{0}m {1}</CargoElevator_DeepRimDepthNamed>
+  <CargoElevator_TagDeepRim>DeepRim</CargoElevator_TagDeepRim>
+  <CargoElevator_TagMultiFloors>MultiFloors</CargoElevator_TagMultiFloors>
+  <CargoElevator_LabelWithTag>{0} ({1})</CargoElevator_LabelWithTag>
+  <CargoElevator_LabelSeparator>, </CargoElevator_LabelSeparator>
+  <!-- {0} = map id, {1} = the label of the map's level. -->
+  <CargoElevator_MapPrefix>map{0} - {1}</CargoElevator_MapPrefix>
+  <CargoElevator_Surface>surface</CargoElevator_Surface>
+  <CargoElevator_VanillaLabel>{0} (map {1})</CargoElevator_VanillaLabel>
+  <!-- {0} = the elevator's custom name, {1} = its level label. -->
+  <CargoElevator_ElevatorOnLevel>{0} on {1}</CargoElevator_ElevatorOnLevel>
+
+  <CargoElevator_HelperConnectsTo>Connects to: {0}</CargoElevator_HelperConnectsTo>
+  <!-- {0} = level label of the smaller map that doesn't reach the hovered cell. -->
+  <CargoElevator_HelperOutsideMap>Outside the boundaries of {0}</CargoElevator_HelperOutsideMap>
+
+  <CargoElevator_GoToPartner>Go to partner</CargoElevator_GoToPartner>
+  <CargoElevator_GoToPartnerDesc>Jump to the linked elevator on the other level.</CargoElevator_GoToPartnerDesc>
+
+  <!-- Step C: buffer, modes, holding -->
+  <CargoElevator_BufferSlots>Buffer: {0} / {1} stacks</CargoElevator_BufferSlots>
+  <!-- {0} = the held stacks with their short reasons. -->
+  <CargoElevator_Paused>Transfer paused: {0}.</CargoElevator_Paused>
+  <CargoElevator_PausedStorageFull>storage full</CargoElevator_PausedStorageFull>
+  <CargoElevator_PausedNoStorage>no storage</CargoElevator_PausedNoStorage>
+  <CargoElevator_PausedFifoWaiting>FIFO on</CargoElevator_PausedFifoWaiting>
+  <CargoElevator_PausedNotConnected>not connected</CargoElevator_PausedNotConnected>
+  <!-- Either end unpowered. -->
+  <CargoElevator_PausedNoPower>no power</CargoElevator_PausedNoPower>
+  <!-- Replace the item list when one reason applies to every held stack, or to all stacks behind the FIFO head. -->
+  <CargoElevator_PausedAllItems>all items</CargoElevator_PausedAllItems>
+  <CargoElevator_PausedAllOthers>all others</CargoElevator_PausedAllOthers>
+  <CargoElevator_Unload>Unload</CargoElevator_Unload>
+  <CargoElevator_UnloadDesc>Put everything in this elevator's buffer down nearby. Pawns will haul it to storage.</CargoElevator_UnloadDesc>
+  <CargoElevator_UnloadEmpty>The buffer is empty.</CargoElevator_UnloadEmpty>
+  <CargoElevator_UnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the elevator.</CargoElevator_UnloadIncomplete>
+  <CargoElevator_ToggleFifo>First in, first out</CargoElevator_ToggleFifo>
+  <CargoElevator_ToggleFifoDesc>On: the buffer is sent strictly in order; if the first entry can't be delivered, everything waits. Off: the first entry that can be delivered is sent.</CargoElevator_ToggleFifoDesc>
+  <CargoElevator_ToggleMerge>Merge stacks</CargoElevator_ToggleMerge>
+  <CargoElevator_ToggleMergeDesc>On: arriving items join any buffered stack of the same kind. Off: every arrival is kept as its own entry.</CargoElevator_ToggleMergeDesc>
+  <CargoElevator_ToggleDrop>Drop on floor near target</CargoElevator_ToggleDrop>
+  <CargoElevator_ToggleDropDesc>On: items that no storage next to the linked elevator accepts are put down on a free cell next to it. Off: such items wait in this elevator.</CargoElevator_ToggleDropDesc>
+  <CargoElevator_ToggleInsert>Allow insert</CargoElevator_ToggleInsert>
+  <CargoElevator_ToggleInsertDesc>On: colonists haul items into this elevator. Off: colonists leave it alone, so it only receives from conveyor belts and other mods. Items already on their way still arrive. Transport loaders are not affected: this elevator still pulls from them.</CargoElevator_ToggleInsertDesc>
+  <CargoElevator_SlotsLess>Fewer slots</CargoElevator_SlotsLess>
+  <CargoElevator_SlotsMore>More slots</CargoElevator_SlotsMore>
+  <!-- Step D: status line. {0} = status text, {1} = partner label (ElevatorLabel). -->
+  <CargoElevator_StatusLinked>Status: {0}, connected to {1}</CargoElevator_StatusLinked>
+  <CargoElevator_StatusUnlinked>Status: {0}</CargoElevator_StatusUnlinked>
+  <CargoElevator_StatusDisconnected>disconnected</CargoElevator_StatusDisconnected>
+  <CargoElevator_StatusNoPower>no power</CargoElevator_StatusNoPower>
+  <CargoElevator_StatusPartnerUnpowered>partner unpowered</CargoElevator_StatusPartnerUnpowered>
+  <!-- Disconnected and unpowered at once: {0} = no power text, {1} = disconnected text. -->
+  <CargoElevator_StatusUnpoweredDisconnected>{0}, {1}</CargoElevator_StatusUnpoweredDisconnected>
+  <CargoElevator_StatusBlocked>blocked</CargoElevator_StatusBlocked>
+  <CargoElevator_StatusActive>active</CargoElevator_StatusActive>
+  <CargoElevator_StatusIdle>idle</CargoElevator_StatusIdle>
+  <CargoElevator_SlotsDesc>Buffer size in slots. A slot holds one full stack. Currently {0}.</CargoElevator_SlotsDesc>
+  <!-- Step E1: transport loader -->
+  <CargoElevator_MsgLoaderLinked>Transport loader linked to {0}.</CargoElevator_MsgLoaderLinked>
+  <CargoElevator_MsgLoaderUnlinked>Transport loader lost its elevator. Loading continues, but nothing is transferred until you turn "Transfer items to elevator" back on.</CargoElevator_MsgLoaderUnlinked>
+  <CargoElevator_LoaderNeedsLink>The loader is not linked to an elevator. Build it next to one, or use "Connect to...".</CargoElevator_LoaderNeedsLink>
+  <CargoElevator_ToggleTransfer>Transfer items to elevator</CargoElevator_ToggleTransfer>
+  <CargoElevator_ToggleTransferDesc>On: the linked elevator takes loaded items out of this loader as soon as it has room. Off: loaded items stay here until you unload them.</CargoElevator_ToggleTransferDesc>
+  <!-- {0} = the current priority level. -->
+  <CargoElevator_LoaderPriority>Priority: {0}</CargoElevator_LoaderPriority>
+  <CargoElevator_LoaderPriorityDesc>When several loaders are linked to one elevator, the elevator takes items from the higher priority loader first.</CargoElevator_LoaderPriorityDesc>
+  <CargoElevator_LoaderConnectDesc>Link this loader to one of the elevators next to it. The link stays until one of them is removed.</CargoElevator_LoaderConnectDesc>
+  <!-- {0} = elevator label, {1} = direction from the loader. -->
+  <CargoElevator_LoaderLinkedTo>Linked to: {0} ({1})</CargoElevator_LoaderLinkedTo>
+  <CargoElevator_DirectionNorth>north</CargoElevator_DirectionNorth>
+  <CargoElevator_DirectionEast>east</CargoElevator_DirectionEast>
+  <CargoElevator_DirectionSouth>south</CargoElevator_DirectionSouth>
+  <CargoElevator_DirectionWest>west</CargoElevator_DirectionWest>
+  <!-- Parts of the loader's status line, joined with "; ". -->
+  <CargoElevator_LoaderStatusLoading>loading</CargoElevator_LoaderStatusLoading>
+  <CargoElevator_LoaderStatusNotLinked>not linked</CargoElevator_LoaderStatusNotLinked>
+  <CargoElevator_LoaderStatusTransferOff>transfer off</CargoElevator_LoaderStatusTransferOff>
+  <CargoElevator_LoaderStatusCannotAccept>elevator cannot accept</CargoElevator_LoaderStatusCannotAccept>
+  <CargoElevator_LoaderStatusTransferring>transferring items</CargoElevator_LoaderStatusTransferring>
+  <!-- Step E2: portal loader. -->
+  <CargoElevator_LoaderPairDown>the elevator is not connected or has no power</CargoElevator_LoaderPairDown>
+  <!-- {0} = pawn name, {1} = loader label. -->
+  <CargoElevator_MsgLoaderPawnReturned>{0} could not go through {1}: the elevator is not connected or has no power. Put down next to the loader.</CargoElevator_MsgLoaderPawnReturned>
+  <!-- {0} = loader label, {1} = number of stacks. -->
+  <CargoElevator_LoaderUnloadIncomplete>{0}: no room nearby for {1} item stack(s); they stay in the loader.</CargoElevator_LoaderUnloadIncomplete>
+  <!-- Step E2 tests: wording. The order tab and its cancel button belong to the vanilla portal; these replace "Travel" and "Cancel entering". -->
+  <CargoElevator_TabLoaderOrder>Loading</CargoElevator_TabLoaderOrder>
+  <CargoElevator_LoaderCancelOrder>Cancel loading</CargoElevator_LoaderCancelOrder>
+  <CargoElevator_LoaderOrderHeader>Still to be sent</CargoElevator_LoaderOrderHeader>
+  <CargoElevator_LoaderElevatorNotConnected>The linked elevator is not connected to an elevator on another level.</CargoElevator_LoaderElevatorNotConnected>
+  <CargoElevator_LoaderStatusTransferOn>transfer on</CargoElevator_LoaderStatusTransferOn>
+  <!-- {0} = the current priority level. -->
+  <CargoElevator_LoaderStatusPriority>priority: {0}</CargoElevator_LoaderStatusPriority>
+  <!-- Closes the elevator's status line. {0} = number of linked loaders, {1} = their directions, e.g. "N, ESE". -->
+  <CargoElevator_StatusLoaders>{0} loaders: {1}</CargoElevator_StatusLoaders>
+  <CargoElevator_StatusLoaderSingle>{0} loader: {1}</CargoElevator_StatusLoaderSingle>
+  <!-- Compass letters; a direction is these put together (NNW, ESE, ...). -->
+  <CargoElevator_CompassN>N</CargoElevator_CompassN>
+  <CargoElevator_CompassE>E</CargoElevator_CompassE>
+  <CargoElevator_CompassS>S</CargoElevator_CompassS>
+  <CargoElevator_CompassW>W</CargoElevator_CompassW>
+  <!-- The loader's command that opens the vanilla portal dialog. -->
+  <CargoElevator_LoaderOpenMenu>Open transport menu</CargoElevator_LoaderOpenMenu>
+  <CargoElevator_LoaderOpenMenuDesc>Choose what to send through the elevator: items, people and animals. While an order is in progress, this also changes it.</CargoElevator_LoaderOpenMenuDesc>
+  <CargoElevator_HelperSeveralElevators>Several elevators: use Connect to...</CargoElevator_HelperSeveralElevators>
+</LanguageData>

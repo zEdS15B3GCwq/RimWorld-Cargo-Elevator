@@ -1,10 +1,10 @@
-# DeepElevator – Step B results
+# CargoElevator – Step B results
 
 Spec: `plan_stepB.md`. Overall: **functionally successful in the first test round.** Linking across the surface, DeepRim (DR) layers and MultiFloors (MF) levels, renaming, labels, the placement helper, and all destruction paths worked as specified. No lag, no `Validation:` warnings. The change requests from round 1 (section 4) and the wording change after round 2 (4.6) are implemented and confirmed in game. Only pocket maps and the provider-fallback check remain untested (section 7).
 
 ## 1. What was implemented
 
-Everything in `plan_stepB.md` §2–§7. Build: `dotnet build` (Debug) gives 0 errors / 0 warnings; `DeepElevator/1.6/Assemblies/` contains only `DeepElevator.dll` + `.pdb`; no source file references DeepRim or MultiFloors types at compile time (only our own provider class names contain the words).
+Everything in `plan_stepB.md` §2–§7. Build: `dotnet build` (Debug) gives 0 errors / 0 warnings; `CargoElevator/1.6/Assemblies/` contains only `CargoElevator.dll` + `.pdb`; no source file references DeepRim or MultiFloors types at compile time (only our own provider class names contain the words).
 
 - Removed: DeepRim reference and `modDependencies`, `FindAnchor` and helpers, `LayerLabel`, `TryGetKey`, `AllowsPlacing` and its caller-report probe in the place worker.
 - New: `LevelLabels` (+ `ILevelLabelProvider`), `DeepRimLabelProvider`, `MultiFloorsLabelProvider`, `Dialog_RenameElevator`.
@@ -57,22 +57,22 @@ Everything in `plan_stepB.md` §2–§7. Build: `dotnet build` (Debug) gives 0 e
 
 - MF labels every map that an MF stack starts from as level 0, "G": the surface, but also a DR layer where stairs were built.
   - Result: a DR layer with stairs is labelled "90m (DeepRim), G (MultiFloors)". Both providers succeed on it, as designed in the spec (§4.2, last bullet).
-  - Log example: `State: DeepElevator_Elevator4562452 on map#0 (G (MultiFloors)) offset=(41, 0, -3) root=map#0 partner=DeepElevator_Elevator4541125 partnerMap=map#27 (90m (DeepRim), G (MultiFloors)) valid=yes candidates=0`. The surface itself is also shown as "G (MultiFloors)".
+  - Log example: `State: CargoElevator_Elevator4562452 on map#0 (G (MultiFloors)) offset=(41, 0, -3) root=map#0 partner=CargoElevator_Elevator4541125 partnerMap=map#27 (90m (DeepRim), G (MultiFloors)) valid=yes candidates=0`. The surface itself is also shown as "G (MultiFloors)".
 - A DR shaft built on an MF level reuses DR's depth numbering (e.g. "10m"), although that level is below a 90m DR layer. This is DR's own naming and not our problem.
 - DR does not label origin maps, so nothing similar happens on the DR side.
 - **Decision:** the "G" label is a ground-level marker, not information we need. See 4.2 and 4.3 for the label changes.
 
 ## 4. Changes made after round 1 (implemented, build 0 errors / 0 warnings; confirmed in game in round 2, section 6)
 
-1. **Cursor text rewritten.** `DeepElevator_HelperNoCounterpart` ("No counterpart on: …") replaced by `DeepElevator_HelperOutsideMap`: "Outside the boundaries of <level label>", where the label is the smaller map's level label (so it contains the map id and mod tag, e.g. "Outside the boundaries of map27 - 90m (DeepRim)").
-2. **Level labels are prefixed with the map id**, in the form `map<id> - <label>` (`DeepElevator_MapPrefix`), e.g. "map27 - 90m (DeepRim)", "map25 - B1 (MultiFloors)", "map0 - surface". The prefix is part of `LevelLabels.LevelLabel`, so it applies everywhere: Connect menu, inspect text, link/unlink messages, placement helper, and logs. Elevator labels with a custom name were first `<name> – map27 - 90m (DeepRim)`; changed after round 2 (4.6, confirmed). `ElevatorUtil.MapDesc` (logs) now returns the level label directly, since it already contains the id (it used to print `map#27 (label)`).
-3. **No "G" from MultiFloors.** `MultiFloorsLabelProvider` returns no label for level 0 (the map a stack starts from). A DR layer with stairs now shows only its DR label; the surface falls through to the new "surface" label (`DeepElevator_Surface`).
+1. **Cursor text rewritten.** `CargoElevator_HelperNoCounterpart` ("No counterpart on: …") replaced by `CargoElevator_HelperOutsideMap`: "Outside the boundaries of <level label>", where the label is the smaller map's level label (so it contains the map id and mod tag, e.g. "Outside the boundaries of map27 - 90m (DeepRim)").
+2. **Level labels are prefixed with the map id**, in the form `map<id> - <label>` (`CargoElevator_MapPrefix`), e.g. "map27 - 90m (DeepRim)", "map25 - B1 (MultiFloors)", "map0 - surface". The prefix is part of `LevelLabels.LevelLabel`, so it applies everywhere: Connect menu, inspect text, link/unlink messages, placement helper, and logs. Elevator labels with a custom name were first `<name> – map27 - 90m (DeepRim)`; changed after round 2 (4.6, confirmed). `ElevatorUtil.MapDesc` (logs) now returns the level label directly, since it already contains the id (it used to print `map#27 (label)`).
+3. **No "G" from MultiFloors.** `MultiFloorsLabelProvider` returns no label for level 0 (the map a stack starts from). A DR layer with stairs now shows only its DR label; the surface falls through to the new "surface" label (`CargoElevator_Surface`).
    - **Surface rule:** a map with no mod label, whose parent is not a `PocketMapParent`, is called "surface". This also covers any other non-pocket map on a world tile (e.g. a quest site map) and a DR layer whose provider failed; none of these were distinguished.
    - **Pocket maps are unchanged (user decision, untested):** they keep the generic fallback "<parent label> (map N)", without the new prefix, which would repeat the id. A pocket map that is the ground of an MF stack now also loses its "G" (the provider rule above has no pocket-map exception), so it falls back to that generic label. MF levels above or below a pocket map get the prefix like any other MF level.
-4. **"Go to partner" gizmo** (normal, shown only while connected): `CameraJumper.TryJumpAndSelect(partner)`, which also switches maps. Icon is the vanilla magnifier `UI/Widgets/Search` as a placeholder (`ElevatorTextures.GoToPartner`). New keys `DeepElevator_GoToPartner`, `DeepElevator_GoToPartnerDesc`.
+4. **"Go to partner" gizmo** (normal, shown only while connected): `CameraJumper.TryJumpAndSelect(partner)`, which also switches maps. Icon is the vanilla magnifier `UI/Widgets/Search` as a placeholder (`ElevatorTextures.GoToPartner`). New keys `CargoElevator_GoToPartner`, `CargoElevator_GoToPartnerDesc`.
 5. **Log messages include the custom name.** New `Building_Elevator.LogId` = thing id plus the name in quotes if the elevator has one (`Elevator4562452 "Ore lift"`); all log lines in `Building_Elevator` use it. Exception: the rename log line prints the plain thing id, because the name is part of the line.
 
-Files touched: `LevelLabels.cs`, `MultiFloorsLabelProvider.cs`, `ElevatorUtil.cs`, `Building_Elevator.cs`, `PlaceWorker_Elevator.cs`, `ElevatorTextures.cs`, `Dialog_RenameElevator.cs`, `Languages/English/Keyed/DeepElevator.xml`.
+Files touched: `LevelLabels.cs`, `MultiFloorsLabelProvider.cs`, `ElevatorUtil.cs`, `Building_Elevator.cs`, `PlaceWorker_Elevator.cs`, `ElevatorTextures.cs`, `Dialog_RenameElevator.cs`, `Languages/English/Keyed/CargoElevator.xml`.
 
 ## 5. Decisions
 
@@ -89,11 +89,11 @@ Files touched: `LevelLabels.cs`, `MultiFloorsLabelProvider.cs`, `ElevatorUtil.cs
 | "Go to partner" | Works. Absent when not connected, and removed when the partner is removed. |
 | Log lines | Show custom names. |
 | Connect menu | OK. |
-| **Vanilla-only run** (checklist item 1): vanilla + main DLCs with only DeepElevator loaded | Loads without errors; elevator buildings can be placed without errors. This counts as the vanilla-only run. |
+| **Vanilla-only run** (checklist item 1): vanilla + main DLCs with only CargoElevator loaded | Loads without errors; elevator buildings can be placed without errors. This counts as the vanilla-only run. |
 
 ### Change after round 2 (4.6) (implemented, build 0 errors / 0 warnings; confirmed in game)
 
-The text of a named elevator's label used "–" between name and level, which produced too many dashes next to the map prefix ("Connected to Ore lift – map27 - 90m (DeepRim)"). `DeepElevator_ElevatorOnLevel` is now `{0} on {1}`, giving **"Connected to Ore lift on map27 - 90m (DeepRim)"**. Unnamed elevators are unchanged ("Connected to map27 - 90m (DeepRim)"). The key is shared, so the same wording appears in the Connect menu, link messages and the placement helper ("Connects to: Ore lift on map…"). Only the language file changed.
+The text of a named elevator's label used "–" between name and level, which produced too many dashes next to the map prefix ("Connected to Ore lift – map27 - 90m (DeepRim)"). `CargoElevator_ElevatorOnLevel` is now `{0} on {1}`, giving **"Connected to Ore lift on map27 - 90m (DeepRim)"**. Unnamed elevators are unchanged ("Connected to map27 - 90m (DeepRim)"). The key is shared, so the same wording appears in the Connect menu, link messages and the placement helper ("Connects to: Ore lift on map…"). Only the language file changed.
 
 ## 7. Open items
 

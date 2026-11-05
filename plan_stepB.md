@@ -1,10 +1,10 @@
-# DeepElevator – Step B implementation spec (handoff)
+# CargoElevator – Step B implementation spec (handoff)
 
 > **Status: implemented and tested** (see `results_stepB.md`). This file is kept as the original spec. Where the build differs, the as-built state is:
 > - The csproj also references `UnityEngine.IMGUIModule` (for `GUI.color`).
 > - `ILevelLabelProvider` has `ProviderName` and `TryGetLabel(map, out label, out int sortValue)`; `SortKey` returns `long`.
 > - Labels: `map<id> - <label>`. MultiFloors level 0 gets no label. A map without a mod label is "surface" unless it is a pocket map. Named elevators: "<name> on <level label>".
-> - "No counterpart on" became "Outside the boundaries of <level label>" (`DeepElevator_HelperOutsideMap`).
+> - "No counterpart on" became "Outside the boundaries of <level label>" (`CargoElevator_HelperOutsideMap`).
 > - Added a "Go to partner" gizmo and `LogId` (thing id + name) in logs.
 > - Untested: pocket maps (item 6) and the broken-provider fallback (item 8). Item 11 (old saves) is dropped: there's no backwards compatibility before release.
 
@@ -12,13 +12,13 @@ Read `plan.md` (rev 5) first, especially §1 "Placement and pairing", the label 
 
 **Goal of Step B:** the elevator no longer depends on DeepRim. It pairs with elevators on any map of the same **level group**, using the **center-relative** position. It shows mod-aware level labels (DeepRim / MultiFloors, with tags), can be renamed, and has a placement helper that shows where connections are possible. Everything from Step A (auto-pair, Connect menu, lifecycle unlinking, load check, save/load) keeps working.
 
-**Done when:** `dotnet build` (Debug) gives 0 errors / 0 warnings; `DeepElevator\1.6\Assemblies\` contains only `DeepElevator.dll` (+ `.pdb`); no source file references `DeepRim` or `MultiFloors` types at compile time; the human test checklist (§8) can be run. The human does the in-game testing; the agent only builds. **No git commits** (the human commits).
+**Done when:** `dotnet build` (Debug) gives 0 errors / 0 warnings; `CargoElevator\1.6\Assemblies\` contains only `CargoElevator.dll` (+ `.pdb`); no source file references `DeepRim` or `MultiFloors` types at compile time; the human test checklist (§8) can be run. The human does the in-game testing; the agent only builds. **No git commits** (the human commits).
 
 ## 0. Environment / conventions
 
-- Repo root `C:\Code\Rimworld\DeepElevator`. SDK-style `DeepElevator.csproj` (`net472`, LangVersion latest) compiles `DeepElevator\Source\**\*.cs`. Build: `dotnet build DeepElevator.csproj` (Debug).
+- Repo root `C:\Code\Rimworld\DeepElevator`. SDK-style `CargoElevator.csproj` (`net472`, LangVersion latest) compiles `CargoElevator\Source\**\*.cs`. Build: `dotnet build CargoElevator.csproj` (Debug).
 - Decompiler: `dotnet ilspycmd -t <Type.FullName> <dll>`, **run from the repo root** (local tool). Game: `C:\Games\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll`. MultiFloors: `Examples\MultiFloors\1.6\Assemblies\MultiFloors.dll`. DeepRim source: `Examples\DeepRim\Source\DeepRim\`.
-- Follow the existing code style: file-scoped namespace `DeepElevator`, XML doc comments on public members, section comments (`// ---- saving` etc.), all logging via `ElevatorUtil.Log` / `LogWarn` (prefix `[DeepElevator]`, unconditional for now).
+- Follow the existing code style: file-scoped namespace `CargoElevator`, XML doc comments on public members, section comments (`// ---- saving` etc.), all logging via `ElevatorUtil.Log` / `LogWarn` (prefix `[CargoElevator]`, unconditional for now).
 - **Performance rule (results_stepA §3.2):** anything vanilla or other mods may call very often must be O(1)-ish and avoid per-call allocations, or be cached. That covers place-worker methods, and gizmo/inspect builders while selected. The candidate search is O(number of maps) and acceptable in gizmos/inspect (few maps). It must never run per cell.
 
 ## 1. Facts this step relies on (verified)
@@ -37,39 +37,39 @@ Read `plan.md` (rev 5) first, especially §1 "Placement and pairing", the label 
 
 ## 2. Project / metadata changes
 
-### 2.1 `DeepElevator.csproj`
+### 2.1 `CargoElevator.csproj`
 - Remove the `DeepRim` `<Reference>`.
 - Remove `<ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch>` and its comment (it only existed for DeepRim.dll).
 - Nothing else changes.
 
-### 2.2 `DeepElevator\About\About.xml`
+### 2.2 `CargoElevator\About\About.xml`
 - Remove the whole `<modDependencies>` block.
 - `<loadAfter>`: `<li>Mlie.DeepRim</li>` and `<li>telardo.MultiFloors</li>` (harmless when absent; keeps their defs and types loaded before our startup code).
 - Replace `<description>` with (keep it plain text; the human may edit it):
   > Elevator building that transports items between levels on the same world location: the surface, DeepRim layers, MultiFloors levels, and pocket maps together with the map they were opened from. Build two elevators at the same position measured from the center of their maps to link them. If maps have different sizes (DeepRim's layer size setting), the smaller map is placed over the center of the larger one, cell for cell. Elevators outside the smaller map's area can't connect to it, and an elevator's position relative to the DeepRim shaft may differ between levels. To avoid both, set DeepRim's layer size to the same size as your surface map. Items dropped onto an elevator are sent to its linked elevator; received items go into neighbouring storage if possible, or onto the ground. Works with VFE conveyor belts: conveyors can feed elevators, and output can go into hoppers.
 
-### 2.3 `DeepElevator\Defs\ThingDefs\DeepElevator_Elevator.xml`
+### 2.3 `CargoElevator\Defs\ThingDefs\CargoElevator_Elevator.xml`
 - Already `Graphic_Single`, `rotatable false`, no `uiIconPath`. Keep it.
 - Update `<description>`: "Transports items to a linked elevator on another level at the same world location (surface, DeepRim layers, MultiFloors levels). Build a second elevator at the same position, measured from the map center, on another level to link them."
-- Keep `<placeWorkers><li>DeepElevator.PlaceWorker_Elevator</li></placeWorkers>`; it is now only the placement helper.
+- Keep `<placeWorkers><li>CargoElevator.PlaceWorker_Elevator</li></placeWorkers>`; it is now only the placement helper.
 
-### 2.4 `DeepElevator\Languages\English\Keyed\DeepElevator.xml`
-Remove: `DeepElevator_NoAnchor`, `DeepElevator_MultipleAnchors`, `DeepElevator_AdjacentToAnchor`, `DeepElevator_Surface`, `DeepElevator_Layer`, `DeepElevator_LayerNamed`. Keep the others; replace "layer(s)" by "level(s)" in their texts. Add:
+### 2.4 `CargoElevator\Languages\English\Keyed\CargoElevator.xml`
+Remove: `CargoElevator_NoAnchor`, `CargoElevator_MultipleAnchors`, `CargoElevator_AdjacentToAnchor`, `CargoElevator_Surface`, `CargoElevator_Layer`, `CargoElevator_LayerNamed`. Keep the others; replace "layer(s)" by "level(s)" in their texts. Add:
 ```xml
-<DeepElevator_DeepRimDepth>{0}m</DeepElevator_DeepRimDepth>
-<DeepElevator_DeepRimDepthNamed>{0}m {1}</DeepElevator_DeepRimDepthNamed>
-<DeepElevator_TagDeepRim>DeepRim</DeepElevator_TagDeepRim>
-<DeepElevator_TagMultiFloors>MultiFloors</DeepElevator_TagMultiFloors>
-<DeepElevator_LabelWithTag>{0} ({1})</DeepElevator_LabelWithTag>
-<DeepElevator_LabelSeparator>, </DeepElevator_LabelSeparator>
-<DeepElevator_VanillaLabel>{0} (map {1})</DeepElevator_VanillaLabel>
-<DeepElevator_ElevatorOnLevel>{0} – {1}</DeepElevator_ElevatorOnLevel>
-<DeepElevator_Rename>Rename</DeepElevator_Rename>
-<DeepElevator_RenameDesc>Give this elevator a name. It is shown in the connect menu and messages of the elevators on other levels.</DeepElevator_RenameDesc>
-<DeepElevator_HelperConnectsTo>Connects to: {0}</DeepElevator_HelperConnectsTo>
-<DeepElevator_HelperNoCounterpart>No counterpart on: {0}</DeepElevator_HelperNoCounterpart>
+<CargoElevator_DeepRimDepth>{0}m</CargoElevator_DeepRimDepth>
+<CargoElevator_DeepRimDepthNamed>{0}m {1}</CargoElevator_DeepRimDepthNamed>
+<CargoElevator_TagDeepRim>DeepRim</CargoElevator_TagDeepRim>
+<CargoElevator_TagMultiFloors>MultiFloors</CargoElevator_TagMultiFloors>
+<CargoElevator_LabelWithTag>{0} ({1})</CargoElevator_LabelWithTag>
+<CargoElevator_LabelSeparator>, </CargoElevator_LabelSeparator>
+<CargoElevator_VanillaLabel>{0} (map {1})</CargoElevator_VanillaLabel>
+<CargoElevator_ElevatorOnLevel>{0} – {1}</CargoElevator_ElevatorOnLevel>
+<CargoElevator_Rename>Rename</CargoElevator_Rename>
+<CargoElevator_RenameDesc>Give this elevator a name. It is shown in the connect menu and messages of the elevators on other levels.</CargoElevator_RenameDesc>
+<CargoElevator_HelperConnectsTo>Connects to: {0}</CargoElevator_HelperConnectsTo>
+<CargoElevator_HelperNoCounterpart>No counterpart on: {0}</CargoElevator_HelperNoCounterpart>
 ```
-`DeepElevator_ElevatorOnLevel` = "<elevator name> – <level label>" (used only when the elevator has a custom name).
+`CargoElevator_ElevatorOnLevel` = "<elevator name> – <level label>" (used only when the elevator has a custom name).
 
 ## 3. Level groups and center-relative key — `ElevatorUtil.cs`
 
@@ -152,8 +152,8 @@ public static class LevelLabels
 ```
 - `LevelLabel(map)`:
   - `null` → "?".
-  - Otherwise, for each provider whose `TryGetLabel` succeeds, collect `"DeepElevator_LabelWithTag".Translate(label, provider.Tag)` and join the parts with `DeepElevator_LabelSeparator`.
-  - If none succeeded, use the vanilla fallback `"DeepElevator_VanillaLabel".Translate(map.Parent?.LabelCap ?? "?", map.uniqueID)`. For the colony this shows the settlement name.
+  - Otherwise, for each provider whose `TryGetLabel` succeeds, collect `"CargoElevator_LabelWithTag".Translate(label, provider.Tag)` and join the parts with `CargoElevator_LabelSeparator`.
+  - If none succeeded, use the vanilla fallback `"CargoElevator_VanillaLabel".Translate(map.Parent?.LabelCap ?? "?", map.uniqueID)`. For the colony this shows the settlement name.
   - **Computed on demand**, never cached or refreshed on a timer (decision). Only the reflection members are cached.
 - Every provider call is wrapped in `try/catch`. On an exception, `LogWarn` once per provider and disable that provider for the session, then use the fallback.
 - `MapDesc(map)` (logs) = `$"map#{map.uniqueID} ({LevelLabel(map)})"`, still exception-safe.
@@ -168,8 +168,8 @@ public static class LevelLabels
   - `map.Parent` must be of the parent type (`parentType.IsInstanceOfType(map.Parent)`), else false.
   - `depth = (int)depthField.GetValue(map.Parent)`.
   - Name: find the map holding this layer. Loop over `Find.Maps` where `ElevatorUtil.SameGroup(map, m)` and `m.Parent` is not the parent type. Get the manager component (`m.components` entry with `managerType.IsInstanceOfType`; loop the list, no LINQ). Check that its `layersState` dictionary contains `map.Parent` as a value (iterate `IDictionary.Values`). Then `name = (string)getLayerName.Invoke(manager, new object[] { depth })`.
-  - Label: `name.NullOrEmpty() ? "DeepElevator_DeepRimDepth".Translate(depth * 10) : "DeepElevator_DeepRimDepthNamed".Translate(depth * 10, name)`.
-  - Tag: `"DeepElevator_TagDeepRim".Translate()`.
+  - Label: `name.NullOrEmpty() ? "CargoElevator_DeepRimDepth".Translate(depth * 10) : "CargoElevator_DeepRimDepthNamed".Translate(depth * 10, name)`.
+  - Tag: `"CargoElevator_TagDeepRim".Translate()`.
   - Sort key part: `depth`.
 - The surface map itself gets no DeepRim label: it isn't a layer. It falls through to MultiFloors (if it has levels) or the vanilla fallback (settlement name).
 
@@ -182,14 +182,14 @@ public static class LevelLabels
 - `TryGetLabel(map)`:
   - Loop over `Find.Maps` in the same group as `map`, **including `map` itself**. Get each map's `MF_LevelMapComp` component and its `MapByLevel`. If an entry's value is `map`, take its key as the level. Search the whole group, not just `map`: the stack lives on the ground map's component.
   - The dictionary only has entries once a stack has ≥ 2 levels, so a map without MultiFloors levels gets no MultiFloors label. That's intended.
-  - `label = (string)currentLevelString.Invoke(null, new object[] { level, false })`; tag `"DeepElevator_TagMultiFloors".Translate()`; sort key part: level.
+  - `label = (string)currentLevelString.Invoke(null, new object[] { level, false })`; tag `"CargoElevator_TagMultiFloors".Translate()`; sort key part: level.
 - Both mods on one map (MultiFloors level on a DeepRim layer, or the DeepRim layer that is that stack's ground): both providers succeed, giving e.g. "70m (DeepRim), G (MultiFloors)".
 
 ### 4.3 Where labels are used
 Replace every `ElevatorUtil.LayerLabel(...)` call:
 - Connect menu options: `LevelLabels.ElevatorLabel(candidate)`.
-- `DeepElevator_MsgLinked`: `ElevatorLabel(other)`.
-- `DeepElevator_MsgUnlinked`: `LevelLabel(lostMap)`. On map removal the lost elevator is gone, and `LevelLabel` must not throw for a removed map: providers may fail, so they're wrapped, and the fallback reads `map.Parent?.LabelCap`.
+- `CargoElevator_MsgLinked`: `ElevatorLabel(other)`.
+- `CargoElevator_MsgUnlinked`: `LevelLabel(lostMap)`. On map removal the lost elevator is gone, and `LevelLabel` must not throw for a removed map: providers may fail, so they're wrapped, and the fallback reads `map.Parent?.LabelCap`.
 - Inspect "Connected to {0}": `ElevatorLabel(partner)`.
 - Placement helper (§6): `ElevatorLabel` / `LevelLabel`.
 
@@ -205,7 +205,7 @@ Replace every `ElevatorUtil.LayerLabel(...)` call:
 - `public bool HasCustomName => customName != null;`
 - Gizmo "Rename" (always available): `icon = TexButton.Rename`, `action = () => Find.WindowStack.Add(new Dialog_RenameElevator(this))`.
 - New `Dialog_RenameElevator.cs`: `public class Dialog_RenameElevator : Dialog_Rename<Building_Elevator> { public Dialog_RenameElevator(Building_Elevator elevator) : base(elevator) { } }`. Optionally override `OnRenamed` to `ElevatorUtil.Log` the rename.
-- `LevelLabels.ElevatorLabel(elevator)` = `HasCustomName ? "DeepElevator_ElevatorOnLevel".Translate(customName, LevelLabel(elevator.Map)) : LevelLabel(elevator.Map)`.
+- `LevelLabels.ElevatorLabel(elevator)` = `HasCustomName ? "CargoElevator_ElevatorOnLevel".Translate(customName, LevelLabel(elevator.Map)) : LevelLabel(elevator.Map)`.
 
 Other changes in `Building_Elevator`:
 - Class doc comment: replace "DeepRim layer" by "level".
@@ -231,7 +231,7 @@ private static readonly List<(Map otherMap, CellRect overlap)> partialOverlaps =
 `EnsureCache(Map map)`: if `map == cachedMap && Time.frameCount - cachedFrame < RebuildIntervalFrames`, return. Otherwise clear and rebuild (reuse the containers; the `targetsByCell` lists can be re-allocated on rebuild, since that is at most once per 60 frames):
 - For each `otherMap` in `ElevatorUtil.OtherLevelMaps(map)`:
   - **Overlap rect:** the other map's cells translated into this map. `offset = map.Center - otherMap.Center`; `rect = new CellRect(offset.x, offset.z, otherMap.Size.x, otherMap.Size.z).ClipInsideMap(map)`. If `rect` doesn't cover the whole map (`rect.Area < map.Size.x * map.Size.z`), add `(otherMap, rect)` to `partialOverlaps`.
-  - **Targets:** for each thing in `otherMap.listerThings.ThingsOfDef(DeepElevatorDefOf.DeepElevator_Elevator)` that is a spawned `Building_Elevator` with `Partner == null`, compute the cell here: `cell = map.Center + ElevatorUtil.CenterOffset(e.Position, otherMap)`. If `cell.InBounds(map)`, add it to `targetsByCell[cell]` (and to `targetCells` once).
+  - **Targets:** for each thing in `otherMap.listerThings.ThingsOfDef(CargoElevatorDefOf.CargoElevator_Elevator)` that is a spawned `Building_Elevator` with `Partner == null`, compute the cell here: `cell = map.Center + ElevatorUtil.CenterOffset(e.Position, otherMap)`. If `cell.InBounds(map)`, add it to `targetsByCell[cell]` (and to `targetCells` once).
 - `cachedMap = map; cachedFrame = Time.frameCount;`
 
 ```csharp
@@ -254,9 +254,9 @@ public override void DrawPlaceMouseAttachments(float curX, ref float curY, Build
     if (map == null) return;
     EnsureCache(map);
     if (targetsByCell.TryGetValue(center, out var elevators))
-        foreach (var e in elevators) DrawLine(curX, ref curY, "DeepElevator_HelperConnectsTo".Translate(LevelLabels.ElevatorLabel(e)), Color.green);
+        foreach (var e in elevators) DrawLine(curX, ref curY, "CargoElevator_HelperConnectsTo".Translate(LevelLabels.ElevatorLabel(e)), Color.green);
     foreach (var (otherMap, overlap) in partialOverlaps)
-        if (!overlap.Contains(center)) DrawLine(curX, ref curY, "DeepElevator_HelperNoCounterpart".Translate(LevelLabels.LevelLabel(otherMap)), Color.yellow);
+        if (!overlap.Contains(center)) DrawLine(curX, ref curY, "CargoElevator_HelperNoCounterpart".Translate(LevelLabels.LevelLabel(otherMap)), Color.yellow);
 }
 ```
 - `DrawLine`: `Text.Font = GameFont.Small; GUI.color = color; Widgets.Label(new Rect(curX, curY, 999f, 29f), text); GUI.color = Color.white; curY += 29f;`. This is the vanilla place-worker pattern; check one vanilla `DrawPlaceMouseAttachments` override with ilspycmd and match its spacing.

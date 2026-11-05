@@ -1,20 +1,20 @@
 # Step D results – 2x2 elevator, power, status, state lights
 
-Build: `dotnet build DeepElevator.csproj` (Debug) → 0 errors, 0 warnings. `DeepElevator\1.6\Assemblies\` contains only `DeepElevator.dll` and `.pdb`. Nothing committed. **Not run in the game**: the human checklist in `plan_stepD.md` §9 is still to do.
+Build: `dotnet build CargoElevator.csproj` (Debug) → 0 errors, 0 warnings. `CargoElevator\1.6\Assemblies\` contains only `CargoElevator.dll` and `.pdb`. Nothing committed. **Not run in the game**: the human checklist in `plan_stepD.md` §9 is still to do.
 
 ## 1. What was implemented
 
-### Defs (`Defs\ThingDefs\DeepElevator_Elevator.xml`)
-- Abstract `DeepElevatorBase` holds everything shared, including `drawerType MapMeshAndRealTime`. The children hold the per-size lists only (`statBases`, `costList`, power comp, `modExtensions`).
-- `DeepElevator_Elevator` (1x1): power 200 W active / 10 W idle, 4 slots, 60 ticks per stack.
-- `DeepElevator_ElevatorLarge` ("large deep elevator"): `DeepElevator_large` sprite, Steel 250 + 6 components (placeholder), power 300 / 30 W, 8 slots, 15 ticks per stack.
-- Light overlay paths are set in each extension (`DeepElevator_green/red/orange`, `…_large`).
+### Defs (`Defs\ThingDefs\CargoElevator_Elevator.xml`)
+- Abstract `CargoElevatorBase` holds everything shared, including `drawerType MapMeshAndRealTime`. The children hold the per-size lists only (`statBases`, `costList`, power comp, `modExtensions`).
+- `CargoElevator_Elevator` (1x1): power 200 W active / 10 W idle, 4 slots, 60 ticks per stack.
+- `CargoElevator_ElevatorLarge` ("large cargo elevator"): `CargoElevator_large` sprite, Steel 250 + 6 components (placeholder), power 300 / 30 W, 8 slots, 15 ticks per stack.
+- Light overlay paths are set in each extension (`CargoElevator_green/red/orange`, `…_large`).
 
 ### Code
 | File | Change |
 | --- | --- |
 | `ElevatorSettingsExtension.cs` | `activeHoldTicks` (+`ActiveHoldTicks`), `blockedAfterSendIntervals`, light texture paths |
-| `DeepElevatorDefOf.cs` | `DeepElevator_ElevatorLarge` |
+| `CargoElevatorDefOf.cs` | `CargoElevator_ElevatorLarge` |
 | `ElevatorUtil.cs` | `ElevatorAnchoredAt(cell, map, def)`; `UnconnectedCandidates` uses it with `self.def`, so no pairing across sizes |
 | `PlaceWorker_Elevator.cs` | cache keyed by `(map, def)`; `AddTargets` takes the def and outlines every footprint cell, cursor text stays keyed by the anchor |
 | `ElevatorDiagnostics.cs` | loops over all defs whose `thingClass` is a `Building_Elevator`; also logs size, drawerType, power and the new fields |
@@ -22,7 +22,7 @@ Build: `dotnet build DeepElevator.csproj` (Debug) → 0 errors, 0 warnings. `Dee
 | `Building_Elevator.cs` | `CachePower()` in `SpawnSetup`; periodic power update and status logging in `Tick`; new status line in the inspect string; `LogLinkState` uses `ElevatorAnchoredAt` |
 | `Building_Elevator.Buffer.cs` | `Accepts` / `ShouldAbsorb` refuse for "no power" and "partner unpowered"; `HoldReason.NotConnected` removed from the paused-line list |
 | `Building_Elevator.Send.cs` | `TrySend` bails out when not operational (clears holds, logs `Send paused` on change); `MarkTransferActive()` on each successful send; `HoldReason.NotConnected` removed; `blockedSinceTick` set in `SetHold` and reset in `ClearHold` |
-| `Languages\English\Keyed\DeepElevator.xml` | removed the three old keys, added the status keys |
+| `Languages\English\Keyed\CargoElevator.xml` | removed the three old keys, added the status keys |
 
 ### Design notes
 - **Power:** a transfer sets `lastActiveTick` on both ends; each end is "active" while the last transfer is within `ActiveHoldTicks` (= `ticksPerStack + 30` by default). The comp's `PowerOutput` is written only on change. A def with no `idlePowerDraw` uses its active draw as idle.
@@ -33,7 +33,7 @@ Build: `dotnet build DeepElevator.csproj` (Debug) → 0 errors, 0 warnings. `Dee
 ## 2. Deviations / things to check
 - `UnloadValidator` still uses `GetFirstThing<Building_Elevator>` on purpose: it must reject any cell of any elevator footprint, which is the wanted behaviour for 2x2.
 - `PlaceWorker_Elevator` de-duplicates footprint cells with `List.Contains`. The lists are tiny (a few elevators), and it is cached once per 60 frames.
-- The two old off-state textures (`DeepElevator_off*.png`) are deleted in the working tree; defs reference only `DeepElevator.png` / `DeepElevator_large.png` plus the light PNGs.
+- The two old off-state textures (`CargoElevator_off*.png`) are deleted in the working tree; defs reference only `CargoElevator.png` / `CargoElevator_large.png` plus the light PNGs.
 - `ContentFinder<Texture2D>.Get(path, reportFailure: false)` is used to check light textures before creating the graphic.
 
 ## 3. Test results
@@ -45,11 +45,11 @@ Only the compile check was done (see top). The in-game checklist (§9 of `plan_s
 
 ## 4. Post-test changes (human)
 - Power values changed in the defs: 1x1 100 W active / 10 W idle, large 300 W / 30 W. Code reads them from the def, so no code change.
-- Defs and textures can't end in a digit: the 2x2 def is now `DeepElevator_ElevatorLarge` (`DeepElevatorDefOf.DeepElevator_ElevatorLarge`), and its textures are `DeepElevator_large` and `DeepElevator_{green,red,orange}_large`. Defs and the DefOf were updated; no other code referenced these names.
+- Defs and textures can't end in a digit: the 2x2 def is now `CargoElevator_ElevatorLarge` (`CargoElevatorDefOf.CargoElevator_ElevatorLarge`), and its textures are `CargoElevator_large` and `CargoElevator_{green,red,orange}_large`. Defs and the DefOf were updated; no other code referenced these names.
 
 ## 5. Second round of fixes
-1. **Status text:** when the elevator is both unpowered and disconnected the status shows "no power, disconnected" (new key `DeepElevator_StatusUnpoweredDisconnected`). Powered and disconnected still shows "disconnected". The `ElevatorStatus` enum, light and behaviour are unchanged (disconnected still wins there); only `DescribeStatus` combines the texts.
-2. **Menu icons:** both defs now set `uiIconPath` to `DeepElevator_MenuIcon` / `DeepElevator_MenuIcon_large`. The base sprite is still used for blueprint, ghost and the map.
+1. **Status text:** when the elevator is both unpowered and disconnected the status shows "no power, disconnected" (new key `CargoElevator_StatusUnpoweredDisconnected`). Powered and disconnected still shows "disconnected". The `ElevatorStatus` enum, light and behaviour are unchanged (disconnected still wins there); only `DescribeStatus` combines the texts.
+2. **Menu icons:** both defs now set `uiIconPath` to `CargoElevator_MenuIcon` / `CargoElevator_MenuIcon_large`. The base sprite is still used for blueprint, ghost and the map.
 3. **"started 10 jobs in one tick" (HaulToCell):**
    - **Cause:** the vanilla haul search (`StoreUtility.TryFindBestBetterStoreCellForWorker`) picks a destination cell using only the storage filter (`Settings.AllowedToAccept`) and cell checks. It never calls the building's `Accepts`. The hauling job's goto toil then fails at once, because it calls `IsValidStorageFor`, which does call `Accepts`. The pawn ends the job, finds the same haul, and repeats until the game aborts after 10 jobs in one tick. So any time hay (or anything the filter allows) could be hauled to an elevator whose `Accepts` is false, it looped. It was not caused by a new Step D refusal as such: the "not connected" refusal from Step C behaves the same way when the filter allows the item.
    - **SUPERSEDED / REVERTED (see §10):** the `HaulDestinationEnabled` override described next was incomplete and has been removed again; the Harmony patch of §10 replaces it. Original description follows for the record. `HaulDestinationEnabled` (checked by the haul search before it looks at a storage group) was hidden with `new` in `Building_Elevator.Power.cs`. It is true only when the elevator is operational (connected, both ends powered) and the buffer has a free slot or a partly filled entry that merging can top up. The interface re-declarations on the class make the game's calls bind to it.
@@ -76,9 +76,9 @@ Everything listed here **is implemented in the defs/code** (the human requested 
 - `plan_stepD.md`: §2.1 "power comp: active 200, idle 10" → "active 100, idle 10"; "active 500, idle 25" → "active 300, idle 30"; the XML snippet `<basePowerConsumption>200` → `100`; §9 item 5: "Power needed: 10 W (active: 200 W)" (2x2: 25/500) → "(active: 100 W)" (2x2: 30/300); "active (200 / 500 W)" → "(100 / 300 W)".
 
 **Names** (defs/textures cannot end in a digit):
-- Def `DeepElevator_Elevator2x2` → `DeepElevator_ElevatorLarge` (also `DeepElevatorDefOf`): `plan_stepD.md` §2.1 heading and §2.3.
-- Textures `*_2x2` → `*_large`: `DeepElevator_large.png`, `DeepElevator_{green,red,orange}_large.png`. `plan.md` lines ~144 and ~271; `plan_stepD.md` §2.1 (texPath, overlays) and §9 item 1.
-- New menu icons (not mentioned in either plan): `DeepElevator_MenuIcon.png` and `DeepElevator_MenuIcon_large.png`, used as `uiIconPath` of the two defs; the base sprite stays for blueprint, ghost and map. `plan.md` line ~271 says the base sprite is also the build-menu icon, which is no longer true.
+- Def `CargoElevator_Elevator2x2` → `CargoElevator_ElevatorLarge` (also `CargoElevatorDefOf`): `plan_stepD.md` §2.1 heading and §2.3.
+- Textures `*_2x2` → `*_large`: `CargoElevator_large.png`, `CargoElevator_{green,red,orange}_large.png`. `plan.md` lines ~144 and ~271; `plan_stepD.md` §2.1 (texPath, overlays) and §9 item 1.
+- New menu icons (not mentioned in either plan): `CargoElevator_MenuIcon.png` and `CargoElevator_MenuIcon_large.png`, used as `uiIconPath` of the two defs; the base sprite stays for blueprint, ghost and map. `plan.md` line ~271 says the base sprite is also the build-menu icon, which is no longer true.
 - Status text: unpowered + disconnected shows "no power, disconnected" (implemented, §5.1); the plans describe a single status value.
 
 ## 9. Haul error: new facts, status and next steps (nothing below is implemented yet)
@@ -109,11 +109,11 @@ Recommendation was option 1. **Decision (human): option 1, the VFE way; implemen
 Status: everything in this section **is implemented in the source** and builds (0 errors, 0 warnings). It is not tested in the game. The plans (`plan.md`, `plan_stepD.md`) do not describe any of it yet; they need updating (deviations from the original plan, agreed with the human).
 
 ### 10.1 What was done
-- **Harmony dependency:** `DeepElevator.csproj` references `include\0Harmony.dll` (symlink to the Harmony mod, `Private=False`, so it is not copied to our output). `About.xml` now has `modDependencies` (`brrainz.harmony`, Steam/GitHub links) and `loadAfter brrainz.harmony`. This is a **deviation from `plan.md`** ("avoid Harmony where possible"), decided by the human because no non-Harmony way covers every case.
-- **`HarmonyPatches.cs` (new):** `[StaticConstructorOnStartup]` creates `Harmony("FT.deepelevator")` and calls `PatchAll`; logs the patched method count. `Patch_StoreUtility_IsGoodStoreCell` is a **postfix** on `StoreUtility.IsGoodStoreCell(c, map, t, carrier, faction)`: if the result is true and the cell belongs to a `Building_Elevator` (`haulDestinationManager.SlotGroupParentAt(c)`), the result becomes false unless `elevator.AcceptsPawnDelivery(t)`. Same idea as VFE's `StoreUtility_IsGoodStoreCell_Patch` for hoppers. It only ever turns true into false. Unlike VFE it does not restrict itself to `carrier != null`, because `Accepts` is the arbiter for every caller.
+- **Harmony dependency:** `CargoElevator.csproj` references `include\0Harmony.dll` (symlink to the Harmony mod, `Private=False`, so it is not copied to our output). `About.xml` now has `modDependencies` (`brrainz.harmony`, Steam/GitHub links) and `loadAfter brrainz.harmony`. This is a **deviation from `plan.md`** ("avoid Harmony where possible"), decided by the human because no non-Harmony way covers every case.
+- **`HarmonyPatches.cs` (new):** `[StaticConstructorOnStartup]` creates `Harmony("FT.cargoelevator")` and calls `PatchAll`; logs the patched method count. `Patch_StoreUtility_IsGoodStoreCell` is a **postfix** on `StoreUtility.IsGoodStoreCell(c, map, t, carrier, faction)`: if the result is true and the cell belongs to a `Building_Elevator` (`haulDestinationManager.SlotGroupParentAt(c)`), the result becomes false unless `elevator.AcceptsPawnDelivery(t)`. Same idea as VFE's `StoreUtility_IsGoodStoreCell_Patch` for hoppers. It only ever turns true into false. Unlike VFE it does not restrict itself to `carrier != null`, because `Accepts` is the arbiter for every caller.
 - **`Building_Elevator.Buffer.cs`:** the acceptance rule now lives in one side-effect-free method `GetRefusalReason(thing)` (null = accept). `Accepts` (game job check, conveyors, our own deliveries) = that rule plus the deduplicated "Rejected" log. `AcceptsPawnDelivery` (haul search) = `allowInsert && GetRefusalReason == null`, no logging (it runs per cell per search).
 - **Reverted:** the `HaulDestinationEnabled` override and `HasPartlyFilledEntry` in `Building_Elevator.Power.cs` (the patch makes them unnecessary; vanilla `HaulDestinationEnabled` is back).
-- **"Allow insert" gizmo:** toggle in the buffer gizmos, label "Allow insert". Saved (`allowInsert`, default from new extension field `defaultAllowInsert`, set in both defs), logged in the buffer dump and in the startup diagnostics. Keys `DeepElevator_ToggleInsert(Desc)`. The icon is a placeholder (vanilla `TexCommand.Install`).
+- **"Allow insert" gizmo:** toggle in the buffer gizmos, label "Allow insert". Saved (`allowInsert`, default from new extension field `defaultAllowInsert`, set in both defs), logged in the buffer dump and in the startup diagnostics. Keys `CargoElevator_ToggleInsert(Desc)`. The icon is a placeholder (vanilla `TexCommand.Install`).
 - **Decision "allow taking" is not needed:** the elevator never acts as a pawn-accessible source (its buffer is internal; Unload puts items on the ground and the normal storage rules apply), so there is nothing to forbid.
 - **Decision "allow insert" scope:** it only affects the *haul search* (pawns carrying items in). It is deliberately **not** part of `Accepts`, otherwise it would also block conveyor belts and other mods that call `Accepts`, which is the case it is meant for. A pawn already carrying an item to the elevator still delivers it (the job's check uses `Accepts`; the elevator absorbs what lands on its cell). A manual "haul to this cell" order is not blocked either (it does not go through `IsGoodStoreCell`'s search; not verified, to test).
 
@@ -186,7 +186,7 @@ Human results: checklist items 1, 2, 6, 8 and 10 OK. 3/4 OK as far as visible. 5
 - **Proposed:**
   - The postfix gets the reason from a new side-effect-free method, e.g. `GetPawnDeliveryRefusalReason(t)`: "insert off", or `GetRefusalReason`.
   - It logs deduplicated per elevator (only when the def or reason changes, like `LogRefusal`).
-  - Remove the leftover `var harmony = new Harmony("FT.deepelevator");` in the postfix. It is unused and allocates a Harmony instance on every rejection.
+  - Remove the leftover `var harmony = new Harmony("FT.cargoelevator");` in the postfix. It is unused and allocates a Harmony instance on every rejection.
 - **Optional test aids** for items 3/4:
   - the intake cell in the `Absorbed` log line;
   - the game tick in send and absorb lines, so rates can be read from the log.
@@ -231,12 +231,12 @@ The human meant god mode. Vanilla dev gizmos, e.g. `CompPowerTrader`'s "DEV: Tog
   - Not connected (`partner == null`) wins over no power. "No power" covers this end and the partner.
   - The reason is read live at display time, not stored in `heldEntries`. `TrySend` stops before it evaluates any entry in this state, and a live check cannot go stale when the state changes. Sending, holds and `blockedSinceTick` are unchanged, so the red "blocked" light cannot be triggered by an unpowered period.
   - When the pair is operational, the line is as before (§14.4).
-- New keys `DeepElevator_PausedNotConnected` ("not connected") and `DeepElevator_PausedNoPower` ("no power").
+- New keys `CargoElevator_PausedNotConnected` ("not connected") and `CargoElevator_PausedNoPower` ("no power").
 - **Remaining case without a reason:** a pawn entry (`HoldReason.Undeliverable`); none can be in the buffer yet.
 - **Finding (unchanged behaviour, for a later decision):** while not operational, `TrySend` retries only every `PeriodicInterval` (250 ticks). After power or the link returns, sending can therefore wait up to about 4 s. During that time the paused line shows nothing (the held list was cleared) until the first attempt. Retrying at the power update interval (30 ticks) while not operational would shorten this to 0.5 s at negligible cost.
 
 ### 15.3 Unused Harmony object in the postfix (removed)
-The postfix had a line `var harmony = new Harmony("FT.deepelevator");` (added together with the rejection log line). It created a new Harmony instance on every rejection and was never used. It has been removed. The patch now creates nothing. The rejection log line itself stays until §15.5 is decided.
+The postfix had a line `var harmony = new Harmony("FT.cargoelevator");` (added together with the rejection log line). It created a new Harmony instance on every rejection and was never used. It has been removed. The patch now creates nothing. The rejection log line itself stays until §15.5 is decided.
 
 ### 15.4 Power sync (discussion, not implemented)
 - **What a transfer does:** `MarkTransferActive` sets the same `lastActiveTick` on both ends and calls `UpdatePowerDraw` on both, in the same tick. So it forces a *check* on both, not a state, but both get identical inputs and therefore the same result (active).
@@ -276,7 +276,7 @@ The postfix had a line `var harmony = new Harmony("FT.deepelevator");` (added to
 ### 17.1 Test results (human)
 - Dev gizmos disappear with god mode off: OK.
 - Disconnected elevator with an empty filter: no rejection lines: OK.
-- Disconnected, normal priority, wide filter: haul jobs are refused, e.g. `Pawn delivery refused: DeepElevator_ElevatorLarge4515157 refuses Limestone blocks x5: not connected`.
+- Disconnected, normal priority, wide filter: haul jobs are refused, e.g. `Pawn delivery refused: CargoElevator_ElevatorLarge4515157 refuses Limestone blocks x5: not connected`.
 - Rejection reasons seen: not connected, allow insert is off, buffer full, partner unpowered, no power. This answers §14.3: the rejections during "steady" delivery are real states (moments of a full buffer, a partner or own end briefly unpowered). The `IsGoodStoreCell` patch is working as designed.
 - The paused line showed the reasons correctly (no power, FIFO, no storage).
 - The log message limit filled up quickly from the unfiltered rejection log.
@@ -294,7 +294,7 @@ The postfix had a line `var harmony = new Harmony("FT.deepelevator");` (added to
    - **Planner's interpretation (to confirm):** the "all items" form is also used when FIFO is off and every held entry has the same per-item reason. The human named only the not-operational reasons as examples.
    - A single held entry shows its own label (`Berries x25 [storage full]`), not "all items".
    - "All items" and "all others" refer to the held entries still in the buffer. Items absorbed after the last failed attempt are not part of the hold until the next attempt.
-   - New keys `DeepElevator_PausedAllItems` ("all items") and `DeepElevator_PausedAllOthers` ("all others").
+   - New keys `CargoElevator_PausedAllItems` ("all items") and `CargoElevator_PausedAllOthers` ("all others").
    - Two small helpers were added, `PausedReasonText` and `PausedGroup`.
 2. **Rejection-reason log disabled (human decision).** The logging part of `AcceptsPawnDelivery` is commented out. The method is back to `allowInsert && GetRefusalReason(thing) == null`. The commented block says what it was for (§15.5/§16) and how to re-enable it. The "allow insert is off" reason text existed only in that block. No other code was used only by it (`ElevatorUtil.Describe` is shared). The postfix comment points to the disabled probe.
 

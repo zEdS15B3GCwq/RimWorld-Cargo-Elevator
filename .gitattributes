@@ -4,7 +4,7 @@
 # Force CRLF for everything meant for Windows
 *.csproj text eol=crlf
 *.slnx text eol=crlf
-DeepElevator/** text eol=crlf
+CargoElevator/** text eol=crlf
 
 # Treat C# files as text
 *.cs text eol=crlf diff=csharp

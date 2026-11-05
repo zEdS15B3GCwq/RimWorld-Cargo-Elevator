@@ -1,4 +1,4 @@
-# DeepElevator – Step E2: portal loader (vanilla portal dialog; pawns and animals)
+# CargoElevator – Step E2: portal loader (vanilla portal dialog; pawns and animals)
 
 Handoff spec for the implementing agent. Background: `plan.md`, `plan_stepE1.md`, `results_stepE.md`, `comparison_multifloors.md`. RimWorld 1.6 only.
 The human tests in game and makes decisions about implementation.
@@ -88,10 +88,10 @@ As in `plan_stepE1.md` §2, plus:
 
 ## 5. Loader
 
-### 5.1 Def (`Defs/ThingDefs/DeepElevator_TransportLoader.xml`)
+### 5.1 Def (`Defs/ThingDefs/CargoElevator_TransportLoader.xml`)
 
 - Remove `CompProperties_Transporter` and the whole `<comps>` block.
-- `inspectorTabs`: `ITab_ContentsMapPortal`, then `DeepElevator.ITab_LoaderContents`.
+- `inspectorTabs`: `ITab_ContentsMapPortal`, then `CargoElevator.ITab_LoaderContents`.
 - Everything else stays: `thingClass`, size, `tickerType` Normal (needed for ticking), graphics, cost, place worker. No `<portal>` props.
 - Description: the loader sends a chosen list of items, and people and animals, through the adjacent elevator. Items ride the elevator; people and animals step out at the other end. Needs no power.
 
@@ -133,11 +133,11 @@ Log each item deposit ("Deposited (loader): ...") and each pawn sent. In `SpawnS
 **Overrides**
 - `GetOtherMap()`: the partner elevator's partner's `Map`, or `null` when not linked or the partner elevator isn't connected. Never base.
 - `GetDestinationLocation()`: the partner elevator's partner's `Position`, or `IntVec3.Invalid`. Vanilla finds a standable cell within 5 cells.
-- `IsEnterable(out reason)`: base first (comps), then not linked → `DeepElevator_LoaderNeedsLink`; `!partner.IsOperational` → new key `DeepElevator_LoaderPairDown` ("the elevator is not connected or has no power"). Reasons appear on the right-click option and the disabled gizmo.
+- `IsEnterable(out reason)`: base first (comps), then not linked → `CargoElevator_LoaderNeedsLink`; `!partner.IsOperational` → new key `CargoElevator_LoaderPairDown` ("the elevator is not connected or has no power"). Reasons appear on the right-click option and the disabled gizmo.
 - `OnEntered(Pawn pawn)`: `Notify_ThingAdded(pawn)` (no-op for a right-click entry, since the order is null or doesn't contain the pawn) and a log line with the destination. Never base.
 - `EnterTex`: the vanilla "UI/Commands/LoadTransporter" texture, cached in `ElevatorTextures`.
 
-**Gizmos** (`GetGizmos`): pass base gizmos through, with one change. The Enter command (`Command_Action` whose `icon == EnterTex`; it's our cached reference, so the match is reliable) gets `Disabled = partner == null` with reason `DeepElevator_LoaderNeedsLink`, instead of vanilla's `!IsEnterable` (decision: link only). Vanilla's Cancel stays as is. Then:
+**Gizmos** (`GetGizmos`): pass base gizmos through, with one change. The Enter command (`Command_Action` whose `icon == EnterTex`; it's our cached reference, so the match is reliable) gets `Disabled = partner == null` with reason `CargoElevator_LoaderNeedsLink`, instead of vanilla's `!IsEnterable` (decision: link only). Vanilla's Cancel stays as is. Then:
 1. **Unload all** (replaces cancel/unload): shown while the container has items. Vanilla `CommandUnload`/`CommandUnloadDesc` texts, `CompTransporter.CancelLoadCommandTex` icon. It drops every entry with `Container.TryDrop(entry, Position, Map, ThingPlaceMode.Near, out _, null, cell => ElevatorUtil.UnloadValidator(cell, Map, entry))`; whatever finds no room stays. It doesn't touch the order.
 2. Transfer toggle, priority, Connect to..., dev gizmo: unchanged.
 
@@ -172,7 +172,7 @@ No changes. `PullFromLoaders`, `RoomFor`, `CanPullFrom`, priorities, links and t
 
 ## 7. Language keys
 
-New: `DeepElevator_LoaderPairDown`. Unused afterwards: `DeepElevator_LoaderStatusComplete`. Remove it, or log in the results why it stays. Update the def description (§5.1).
+New: `CargoElevator_LoaderPairDown`. Unused afterwards: `CargoElevator_LoaderStatusComplete`. Remove it, or log in the results why it stays. Update the def description (§5.1).
 
 ## 8. Tests for the human
 

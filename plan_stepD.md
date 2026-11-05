@@ -1,4 +1,4 @@
-# DeepElevator – Step D implementation spec (handoff)
+# CargoElevator – Step D implementation spec (handoff)
 
 Read `plan.md` (rev 8) first, especially §1 "Steps" → Step D (decisions, status table), §2 "Power and drawing", and `results_stepC.md` §1 (how the code is organised now). This file is self-contained for Step D. **Don't implement anything beyond it:** no VFE-specific code (Step E), no manifest / Load dialog (Step F; the Load gizmo stays hidden), no Harmony, no mod settings, no on/off switch, no probe removal.
 
@@ -8,10 +8,10 @@ Read `plan.md` (rev 8) first, especially §1 "Steps" → Step D (decisions, stat
 - A combined **status line**.
 - **State lights** drawn over the base sprite, with blinking prepared for the manifest step.
 
-**Done when:** `dotnet build DeepElevator.csproj` (Debug) gives 0 errors / 0 warnings; `DeepElevator\1.6\Assemblies\` contains only `DeepElevator.dll` (+ `.pdb`); the human test checklist (§9) can be run. **No git commits** (the human commits). Backwards compatibility with Step C saves is not required.
+**Done when:** `dotnet build CargoElevator.csproj` (Debug) gives 0 errors / 0 warnings; `CargoElevator\1.6\Assemblies\` contains only `CargoElevator.dll` (+ `.pdb`); the human test checklist (§9) can be run. **No git commits** (the human commits). Backwards compatibility with Step C saves is not required.
 
 ## 0. Environment / conventions
-- Repo root `C:\Code\Rimworld\DeepElevator`. SDK-style `DeepElevator.csproj` (`net472`, LangVersion latest) references `include\Assembly-CSharp.dll`, `include\UnityEngine.CoreModule.dll`, `include\UnityEngine.IMGUIModule.dll`. These are symlinks to `D:\G\RimWorld\RimWorldWin64_Data\Managed\…`.
+- Repo root `C:\Code\Rimworld\DeepElevator`. SDK-style `CargoElevator.csproj` (`net472`, LangVersion latest) references `include\Assembly-CSharp.dll`, `include\UnityEngine.CoreModule.dll`, `include\UnityEngine.IMGUIModule.dll`. These are symlinks to `D:\G\RimWorld\RimWorldWin64_Data\Managed\…`.
 - Decompiler: `dotnet ilspycmd -t <Type> "D:\G\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll"`, **run from the repo root**.
 - Code layout (Step C): `Building_Elevator` is `partial`: `Building_Elevator.cs` (link, lifecycle, tick, UI), `.Buffer.cs` (intake, buffer, gizmos, inspect lines), `.Send.cs` (sending, delivery, hold state). Add a new part **`Building_Elevator.Power.cs`** for power, status and drawing.
 - Style: file-scoped namespace, XML doc comments, section comments, logging via `ElevatorUtil.Log` / `LogWarn` with `LogId`.
@@ -30,12 +30,12 @@ Read `plan.md` (rev 8) first, especially §1 "Steps" → Step D (decisions, stat
 | `CompTransporter.LoadingInProgressOrReadyToLaunch` (public) = a load is set up | decompiled |
 | The game reserves each storage cell for one hauling pawn, so 4 intake cells = up to 4 parallel hauls | `StoreUtility.IsGoodStoreCell` (plan.md §2) |
 | Size-agnostic already: `AbsorbIntake` (loops `AllSlotCellsList()`), `ElevatorUtil.OutputCells` (rect expanded by 1 minus the rect), `StorageCellRoom`, `DeliveryDropRoom`, delivery and drop loops, Unload (`Near` from `Position`) | current source |
-| **Not** size-agnostic yet: `UnconnectedCandidates` (`GetFirstThing<Building_Elevator>` at the matching cell, any def), `PlaceWorker_Elevator.AddTargets` (`ThingsOfDef(DeepElevator_Elevator)`, highlights one cell), `ElevatorDiagnostics` (one def), `LogLinkState` (`GetFirstThing`) | current source |
+| **Not** size-agnostic yet: `UnconnectedCandidates` (`GetFirstThing<Building_Elevator>` at the matching cell, any def), `PlaceWorker_Elevator.AddTargets` (`ThingsOfDef(CargoElevator_Elevator)`, highlights one cell), `ElevatorDiagnostics` (one def), `LogLinkState` (`GetFirstThing`) | current source |
 
 ## 2. Defs
 
-### 2.1 `DeepElevator\Defs\ThingDefs\DeepElevator_Elevator.xml`: abstract parent + two children
-- `<ThingDef Name="DeepElevatorBase" ParentName="BuildingBase" Abstract="True">` holds **everything shared**:
+### 2.1 `CargoElevator\Defs\ThingDefs\CargoElevator_Elevator.xml`: abstract parent + two children
+- `<ThingDef Name="CargoElevatorBase" ParentName="BuildingBase" Abstract="True">` holds **everything shared**:
   - `thingClass`, `graphicData` (`graphicClass Graphic_Single`; `texPath` / `drawSize` are set per child);
   - `rotatable false`, `altitudeLayer Building`, `passability PassThroughOnly`, `fillPercent`, `pathCost`;
   - `tickerType Normal`, **`drawerType MapMeshAndRealTime`**, `surfaceType Item`;
@@ -43,14 +43,14 @@ Read `plan.md` (rev 8) first, especially §1 "Steps" → Step D (decisions, stat
   - the whole `building` block (storage settings, `maxItemsInCell 1`, …);
   - the `CompProperties_Transporter` comp.
 - **Lists that differ must only appear in the children:** `costList`, `statBases`, the `CompProperties_Power` comp, `modExtensions`. Children's `<li>` lists are appended to the parent's. A power comp or extension in both would give two entries, and `GetModExtension` returns the first. If a list must be both inherited and replaced, use `Inherit="False"` on the child's node.
-- `<ThingDef ParentName="DeepElevatorBase">` **`DeepElevator_Elevator`** (keep the defName; 1x1):
-  - label "deep elevator", `size (1,1)`, `graphicData texPath Things/Buildings/DeepElevator/DeepElevator`, `drawSize (1,1)`;
+- `<ThingDef ParentName="CargoElevatorBase">` **`CargoElevator_Elevator`** (keep the defName; 1x1):
+  - label "cargo elevator", `size (1,1)`, `graphicData texPath Things/Buildings/CargoElevator/CargoElevator`, `drawSize (1,1)`;
   - `costList` Steel 75, ComponentIndustrial 2; `statBases` as now;
   - power comp: active 200, idle 10;
-  - extension: `defaultSlots 4, minSlots 1, maxSlots 4, ticksPerStack 60`, overlays `DeepElevator_green / _red / _orange`.
-- `<ThingDef ParentName="DeepElevatorBase">` **`DeepElevator_Elevator2x2`**:
-  - label "large deep elevator", description mentions 4 intake cells and faster transfer;
-  - `size (2,2)`, `texPath Things/Buildings/DeepElevator/DeepElevator_2x2`, `drawSize (2,2)`;
+  - extension: `defaultSlots 4, minSlots 1, maxSlots 4, ticksPerStack 60`, overlays `CargoElevator_green / _red / _orange`.
+- `<ThingDef ParentName="CargoElevatorBase">` **`CargoElevator_Elevator2x2`**:
+  - label "large cargo elevator", description mentions 4 intake cells and faster transfer;
+  - `size (2,2)`, `texPath Things/Buildings/CargoElevator/CargoElevator_2x2`, `drawSize (2,2)`;
   - `costList` Steel 250, ComponentIndustrial 6 (placeholder; human adjusts); `statBases`: MaxHitPoints 400, WorkToBuild 4000, Mass 100, Flammability 0;
   - power comp: active 500, idle 25;
   - extension: `defaultSlots 8, minSlots 1, maxSlots 8, ticksPerStack 15`, overlays `…_2x2`.
@@ -80,24 +80,24 @@ public string greenTexPath, redTexPath, orangeTexPath;
 ```
 Default `maxSlots` in the C# class stays a fallback only; the XML values rule.
 
-### 2.3 `DeepElevatorDefOf`
-Add `public static ThingDef DeepElevator_Elevator2x2;`.
+### 2.3 `CargoElevatorDefOf`
+Add `public static ThingDef CargoElevator_Elevator2x2;`.
 
 ### 2.4 Language keys
-- Remove: `DeepElevator_ConnectedTo`, `DeepElevator_NotConnected`, `DeepElevator_PausedNotConnected`.
+- Remove: `CargoElevator_ConnectedTo`, `CargoElevator_NotConnected`, `CargoElevator_PausedNotConnected`.
 - Add:
 ```xml
 <!-- Status line: {0} = status text, {1} = partner label (ElevatorLabel). -->
-<DeepElevator_StatusLinked>Status: {0}, connected to {1}</DeepElevator_StatusLinked>
-<DeepElevator_StatusUnlinked>Status: {0}</DeepElevator_StatusUnlinked>
-<DeepElevator_StatusDisconnected>disconnected</DeepElevator_StatusDisconnected>
-<DeepElevator_StatusNoPower>no power</DeepElevator_StatusNoPower>
-<DeepElevator_StatusPartnerUnpowered>partner unpowered</DeepElevator_StatusPartnerUnpowered>
-<DeepElevator_StatusBlocked>blocked</DeepElevator_StatusBlocked>
-<DeepElevator_StatusActive>active</DeepElevator_StatusActive>
-<DeepElevator_StatusIdle>idle</DeepElevator_StatusIdle>
+<CargoElevator_StatusLinked>Status: {0}, connected to {1}</CargoElevator_StatusLinked>
+<CargoElevator_StatusUnlinked>Status: {0}</CargoElevator_StatusUnlinked>
+<CargoElevator_StatusDisconnected>disconnected</CargoElevator_StatusDisconnected>
+<CargoElevator_StatusNoPower>no power</CargoElevator_StatusNoPower>
+<CargoElevator_StatusPartnerUnpowered>partner unpowered</CargoElevator_StatusPartnerUnpowered>
+<CargoElevator_StatusBlocked>blocked</CargoElevator_StatusBlocked>
+<CargoElevator_StatusActive>active</CargoElevator_StatusActive>
+<CargoElevator_StatusIdle>idle</CargoElevator_StatusIdle>
 <!-- {0} = blocked/active/idle -->
-<DeepElevator_StatusLoading>loading, {0}</DeepElevator_StatusLoading>
+<CargoElevator_StatusLoading>loading, {0}</CargoElevator_StatusLoading>
 ```
 The "no power" and "partner unpowered" texts are used with the linked format (the partner exists).
 
@@ -195,9 +195,9 @@ public ElevatorStatus Status
 public bool IsManifestLoading => transporter != null && transporter.LoadingInProgressOrReadyToLaunch;   // never true in Step D
 ```
 - **Inspect** (`GetInspectString` in `Building_Elevator.cs`): replace the "Connected to" / "Not connected" lines.
-  - Connected: `"DeepElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner))`.
-  - Unconnected: `"DeepElevator_StatusUnlinked".Translate("DeepElevator_StatusDisconnected".Translate())`, followed by the existing candidates hint.
-  - `statusText` = the status key, wrapped in `DeepElevator_StatusLoading` when `IsManifestLoading` and the status is Blocked/Active/Idle.
+  - Connected: `"CargoElevator_StatusLinked".Translate(statusText, LevelLabels.ElevatorLabel(partner))`.
+  - Unconnected: `"CargoElevator_StatusUnlinked".Translate("CargoElevator_StatusDisconnected".Translate())`, followed by the existing candidates hint.
+  - `statusText` = the status key, wrapped in `CargoElevator_StatusLoading` when `IsManifestLoading` and the status is Blocked/Active/Idle.
   - The vanilla power line ("Power needed: …") comes from the base inspect string.
 - **Paused line:** `DescribePausedTransfer` lists only `StorageFull`, `NoStorage`, `FifoWaiting`.
 
@@ -225,7 +225,7 @@ public bool IsManifestLoading => transporter != null && transporter.LoadingInPro
 - Startup diagnostics for both defs.
 
 ## 9. Human test checklist (Dev mode, watch the log)
-1. **Defs:** both elevators appear in the build menu with their base sprite (off look); the 2x2 ghost and blueprint use `DeepElevator_2x2`. The diagnostics show both defs with size, power and extension values.
+1. **Defs:** both elevators appear in the build menu with their base sprite (off look); the 2x2 ghost and blueprint use `CargoElevator_2x2`. The diagnostics show both defs with size, power and extension values.
 2. **Pairing:**
    - A 1x1 and a 2x2 at the same position never link (no candidate, no placement highlight).
    - Two 2x2 at the same center offset link automatically.

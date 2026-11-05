@@ -1,4 +1,4 @@
-# DeepElevator – Step F: glow and night-visible lights
+# CargoElevator – Step F: glow and night-visible lights
 
 Handoff spec for the implementing agent. Background: `plan.md`, `pre_stepF.md`. RimWorld 1.6 only.
 The human tests in game and makes decisions about implementation.
@@ -39,7 +39,7 @@ New enum or private helper: `LightState { Off, Green, Red }` from `Status`:
 
 `CurrentLightGraphic()` uses it instead of its own condition, so the sprite and the glow can't diverge.
 
-### 3.2 Def (`DeepElevatorBase` comps, or per size where values differ)
+### 3.2 Def (`CargoElevatorBase` comps, or per size where values differ)
 
 ```xml
 <li Class="CompProperties_Glower">
@@ -48,7 +48,7 @@ New enum or private helper: `LightState { Off, Green, Red }` from `Status`:
 </li>
 ```
 
-`ElevatorSettingsExtension` gets `ColorInt greenGlowColor` and `ColorInt redGlowColor`, set in the XML of both sizes. Start with green `(60,200,80,0)` and red `(220,60,50,0)`. These are starting values: they should match the lamp colour in the PNGs, so sample the lamp pixels of `DeepElevator_GreenLight.png` and `DeepElevator_RedLight.png`, log the values in the results, and let the human tune. Brightness comes from the colour value; vanilla multiplies above 1 for bright lamps. Keep it dim.
+`ElevatorSettingsExtension` gets `ColorInt greenGlowColor` and `ColorInt redGlowColor`, set in the XML of both sizes. Start with green `(60,200,80,0)` and red `(220,60,50,0)`. These are starting values: they should match the lamp colour in the PNGs, so sample the lamp pixels of `CargoElevator_GreenLight.png` and `CargoElevator_RedLight.png`, log the values in the results, and let the human tune. Brightness comes from the colour value; vanilla multiplies above 1 for bright lamps. Keep it dim.
 
 ### 3.3 Code (`Building_Elevator.Power.cs`)
 
@@ -66,7 +66,7 @@ New enum or private helper: `LightState { Off, Green, Red }` from `Status`:
 
 The current green and red overlays are full sprites drawn with `Cutout`, so they darken at night. Add **lights-only** overlays drawn on top with `TransparentPostLight`:
 
-- **Files (supplied by the human):** `DeepElevator_GreenLight`, `DeepElevator_RedLight` (256x256), `DeepElevator_Large_GreenLight`, `DeepElevator_Large_RedLight` (512x512), all in `Things/Buildings/DeepElevator/`, on the same canvas as the base sprite.
+- **Files (supplied by the human):** `CargoElevator_GreenLight`, `CargoElevator_RedLight` (256x256), `CargoElevator_Large_GreenLight`, `CargoElevator_Large_RedLight` (512x512), all in `Things/Buildings/CargoElevator/`, on the same canvas as the base sprite.
 - `ElevatorSettingsExtension`: `greenNightTexPath`, `redNightTexPath`, set in the XML of both sizes. When a path is unset, nothing changes.
 - `ElevatorUtil.LoadOverlayGraphic` gets an optional shader parameter (default `Cutout`). The night graphics load with `ShaderDatabase.TransparentPostLight`, cached per def like the state lights. A missing file is logged once and skipped, as now.
 - `DrawAt`: after the state light, draw the matching night graphic (same index), a little higher (for example `Altitudes.AltIncVect * 0.6f`).

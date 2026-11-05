@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Everything the elevator sizes share. Lists that differ per size (costList, statBases, the power comp,
+       modExtensions) live only in the children, because a child's list items are appended to the parent's. -->
+  <ThingDef Name="CargoElevatorBase" ParentName="BuildingBase" Abstract="True">
+    <thingClass>CargoElevator.Building_Elevator</thingClass>
+    <graphicData>
+      <!-- texPath and drawSize are set per size -->
+      <graphicClass>Graphic_Single</graphicClass>
+    </graphicData>
+    <rotatable>false</rotatable>
+    <altitudeLayer>Building</altitudeLayer>
+    <passability>PassThroughOnly</passability>
+    <fillPercent>0.4</fillPercent>
+    <pathCost>42</pathCost>
+    <tickerType>Normal</tickerType>
+    <drawerType>MapMeshAndRealTime</drawerType> <!-- base sprite in the map mesh, the state light drawn every frame -->
+    <surfaceType>Item</surfaceType>
+    <inspectorTabs>
+      <li>ITab_Storage</li>
+      <li>CargoElevator.ITab_ElevatorContents</li>
+    </inspectorTabs>
+    <canOverlapZones>false</canOverlapZones>
+    <designationCategory>Misc</designationCategory>
+    <placeWorkers>
+      <li>CargoElevator.PlaceWorker_Elevator</li>
+    </placeWorkers>
+    <building>
+      <destroySound>BuildingDestroyed_Metal_Medium</destroySound>
+      <maxItemsInCell>1</maxItemsInCell>
+      <preventDeteriorationOnTop>true</preventDeteriorationOnTop>
+      <ignoreStoredThingsBeauty>true</ignoreStoredThingsBeauty>
+      <!-- no storageGroupTag: elevators must not be linked into shared storage groups -->
+      <fixedStorageSettings>
+        <filter>
+          <disallowNotEverStorable>true</disallowNotEverStorable>
+          <categories>
+            <li>Root</li>
+          </categories>
+        </filter>
+      </fixedStorageSettings>
+      <defaultStorageSettings>
+        <priority>Normal</priority>
+        <!-- nothing allowed by default; same pattern as VFE hoppers (empty filter) -->
+        <filter></filter>
+      </defaultStorageSettings>
+    </building>
+    <constructEffect>ConstructMetal</constructEffect>
+  </ThingDef>
+
+  <!-- 1x1 elevator -->
+  <ThingDef ParentName="CargoElevatorBase">
+    <defName>CargoElevator_Elevator</defName>
+    <label>cargo elevator</label>
+    <description>Transports items to a linked elevator on another level at the same world location (surface, DeepRim layers, MultiFloors levels). Build a second elevator at the same position, measured from the map center, on another level to link them.</description>
+    <graphicData>
+      <texPath>Things/Buildings/CargoElevator/CargoElevator</texPath>
+      <drawSize>(1,1)</drawSize>
+    </graphicData>
+    <uiIconPath>Things/Buildings/CargoElevator/CargoElevator_MenuIcon</uiIconPath> <!-- build menu icon; the base sprite is still used for the blueprint and ghost -->
+    <size>(1,1)</size>
+    <statBases>
+      <MaxHitPoints>200</MaxHitPoints>
+      <WorkToBuild>1500</WorkToBuild>
+      <Mass>30</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>75</Steel>
+      <ComponentIndustrial>2</ComponentIndustrial>
+    </costList>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>100</basePowerConsumption> <!-- active -->
+        <idlePowerDraw>10</idlePowerDraw>
+        <shortCircuitInRain>false</shortCircuitInRain>
+      </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>4</glowRadius> <!-- a weak lamp; tune in game -->
+        <glowColor>(60,200,80,0)</glowColor> <!-- the green; the elevator sets green or red per state -->
+      </li>
+    </comps>
+    <modExtensions>
+      <li Class="CargoElevator.ElevatorSettingsExtension">
+        <defaultSlots>4</defaultSlots>
+        <minSlots>1</minSlots>
+        <maxSlots>4</maxSlots>
+        <ticksPerStack>60</ticksPerStack> <!-- one piece per second -->
+        <heldRetryTicks>-1</heldRetryTicks> <!-- -1 = same as ticksPerStack -->
+        <defaultFifo>true</defaultFifo>
+        <defaultMerge>true</defaultMerge>
+        <defaultAllowDrop>true</defaultAllowDrop>
+        <defaultAllowInsert>true</defaultAllowInsert>
+        <greenLightTexPath>Things/Buildings/CargoElevator/CargoElevator_GreenLight</greenLightTexPath> <!-- lights-only overlay, stays bright at night -->
+        <redLightTexPath>Things/Buildings/CargoElevator/CargoElevator_RedLight</redLightTexPath>
+        <greenGlowColor>(60,200,80,0)</greenGlowColor>
+        <redGlowColor>(220,60,50,0)</redGlowColor>
+      </li>
+    </modExtensions>
+  </ThingDef>
+
+  <!-- 2x2 elevator: four intake cells, a 12-cell output ring, four times the sending speed -->
+  <ThingDef ParentName="CargoElevatorBase">
+    <defName>CargoElevator_ElevatorLarge</defName>
+    <label>large cargo elevator</label>
+    <description>A large cargo elevator. Works like the small one, but has four intake cells, delivers to the twelve cells around it and transfers items four times as fast. Pairs only with another large cargo elevator at the same position on another level.</description>
+    <graphicData>
+      <texPath>Things/Buildings/CargoElevator/CargoElevator_Large</texPath>
+      <drawSize>(2,2)</drawSize>
+    </graphicData>
+    <size>(2,2)</size>
+    <statBases>
+      <MaxHitPoints>400</MaxHitPoints>
+      <WorkToBuild>4000</WorkToBuild>
+      <Mass>100</Mass>
+      <Flammability>0</Flammability>
+    </statBases>
+    <costList>
+      <Steel>250</Steel>
+      <ComponentIndustrial>6</ComponentIndustrial>
+    </costList>
+    <comps>
+      <li Class="CompProperties_Power">
+        <compClass>CompPowerTrader</compClass>
+        <basePowerConsumption>300</basePowerConsumption> <!-- active -->
+        <idlePowerDraw>30</idlePowerDraw>
+        <shortCircuitInRain>false</shortCircuitInRain>
+      </li>
+      <li Class="CompProperties_Glower">
+        <glowRadius>5</glowRadius>
+        <glowColor>(60,200,80,0)</glowColor>
+      </li>
+    </comps>
+    <modExtensions>
+      <li Class="CargoElevator.ElevatorSettingsExtension">
+        <defaultSlots>8</defaultSlots>
+        <minSlots>1</minSlots>
+        <maxSlots>8</maxSlots>
+        <ticksPerStack>15</ticksPerStack> <!-- four pieces per second -->
+        <heldRetryTicks>-1</heldRetryTicks>
+        <defaultFifo>true</defaultFifo>
+        <defaultMerge>true</defaultMerge>
+        <defaultAllowDrop>true</defaultAllowDrop>
+        <defaultAllowInsert>true</defaultAllowInsert>
+        <greenLightTexPath>Things/Buildings/CargoElevator/CargoElevator_Large_GreenLight</greenLightTexPath>
+        <redLightTexPath>Things/Buildings/CargoElevator/CargoElevator_Large_RedLight</redLightTexPath>
+        <greenGlowColor>(60,200,80,0)</greenGlowColor>
+        <redGlowColor>(220,60,50,0)</redGlowColor>
+      </li>
+    </modExtensions>
+  </ThingDef>
+</Defs>

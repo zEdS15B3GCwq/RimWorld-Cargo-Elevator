@@ -1,8 +1,8 @@
-# DeepElevator – Step A implementation spec (handoff)
+# CargoElevator – Step A implementation spec (handoff)
 
 > **Status: implemented and tested** (see `results_stepA.md`). This file is kept as the original spec. Where the build differs, the as-built state is:
 > - **Tooling (§2.1, §6):** csproj is SDK-style `net472` (no compile list, no `Properties/AssemblyInfo.cs`), with `ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch=true` for DeepRim.dll. `dotnet build` works; VS is 2026 (`...\Visual Studio\18\Community\MSBuild\...`), not 2022.
-> - **§3.1 graphics:** now `Graphic_Single` (`DeepElevator.png`, 256x256), `rotatable false`, no `uiIconPath` (changed after Step A).
+> - **§3.1 graphics:** now `Graphic_Single` (`CargoElevator.png`, 256x256), `rotatable false`, no `uiIconPath` (changed after Step A).
 > - **§4.1 `FindAnchor`:** uses `map.listerThings.ThingsOfDef(miningshaft / undergroundlift)` and counts player-owned buildings without allocating (the `listerBuildings` version caused a multi-second lag, results §3.2).
 > - **§4.2 placement:** the adjacency rule and the red-zone `DrawGhost` are commented out (user decision). The only rule left is exactly one anchor on the map. Superseded entirely by `plan.md` rev 5 §1 (center-relative pairing, no anchor) in the next step.
 > - **§4.4 load-time check:** `VerifyPartnerLinksBack()` runs in `SpawnSetup` when `respawningAfterLoad` is true and unlinks if `partner.partner != this`. That is allowed at load-spawn because all references are resolved before spawning; it doesn't read the partner's spawned state. This refines "no validation during load-spawn": spawn-state checks stay on the tick.
@@ -13,15 +13,15 @@ Read `plan.md` (rev 4) first, especially §1 (decisions) and §2 (verified facts
 
 **Goal of Step A:** the elevator can be built; placement rules work; two elevators on different layers of the same tile pair automatically (or via the "Connect to…" gizmo when ambiguous). Every lifecycle path that can break a link is detected and **logged**, so the human tester can see which callbacks fire. Links survive save/load.
 
-**Done when:** the solution builds with 0 errors in VS 2022 / MSBuild, `DeepElevator\1.6\Assemblies\DeepElevator.dll` is produced with no game/DeepRim DLLs copied next to it, and the human test checklist (end of file) can be run. The human does the in-game testing; the agent only builds.
+**Done when:** the solution builds with 0 errors in VS 2022 / MSBuild, `CargoElevator\1.6\Assemblies\CargoElevator.dll` is produced with no game/DeepRim DLLs copied next to it, and the human test checklist (end of file) can be run. The human does the in-game testing; the agent only builds.
 
 ## 0. Environment
 
-- Repo root: `C:\Code\Rimworld\DeepElevator`. The VS project (`DeepElevator.csproj`, `DeepElevator.slnx`, `Properties\AssemblyInfo.cs`) stays in the root. The mod folder is `DeepElevator\`. Source goes into `DeepElevator\Source\`.
+- Repo root: `C:\Code\Rimworld\DeepElevator`. The VS project (`CargoElevator.csproj`, `CargoElevator.slnx`, `Properties\AssemblyInfo.cs`) stays in the root. The mod folder is `CargoElevator\`. Source goes into `CargoElevator\Source\`.
 - Game assemblies: `C:\Games\RimWorld\RimWorldWin64_Data\Managed\` (already referenced via relative HintPath).
 - DeepRim assembly: `C:\Games\RimWorld\Mods\2164179860\1.6\Assemblies\DeepRim.dll`. DeepRim source for reading: `Examples\DeepRim\Source\DeepRim\` (git-ignored, not shipped).
 - Decompiler: run `dotnet ilspycmd -t <Type.FullName> "C:\Games\RimWorld\RimWorldWin64_Data\Managed\Assembly-CSharp.dll"` **from the repo root** (it's a local dotnet tool, so it fails from other directories).
-- Conventions: namespace `DeepElevator`; one class per file; file-scoped namespaces are OK once LangVersion is raised (below). Logging always goes through `ElevatorUtil.Log*` (prefix `[DeepElevator]`).
+- Conventions: namespace `CargoElevator`; one class per file; file-scoped namespaces are OK once LangVersion is raised (below). Logging always goes through `ElevatorUtil.Log*` (prefix `[CargoElevator]`).
 
 ## 1. Verified behaviour this step relies on
 
@@ -39,8 +39,8 @@ Read `plan.md` (rev 4) first, especially §1 (decisions) and §2 (verified facts
 
 ## 2. Project changes
 
-### 2.1 `DeepElevator.csproj` (root)
-- OutputPath is already `DeepElevator\1.6\Assemblies\` for both configurations; leave it.
+### 2.1 `CargoElevator.csproj` (root)
+- OutputPath is already `CargoElevator\1.6\Assemblies\` for both configurations; leave it.
 - Add to the first `PropertyGroup`: `<LangVersion>latest</LangVersion>`. Avoid features that need runtime/BCL support missing in .NET Framework 4.7.2 (records/`init`, default interface methods, `Index`/`Range`). Pattern matching, `is not`, switch expressions and `??=` are fine.
 - Set `<Private>False</Private>` on the existing `Assembly-CSharp` and `UnityEngine.CoreModule` references.
 - Add a reference:
@@ -53,18 +53,18 @@ Read `plan.md` (rev 4) first, especially §1 (decisions) and §2 (verified facts
 - Compile items (explicit, old-style csproj):
   ```xml
   <Compile Include="Properties\AssemblyInfo.cs" />
-  <Compile Include="DeepElevator\Source\Building_Elevator.cs" />
-  <Compile Include="DeepElevator\Source\ElevatorUtil.cs" />
-  <Compile Include="DeepElevator\Source\PlaceWorker_Elevator.cs" />
-  <Compile Include="DeepElevator\Source\MapComponent_ElevatorProbe.cs" />
-  <Compile Include="DeepElevator\Source\ElevatorTextures.cs" />
-  <Compile Include="DeepElevator\Source\DeepElevatorDefOf.cs" />
+  <Compile Include="CargoElevator\Source\Building_Elevator.cs" />
+  <Compile Include="CargoElevator\Source\ElevatorUtil.cs" />
+  <Compile Include="CargoElevator\Source\PlaceWorker_Elevator.cs" />
+  <Compile Include="CargoElevator\Source\MapComponent_ElevatorProbe.cs" />
+  <Compile Include="CargoElevator\Source\ElevatorTextures.cs" />
+  <Compile Include="CargoElevator\Source\CargoElevatorDefOf.cs" />
   ```
-- Optional but recommended: `<None Include="DeepElevator\**\*.xml" />` so the Defs are visible in VS. Don't make them build items.
+- Optional but recommended: `<None Include="CargoElevator\**\*.xml" />` so the Defs are visible in VS. Don't make them build items.
 - If `System.Net.Http` / `System.Data*` refs cause trouble, remove them (they aren't needed).
 
-### 2.2 `DeepElevator\About\About.xml`
-Keep name, packageId (`FT.deepelevator`), supportedVersions and description; leave `author` to the user. Add:
+### 2.2 `CargoElevator\About\About.xml`
+Keep name, packageId (`FT.cargoelevator`), supportedVersions and description; leave `author` to the user. Add:
 ```xml
 <modDependencies>
   <li>
@@ -79,26 +79,26 @@ Keep name, packageId (`FT.deepelevator`), supportedVersions and description; lea
 ```
 Append to the description: "Build only one DeepRim mining shaft per map." Remove the empty `modIconPath` element unless an icon exists.
 
-### 2.3 `DeepElevator\loadFolders.xml`
+### 2.3 `CargoElevator\loadFolders.xml`
 Already correct (`/`, `1.6`). No change.
 
 ## 3. Defs
 
-### 3.1 `DeepElevator\Defs\ThingDefs\DeepElevator_Elevator.xml`
+### 3.1 `CargoElevator\Defs\ThingDefs\CargoElevator_Elevator.xml`
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
   <ThingDef ParentName="BuildingBase">
-    <defName>DeepElevator_Elevator</defName>
-    <label>deep elevator</label>
+    <defName>CargoElevator_Elevator</defName>
+    <label>cargo elevator</label>
     <description>Transports items to a linked elevator on another DeepRim layer. Build a second elevator at the same position relative to the mining shaft / lift on another layer to link them.</description>
-    <thingClass>DeepElevator.Building_Elevator</thingClass>
+    <thingClass>CargoElevator.Building_Elevator</thingClass>
     <graphicData>
-      <texPath>Things/Buildings/DeepElevator/DeepElevator</texPath>
+      <texPath>Things/Buildings/CargoElevator/CargoElevator</texPath>
       <graphicClass>Graphic_Multi</graphicClass>
       <drawSize>(1,1)</drawSize>
     </graphicData>
-    <uiIconPath>Things/Buildings/DeepElevator/DeepElevator_MenuIcon</uiIconPath>
+    <uiIconPath>Things/Buildings/CargoElevator/CargoElevator_MenuIcon</uiIconPath>
     <size>(1,1)</size>
     <rotatable>true</rotatable>
     <altitudeLayer>Building</altitudeLayer>
@@ -119,7 +119,7 @@ Already correct (`/`, `1.6`). No change.
     </costList>
     <designationCategory>Misc</designationCategory>
     <placeWorkers>
-      <li>DeepElevator.PlaceWorker_Elevator</li>
+      <li>CargoElevator.PlaceWorker_Elevator</li>
     </placeWorkers>
     <building>
       <destroySound>BuildingDestroyed_Metal_Medium</destroySound>
@@ -129,49 +129,49 @@ Already correct (`/`, `1.6`). No change.
 </Defs>
 ```
 Notes:
-- `Graphic_Multi` loads `DeepElevator_north/_east/_south/_west.png` (they exist). `DeepElevator.png` would be the `Graphic_Single` path; it's unused in Step A.
+- `Graphic_Multi` loads `CargoElevator_north/_east/_south/_west.png` (they exist). `CargoElevator.png` would be the `Graphic_Single` path; it's unused in Step A.
 - Not minifiable in Step A (no `minifiedDef`), so the "uninstall" path doesn't exist yet.
 - No research prerequisite for now.
 - `tickerType Rare`: all periodic work runs every 250 ticks. The code supports `Normal` too (§4.4 "Periodic work"), so switching is an XML-only change.
 
-### 3.2 `DeepElevator\Languages\English\Keyed\DeepElevator.xml`
+### 3.2 `CargoElevator\Languages\English\Keyed\CargoElevator.xml`
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <LanguageData>
-  <DeepElevator_NoAnchor>Needs a DeepRim mining shaft (surface) or lift (layer) on this map.</DeepElevator_NoAnchor>
-  <DeepElevator_MultipleAnchors>This map has more than one DeepRim shaft or lift.</DeepElevator_MultipleAnchors>
-  <DeepElevator_AdjacentToAnchor>Too close to the mining shaft / lift.</DeepElevator_AdjacentToAnchor>
-  <DeepElevator_Surface>surface</DeepElevator_Surface>
-  <DeepElevator_Layer>layer at {0}m</DeepElevator_Layer>
-  <DeepElevator_LayerNamed>layer at {0}m ({1})</DeepElevator_LayerNamed>
-  <DeepElevator_ConnectedTo>Connected to {0}</DeepElevator_ConnectedTo>
-  <DeepElevator_NotConnected>Not connected</DeepElevator_NotConnected>
-  <DeepElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other layers. Use "Connect to...".</DeepElevator_CandidatesAvailable>
-  <DeepElevator_Connect>Connect to...</DeepElevator_Connect>
-  <DeepElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another layer. The link cannot be changed afterwards.</DeepElevator_ConnectDesc>
-  <DeepElevator_MsgLinked>Elevator connected to {0}.</DeepElevator_MsgLinked>
-  <DeepElevator_MsgUnlinked>Elevator lost its connection to {0}.</DeepElevator_MsgUnlinked>
+  <CargoElevator_NoAnchor>Needs a DeepRim mining shaft (surface) or lift (layer) on this map.</CargoElevator_NoAnchor>
+  <CargoElevator_MultipleAnchors>This map has more than one DeepRim shaft or lift.</CargoElevator_MultipleAnchors>
+  <CargoElevator_AdjacentToAnchor>Too close to the mining shaft / lift.</CargoElevator_AdjacentToAnchor>
+  <CargoElevator_Surface>surface</CargoElevator_Surface>
+  <CargoElevator_Layer>layer at {0}m</CargoElevator_Layer>
+  <CargoElevator_LayerNamed>layer at {0}m ({1})</CargoElevator_LayerNamed>
+  <CargoElevator_ConnectedTo>Connected to {0}</CargoElevator_ConnectedTo>
+  <CargoElevator_NotConnected>Not connected</CargoElevator_NotConnected>
+  <CargoElevator_CandidatesAvailable>{0} unconnected elevator(s) at this position on other layers. Use "Connect to...".</CargoElevator_CandidatesAvailable>
+  <CargoElevator_Connect>Connect to...</CargoElevator_Connect>
+  <CargoElevator_ConnectDesc>Link this elevator to an unconnected elevator at the same position on another layer. The link cannot be changed afterwards.</CargoElevator_ConnectDesc>
+  <CargoElevator_MsgLinked>Elevator connected to {0}.</CargoElevator_MsgLinked>
+  <CargoElevator_MsgUnlinked>Elevator lost its connection to {0}.</CargoElevator_MsgUnlinked>
 </LanguageData>
 ```
 Use `"Key".Translate(arg…)`, which supports `{0}`/`{1}` placeholders.
 
 ## 4. Code
 
-All files go in `DeepElevator\Source\`. Usings as needed: `System`, `System.Collections.Generic`, `System.Linq`, `System.Text`, `RimWorld`, `Verse`, `DeepRim`.
+All files go in `CargoElevator\Source\`. Usings as needed: `System`, `System.Collections.Generic`, `System.Linq`, `System.Text`, `RimWorld`, `Verse`, `DeepRim`.
 
 ### 4.1 `ElevatorUtil.cs` – `public static class ElevatorUtil`
 
 ```csharp
-public const string LogPrefix = "[DeepElevator] ";
+public const string LogPrefix = "[CargoElevator] ";
 public static void Log(string msg)      => Verse.Log.Message(LogPrefix + msg);
 public static void LogWarn(string msg)  => Verse.Log.Warning(LogPrefix + msg);
 ```
 In Step A, log unconditionally (this is a probe build). Later steps may gate on `Prefs.DevMode`.
 
 ```csharp
-public static ThingDef ElevatorDef => DefDatabase<ThingDef>.GetNamed("DeepElevator_Elevator");
+public static ThingDef ElevatorDef => DefDatabase<ThingDef>.GetNamed("CargoElevator_Elevator");
 ```
-(Or a `[DefOf]` class `DeepElevatorDefOf { public static ThingDef DeepElevator_Elevator; }` with the usual `static ctor DefOfHelper.EnsureInitializedInCtor`. Either is fine; prefer DefOf.)
+(Or a `[DefOf]` class `CargoElevatorDefOf { public static ThingDef CargoElevator_Elevator; }` with the usual `static ctor DefOfHelper.EnsureInitializedInCtor`. Either is fine; prefer DefOf.)
 
 ```csharp
 /// Shaft (surface) or lift (deep layer). Null + reason if none or more than one.
@@ -179,7 +179,7 @@ public static Building FindAnchor(Map map, out string failReason)
 ```
 - `shafts = map.listerBuildings.AllBuildingsColonistOfDef(ShaftThingDefOf.miningshaft)`
 - `lifts = map.listerBuildings.AllBuildingsColonistOfClass<Building_SpawnedLift>()`
-- total = shafts.Count + lifts.Count. 0 → `failReason = "DeepElevator_NoAnchor".Translate()`, return null. >1 → `"DeepElevator_MultipleAnchors"`, return null. Otherwise return the single one, `failReason = null`.
+- total = shafts.Count + lifts.Count. 0 → `failReason = "CargoElevator_NoAnchor".Translate()`, return null. >1 → `"CargoElevator_MultipleAnchors"`, return null. Otherwise return the single one, `failReason = null`.
 - Note: `allBuildingsColonist` contains only player-faction buildings. DeepRim sets the lift's faction to player, so this is fine.
 
 ```csharp
@@ -207,8 +207,8 @@ public static List<Building_Elevator> UnconnectedCandidates(Building_Elevator se
 /// "surface", "layer at 30m", "layer at 30m (Mines)"
 public static string LayerLabel(Map map)
 ```
-- `map.Parent is UndergroundMapParent ump` → depth = `ump.depth`. Name: find the surface map = `Find.Maps.FirstOrDefault(m => m.Tile == map.Tile && !(m.Parent is UndergroundMapParent))`, then `surface?.GetComponent<UndergroundManager>()?.GetLayerName(depth)`. Empty/null → `"DeepElevator_Layer".Translate(depth * 10)`, else `"DeepElevator_LayerNamed".Translate(depth * 10, name)`.
-- Otherwise → `"DeepElevator_Surface".Translate()`.
+- `map.Parent is UndergroundMapParent ump` → depth = `ump.depth`. Name: find the surface map = `Find.Maps.FirstOrDefault(m => m.Tile == map.Tile && !(m.Parent is UndergroundMapParent))`, then `surface?.GetComponent<UndergroundManager>()?.GetLayerName(depth)`. Empty/null → `"CargoElevator_Layer".Translate(depth * 10)`, else `"CargoElevator_LayerNamed".Translate(depth * 10, name)`.
+- Otherwise → `"CargoElevator_Surface".Translate()`.
 - Must not throw when `map` is null or already removed: return `"?"` for null.
 
 ```csharp
@@ -224,7 +224,7 @@ public override AcceptanceReport AllowsPlacing(BuildableDef checkingDef, IntVec3
     Thing thingToIgnore = null, Thing thing = null)
 ```
 - `anchor = ElevatorUtil.FindAnchor(map, out var reason)`; null → `return new AcceptanceReport(reason)`.
-- `if (anchor.OccupiedRect().ExpandedBy(1).Contains(loc))` → `"DeepElevator_AdjacentToAnchor".Translate()`. ExpandedBy(1) covers both the anchor's own cells and the 8-neighbourhood; DeepRim's `NearbyStorages` uses `OccupiedRect().AdjacentCells`.
+- `if (anchor.OccupiedRect().ExpandedBy(1).Contains(loc))` → `"CargoElevator_AdjacentToAnchor".Translate()`. ExpandedBy(1) covers both the anchor's own cells and the 8-neighbourhood; DeepRim's `NearbyStorages` uses `OccupiedRect().AdjacentCells`.
 - Otherwise `true`. Cell occupancy etc. is handled by vanilla.
 - Optional (nice, cheap): `DrawGhost` override that highlights the anchor with `GenDraw.DrawFieldEdges(anchor.OccupiedRect().ExpandedBy(1).Cells.ToList(), Color.red)`. Skip if it causes any trouble.
 
@@ -294,7 +294,7 @@ public void Link(Building_Elevator other)
     partner = other; partnerMap = other.Map;
     other.partner = this; other.partnerMap = Map;
     ElevatorUtil.Log($"Linked: {ThingID} ({ElevatorUtil.MapDesc(Map)}) <-> {other.ThingID} ({ElevatorUtil.MapDesc(other.Map)})");
-    Messages.Message("DeepElevator_MsgLinked".Translate(ElevatorUtil.LayerLabel(other.Map)), this, MessageTypeDefOf.PositiveEvent, historical: false);
+    Messages.Message("CargoElevator_MsgLinked".Translate(ElevatorUtil.LayerLabel(other.Map)), this, MessageTypeDefOf.PositiveEvent, historical: false);
 }
 
 /// Idempotent. Clears both sides (the other side only if it still points at us).
@@ -308,7 +308,7 @@ public void Unlink(string reason)
     // Tell the player about the survivor, if any: whichever of this/p is still spawned
     var survivor = Spawned ? this : (p.Spawned ? p : null);
     if (survivor != null)
-        Messages.Message("DeepElevator_MsgUnlinked".Translate(ElevatorUtil.LayerLabel(survivor == this ? pMap : Map)), survivor, MessageTypeDefOf.NeutralEvent, historical: false);
+        Messages.Message("CargoElevator_MsgUnlinked".Translate(ElevatorUtil.LayerLabel(survivor == this ? pMap : Map)), survivor, MessageTypeDefOf.NeutralEvent, historical: false);
 }
 ```
 Keep `ElevatorUtil.LayerLabel` null/removed-map safe (§4.1), because `pMap` may be gone.
@@ -352,10 +352,10 @@ public override void Notify_MyMapRemoved()
 ```
 Expected log for a deconstruct (vanilla `Destroy()` calls `DeSpawn()` from inside itself, so `Destroy:` comes first):
 ```
-[DeepElevator] Destroy: Building_Elevator123 on map#2 (layer at 10m) spawned=True mode=Deconstruct partner=Building_Elevator77
-[DeepElevator] Unlinked (Destroy): Building_Elevator123 x Building_Elevator77 (partner map map#0 (surface))
-[DeepElevator] DeSpawn: Building_Elevator123 on map#2 (layer at 10m) spawned=True mode=Deconstruct partner=none
-[DeepElevator] Discard: Building_Elevator123 on map#null spawned=False silently=False partner=none   (only if the def discards on destroy)
+[CargoElevator] Destroy: Building_Elevator123 on map#2 (layer at 10m) spawned=True mode=Deconstruct partner=Building_Elevator77
+[CargoElevator] Unlinked (Destroy): Building_Elevator123 x Building_Elevator77 (partner map map#0 (surface))
+[CargoElevator] DeSpawn: Building_Elevator123 on map#2 (layer at 10m) spawned=True mode=Deconstruct partner=none
+[CargoElevator] Discard: Building_Elevator123 on map#null spawned=False silently=False partner=none   (only if the def discards on destroy)
 ```
 A `DeSpawn:` line with a partner still set and no `Destroy:` before it means despawn without destroy (e.g. minify, later steps).
 
@@ -412,8 +412,8 @@ public override IEnumerable<Gizmo> GetGizmos()
         var candidates = ElevatorUtil.UnconnectedCandidates(this);
         if (candidates.Count > 0)
             yield return new Command_Action {
-                defaultLabel = "DeepElevator_Connect".Translate(),
-                defaultDesc = "DeepElevator_ConnectDesc".Translate(),
+                defaultLabel = "CargoElevator_Connect".Translate(),
+                defaultDesc = "CargoElevator_ConnectDesc".Translate(),
                 icon = ElevatorTextures.Connect,   // placeholder vanilla icon, see below
                 action = () => Find.WindowStack.Add(new FloatMenu(
                     candidates.Select(c => new FloatMenuOption(ElevatorUtil.LayerLabel(c.Map), () => {
@@ -438,11 +438,11 @@ Icon: load textures in a `[StaticConstructorOnStartup]` static class (e.g. `Elev
 var sb = new StringBuilder();
 var baseStr = base.GetInspectString();
 if (!baseStr.NullOrEmpty()) sb.AppendLine(baseStr);
-if (partner != null) sb.AppendLine("DeepElevator_ConnectedTo".Translate(ElevatorUtil.LayerLabel(partnerMap)));
+if (partner != null) sb.AppendLine("CargoElevator_ConnectedTo".Translate(ElevatorUtil.LayerLabel(partnerMap)));
 else {
-    sb.AppendLine("DeepElevator_NotConnected".Translate());
+    sb.AppendLine("CargoElevator_NotConnected".Translate());
     var n = ElevatorUtil.UnconnectedCandidates(this).Count;
-    if (n > 0) sb.AppendLine("DeepElevator_CandidatesAvailable".Translate(n));
+    if (n > 0) sb.AppendLine("CargoElevator_CandidatesAvailable".Translate(n));
 }
 return sb.ToString().TrimEndNewlines();
 ```
@@ -452,8 +452,8 @@ return sb.ToString().TrimEndNewlines();
 Storage settings / `Building_Storage`, internal buffer, `Accepts`, transport, rate limit, delivery, Unload gizmo, Contents tab, CompTransporter/manifest, placement helper ghosts on other layers, Harmony, mod settings, custom graphics swap.
 
 ## 6. Build check (agent)
-- Build Debug with MSBuild from the VS 2022 install, e.g. `"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" DeepElevator.csproj /p:Configuration=Debug`, or ask the user to build in VS.
-- Expect 0 errors. `DeepElevator\1.6\Assemblies\` contains only `DeepElevator.dll` (+ `.pdb` in Debug). No `Assembly-CSharp.dll`, `DeepRim.dll`, or `UnityEngine*.dll` copies.
+- Build Debug with MSBuild from the VS 2022 install, e.g. `"C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" CargoElevator.csproj /p:Configuration=Debug`, or ask the user to build in VS.
+- Expect 0 errors. `CargoElevator\1.6\Assemblies\` contains only `CargoElevator.dll` (+ `.pdb` in Debug). No `Assembly-CSharp.dll`, `DeepRim.dll`, or `UnityEngine*.dll` copies.
 - Don't commit unless the user asks.
 
 ## 7. Human test checklist (in game, Dev mode on, watch the log)

@@ -1,4 +1,4 @@
-# DeepElevator – Step A results
+# CargoElevator – Step A results
 
 Spec: `plan_stepA.md`. Overall: **functionally successful, with one open performance issue** (placement lag, section 3.2) that has been solved. Building, placement rules, auto-pairing, the "Connect to…" menu, lifecycle callbacks (including all map-removal paths) and save/load all behaved as specified.
 
@@ -6,9 +6,9 @@ Spec: `plan_stepA.md`. Overall: **functionally successful, with one open perform
 
 Everything in `plan_stepA.md` §2–§4, with the deviations below, plus the diagnostics and the load-time link check added after the second round of testing (section 6).
 
-- `DeepElevator/Source/`: `Building_Elevator`, `ElevatorUtil`, `PlaceWorker_Elevator`, `MapComponent_ElevatorProbe`, `ElevatorTextures`, `DeepElevatorDefOf`, and (round 2) `ElevatorProfiler`, `ElevatorDiagnostics`.
-- Defs / language / About: `Defs/ThingDefs/DeepElevator_Elevator.xml`, `Languages/English/Keyed/DeepElevator.xml`, `About.xml` (DeepRim dependency, loadAfter, one-shaft note, empty `modIconPath` removed).
-- Build output: only `DeepElevator.dll` + `.pdb` in `DeepElevator/1.6/Assemblies/` (no game/DeepRim DLLs copied).
+- `CargoElevator/Source/`: `Building_Elevator`, `ElevatorUtil`, `PlaceWorker_Elevator`, `MapComponent_ElevatorProbe`, `ElevatorTextures`, `CargoElevatorDefOf`, and (round 2) `ElevatorProfiler`, `ElevatorDiagnostics`.
+- Defs / language / About: `Defs/ThingDefs/CargoElevator_Elevator.xml`, `Languages/English/Keyed/CargoElevator.xml`, `About.xml` (DeepRim dependency, loadAfter, one-shaft note, empty `modIconPath` removed).
+- Build output: only `CargoElevator.dll` + `.pdb` in `CargoElevator/1.6/Assemblies/` (no game/DeepRim DLLs copied).
 
 ### Deviations from the spec
 
@@ -16,10 +16,10 @@ Everything in `plan_stepA.md` §2–§4, with the deviations below, plus the dia
 | --- | --- |
 | `ResolveAssemblyReferenceIgnoreTargetFrameworkAttributeVersionMismatch=true` in the csproj | DeepRim.dll is built for .NET 4.8.1, the project targets 4.7.2. MSBuild refused the reference (MSB3274, then CS0246 for `using DeepRim`). Only affects compile-time reference resolution; the game's Mono does not enforce the framework label, and DeepRim already loads compiled that way. |
 | MSBuild path is `...\Visual Studio\18\Community\...` (VS 2026), not 2022 | The "2022" in the plan was a typo. |
-| **csproj converted to SDK-style** (`net472`, requested after Step A) | No per-file compile list, `dotnet build` works, no VS-only targeting packs. `Properties/AssemblyInfo.cs` removed (assembly info generated from csproj properties). Default item globs are off; only `DeepElevator/Source/**/*.cs` is compiled, so `Examples/` (DeepRim source) is never picked up. Verified: `dotnet build` (Debug) and VS MSBuild (Release, with `-restore`) both give 0 errors / 0 warnings and identical output files. |
+| **csproj converted to SDK-style** (`net472`, requested after Step A) | No per-file compile list, `dotnet build` works, no VS-only targeting packs. `Properties/AssemblyInfo.cs` removed (assembly info generated from csproj properties). Default item globs are off; only `CargoElevator/Source/**/*.cs` is compiled, so `Examples/` (DeepRim source) is never picked up. Verified: `dotnet build` (Debug) and VS MSBuild (Release, with `-restore`) both give 0 errors / 0 warnings and identical output files. |
 | `DrawGhost` override in `PlaceWorker_Elevator` (the optional extra in the spec) | Draws the red boundary around the anchor so the player sees the forbidden cells. |
 | `System.Data*`, `System.Net.Http` references removed | Unused. |
-| `DeepElevatorDefOf` exists but is unused | Spec asked for it; later steps will use it. |
+| `CargoElevatorDefOf` exists but is unused | Spec asked for it; later steps will use it. |
 
 Also: the "Connect to…" gizmo uses the vanilla icon `UI/Commands/LoadTransporter` (not verified to exist; falls back to the bad-texture icon), and `plan.md` was modified on disk by the user during the session (not by the agent).
 
@@ -58,7 +58,7 @@ Also: the "Connect to…" gizmo uses the vanilla icon `UI/Commands/LoadTransport
 | --- | --- |
 | Damaged save (a) and (b) after the load-time check | Link removed on both ends with the warning `partner ... does not link back (it links to none); unlinking.`. "Connect to…" becomes enabled and the link can be re-established. 3.3 is fixed. |
 | Unrelated build icon right after restart | Also produced the Dubs Mint Menus error (3.1). |
-| Startup diagnostic | `placeWorkers=[DeepElevator.PlaceWorker_Elevator] hasInteractionCell=False passability=PassThroughOnly ... tickerType=Rare`: no other mod adds place workers or interaction cells to our def. |
+| Startup diagnostic | `placeWorkers=[CargoElevator.PlaceWorker_Elevator] hasInteractionCell=False passability=PassThroughOnly ... tickerType=Rare`: no other mod adds place workers or interaction cells to our def. |
 | Hitch lines after rejected placements | Showed about 20000 `AllowsPlacing` calls per frame; see 3.2. |
 
 ### Round 4 (after the `FindAnchor` fix)
@@ -125,7 +125,7 @@ An error from Better Architect / Dubs Mint Menus (`toggleDesMethod is null`) app
 ## 5. Agreed changes to the plan
 
 - **Placement restrictions (user decision):** elevators may be placed adjacent to the shaft/lift and adjacent to other elevators. Players must be aware that DeepRim pulls items from adjacent storage and plan accordingly; some may even want that. The only remaining rule: the map must have exactly one anchor (shaft or lift).
-  - **Done in code:** the adjacency-to-anchor check in `PlaceWorker_Elevator.EvaluatePlacement` and the red-zone `DrawGhost` override are **commented out, not deleted**, in case adjacency rules return. The language key `DeepElevator_AdjacentToAnchor` is unused for now. `plan.md` §1 (placement rule) still describes the old rule and must be updated.
+  - **Done in code:** the adjacency-to-anchor check in `PlaceWorker_Elevator.EvaluatePlacement` and the red-zone `DrawGhost` override are **commented out, not deleted**, in case adjacency rules return. The language key `CargoElevator_AdjacentToAnchor` is unused for now. `plan.md` §1 (placement rule) still describes the old rule and must be updated.
 - **Placement helper** (ghost shading of unconnected elevators on other layers) stays in "Later", implemented in `PlaceWorker_Elevator.DrawGhost` by projecting unconnected elevators through the key. Open question: how to show the layer name (the world-draw pass cannot draw text; check for a PlaceWorker GUI hook first). Note the performance rule from 3.2 if `DrawGhost` ever does more than trivial work.
 - **Transport loops (for Step B):**
   - Basically, not as much of a concern as thought before. Player-built conveyor loops remain possible; the rate limit keeps them from being instant.

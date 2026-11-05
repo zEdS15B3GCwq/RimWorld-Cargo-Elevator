@@ -1,4 +1,4 @@
-# DeepElevator – Step E1: transport loader (manifest loading, items only)
+# CargoElevator – Step E1: transport loader (manifest loading, items only)
 
 > **Superseded in part by `plan_stepE2.md`:** the loader's transporter comp, Load dialog, finish check and cancel handling are replaced by a vanilla map portal. The elevator side of E1 stays.
 
@@ -66,19 +66,19 @@ Manifest loading moves off the elevator into a new building, the **transport loa
 
 ## 5. Loader
 
-### 5.1 Def (new file `Defs/ThingDefs/DeepElevator_TransportLoader.xml`)
+### 5.1 Def (new file `Defs/ThingDefs/CargoElevator_TransportLoader.xml`)
 
-`DeepElevator_TransportLoader`, parent `BuildingBase`:
+`CargoElevator_TransportLoader`, parent `BuildingBase`:
 
-- `thingClass` `DeepElevator.Building_TransportLoader`; `size` (1,1); `rotatable` false; `tickerType` Normal; `altitudeLayer` Building; `passability` PassThroughOnly; `fillPercent` 0.4; `pathCost` 42; `designationCategory` Misc; `canOverlapZones` false; `constructEffect` ConstructMetal.
-- `graphicData`: `Graphic_Single`, `texPath` `Things/Buildings/DeepElevator/TransportLoader`, `drawSize` (1,1).
+- `thingClass` `CargoElevator.Building_TransportLoader`; `size` (1,1); `rotatable` false; `tickerType` Normal; `altitudeLayer` Building; `passability` PassThroughOnly; `fillPercent` 0.4; `pathCost` 42; `designationCategory` Misc; `canOverlapZones` false; `constructEffect` ConstructMetal.
+- `graphicData`: `Graphic_Single`, `texPath` `Things/Buildings/CargoElevator/TransportLoader`, `drawSize` (1,1).
 - `inspectorTabs`: `ITab_ContentsTransporter`.
-- `placeWorkers`: `DeepElevator.PlaceWorker_TransportLoader`.
+- `placeWorkers`: `CargoElevator.PlaceWorker_TransportLoader`.
 - Cost and stats (first values, tunable): Steel 50, ComponentIndustrial 1, WorkToBuild 800, MaxHitPoints 150, Mass 20, Flammability 0.
 - `CompProperties_Transporter`: `massCapacity` 100000, `max1PerGroup` true, `canChangeAssignedThingsAfterStarting` true, `shouldTickContents` true, `showMassInInspectString` false, `showOverallStats` false.
 - Description: says it loads a chosen list of items and passes them to the adjacent elevator; needs no power.
 
-**Texture:** `DeepElevator/Textures/Things/Buildings/DeepElevator/TransportLoader.png` is in place (supplied by the human). Use it as it is.
+**Texture:** `CargoElevator/Textures/Things/Buildings/CargoElevator/TransportLoader.png` is in place (supplied by the human). Use it as it is.
 
 ### 5.2 Class (new file `Source/Building_TransportLoader.cs`)
 
@@ -108,18 +108,18 @@ Log it as load finished, not cancelled.
 **Linking**
 - `Candidates()`: distinct `Building_Elevator`s on `GenAdj.CellsAdjacentCardinal(this)`, spawned, excluding one being removed.
 - `TryAutoLink()`: exactly one candidate and no partner: `LinkTo(candidate)`. It does not change `transferAllowed`.
-- `LinkTo(elevator)`: set `partner`, `elevator.RegisterLoader(this)`, log, message `DeepElevator_MsgLoaderLinked`.
-- `Notify_PartnerLost()`: `partner = null; transferAllowed = false;`, log, message `DeepElevator_MsgLoaderUnlinked`, then `TryAutoLink()`. Items stay in the container.
+- `LinkTo(elevator)`: set `partner`, `elevator.RegisterLoader(this)`, log, message `CargoElevator_MsgLoaderLinked`.
+- `Notify_PartnerLost()`: `partner = null; transferAllowed = false;`, log, message `CargoElevator_MsgLoaderUnlinked`, then `TryAutoLink()`. Items stay in the container.
 
 **Gizmos** (`GetGizmos`). Pass through base gizmos, with two changes:
 - Skip the vanilla cancel: `gizmo is Command_Action { icon: var icon } && icon == CompTransporter.CancelLoadCommandTex`. Check this works in game.
-- `Command_LoadToTransporter`: if not loading and `partner == null`, call `.Disable("DeepElevator_LoaderNeedsLink".Translate())`. While loading it stays enabled, also with no partner.
+- `Command_LoadToTransporter`: if not loading and `partner == null`, call `.Disable("CargoElevator_LoaderNeedsLink".Translate())`. While loading it stays enabled, also with no partner.
 
 Then add:
 1. **Cancel/unload**: shown while loading or when the container has items. Label and description use vanilla's keys: `CommandCancelLoad`/`CommandCancelLoadDesc` when `AnythingLeftToLoad`, else `CommandUnload`/`CommandUnloadDesc` (with `LabelShort`). Icon `CompTransporter.CancelLoadCommandTex`. Action: `SoundDefOf.Designate_Cancel.PlayOneShotOnCamera()`; if loading `transporter.CancelLoad()`, otherwise `Container.TryDropAll(Position, Map, ThingPlaceMode.Near)` (safety path).
 2. **Transfer items to elevator**: `Command_Toggle` on `transferAllowed`; disabled with a reason while not linked. Placeholder icon.
 3. **Priority**: `Command_Action` opening a `FloatMenu` of `Low, Normal, Preferred, Important, Critical` (`priority.Label()`); on change call `partner?.Notify_LoaderPriorityChanged()`. The label shows the current level. Placeholder icon.
-4. **Connect to...**: when no partner and at least one candidate. Reuse the `DeepElevator_Connect` label and `ElevatorTextures.Connect`; a new description key. Same-map neighbours can show the same level label, so the menu shows `LabelCap` plus the direction from the loader (north/east/south/west, own keys; `Rot4.FromIntVec3` of the adjacent cell minus `Position`). Re-check the state in the option's action, as `OpenConnectMenu` does.
+4. **Connect to...**: when no partner and at least one candidate. Reuse the `CargoElevator_Connect` label and `ElevatorTextures.Connect`; a new description key. Same-map neighbours can show the same level label, so the menu shows `LabelCap` plus the direction from the loader (north/east/south/west, own keys; `Rot4.FromIntVec3` of the adjacent cell minus `Position`). Re-check the state in the option's action, as `OpenConnectMenu` does.
 5. Dev gizmo `DEV: log loader state` behind `DebugSettings.ShowDevGizmos`.
 
 **Inspect string**: base text, then:
@@ -137,7 +137,7 @@ Then add:
 
 ### 5.3 Placement (new file `Source/PlaceWorker_TransportLoader.cs`)
 
-`AllowsPlacing` is not overridden. `DrawGhost`: green `GenDraw.DrawFieldEdges` around all cells cardinally adjacent to spawned elevators on the map. Cached and rebuilt every 60 frames, with the same pattern as `PlaceWorker_Elevator.EnsureCache`, plus an `ElevatorProfiler.Measure`. `DrawPlaceMouseAttachments`: for the hovered cell, "Connects to: <label>" for one candidate (reuse `DeepElevator_HelperConnectsTo`), or a new line for several: "Several elevators: use Connect to...". Sharing code with the elevator's worker is not expected, because that one searches other maps; move small helpers such as `DrawMouseTextLine` only if it stays simple.
+`AllowsPlacing` is not overridden. `DrawGhost`: green `GenDraw.DrawFieldEdges` around all cells cardinally adjacent to spawned elevators on the map. Cached and rebuilt every 60 frames, with the same pattern as `PlaceWorker_Elevator.EnsureCache`, plus an `ElevatorProfiler.Measure`. `DrawPlaceMouseAttachments`: for the hovered cell, "Connects to: <label>" for one candidate (reuse `CargoElevator_HelperConnectsTo`), or a new line for several: "Several elevators: use Connect to...". Sharing code with the elevator's worker is not expected, because that one searches other maps; move small helpers such as `DrawMouseTextLine` only if it stays simple.
 
 ## 6. Elevator changes
 
@@ -160,7 +160,7 @@ Then add:
 
 ### 6.3 Loading state removal
 
-Remove: `IsManifestLoading`, the "loading, ..." wrapping in `DescribeStatus`, key `DeepElevator_StatusLoading`, the orange blink and `ManifestBlinkHalfPeriodSeconds`, `OrangeLightIndex`, the orange slot in the light array, `orangeTexPath` (extension, XML, diagnostics). **Keep the `DeepElevator_orange*.png` files:** the human may repurpose them. They are simply no longer referenced.
+Remove: `IsManifestLoading`, the "loading, ..." wrapping in `DescribeStatus`, key `CargoElevator_StatusLoading`, the orange blink and `ManifestBlinkHalfPeriodSeconds`, `OrangeLightIndex`, the orange slot in the light array, `orangeTexPath` (extension, XML, diagnostics). **Keep the `CargoElevator_orange*.png` files:** the human may repurpose them. They are simply no longer referenced.
 
 ### 6.4 Pull (new file `Source/Building_Elevator.Loaders.cs`)
 
@@ -219,7 +219,7 @@ Why this gives loaders precedence without any event logic: `Notify_ReceivedThing
 
 ### 6.5 Allow insert hint
 
-Add to `DeepElevator_ToggleInsertDesc`: "Transport loaders are not affected: this elevator still pulls from them."
+Add to `CargoElevator_ToggleInsertDesc`: "Transport loaders are not affected: this elevator still pulls from them."
 
 ### 6.6 Keep unchanged
 
@@ -227,7 +227,7 @@ Add to `DeepElevator_ToggleInsertDesc`: "Transport loaders are not affected: thi
 
 ## 7. Language keys (new)
 
-`DeepElevator_MsgLoaderLinked`, `DeepElevator_MsgLoaderUnlinked`, `DeepElevator_LoaderNeedsLink`, `DeepElevator_ToggleTransfer` + `Desc`, `DeepElevator_LoaderPriority` + `Desc`, `DeepElevator_LoaderConnectDesc`, `DeepElevator_LoaderLinkedTo`, `DeepElevator_LoaderStatusLoading`, `...StatusComplete`, `...StatusNotLinked`, `...StatusTransferOff`, `...StatusCannotAccept`, `...StatusTransferring`, direction keys, `DeepElevator_HelperSeveralElevators`. Wording of vanilla pod messages is not changed (§9).
+`CargoElevator_MsgLoaderLinked`, `CargoElevator_MsgLoaderUnlinked`, `CargoElevator_LoaderNeedsLink`, `CargoElevator_ToggleTransfer` + `Desc`, `CargoElevator_LoaderPriority` + `Desc`, `CargoElevator_LoaderConnectDesc`, `CargoElevator_LoaderLinkedTo`, `CargoElevator_LoaderStatusLoading`, `...StatusComplete`, `...StatusNotLinked`, `...StatusTransferOff`, `...StatusCannotAccept`, `...StatusTransferring`, direction keys, `CargoElevator_HelperSeveralElevators`. Wording of vanilla pod messages is not changed (§9).
 
 ## 8. Tests for the human
 

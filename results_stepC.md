@@ -1,10 +1,10 @@
-# DeepElevator – Step C results
+# CargoElevator – Step C results
 
-Spec: `plan_stepC.md`. Overall: **step concluded.** The elevator is a working item elevator: items go into a buffer, are streamed to the linked partner and are delivered to adjacent storage, held, or dropped on the adjacent floor. Three rounds of in-game testing by the human led to the changes in section 4. The final wording of the status line ("FIFO on") was set by the human directly in the files. Build: `dotnet build DeepElevator.csproj` (Debug) gives 0 errors / 0 warnings; `DeepElevator/1.6/Assemblies/` contains only `DeepElevator.dll` + `.pdb`. No git commits were made by the agent.
+Spec: `plan_stepC.md`. Overall: **step concluded.** The elevator is a working item elevator: items go into a buffer, are streamed to the linked partner and are delivered to adjacent storage, held, or dropped on the adjacent floor. Three rounds of in-game testing by the human led to the changes in section 4. The final wording of the status line ("FIFO on") was set by the human directly in the files. Build: `dotnet build CargoElevator.csproj` (Debug) gives 0 errors / 0 warnings; `CargoElevator/1.6/Assemblies/` contains only `CargoElevator.dll` + `.pdb`. No git commits were made by the agent.
 
 ## 1. What was implemented
 
-- **Def** (`DeepElevator_Elevator.xml`): `tickerType Normal`, `surfaceType Item`, inspector tabs `ITab_Storage` + `DeepElevator.ITab_ElevatorContents`, building storage settings (`maxItemsInCell` 1, empty default filter, no `storageGroupTag`), `CompProperties_Transporter` (the buffer), `ElevatorSettingsExtension`.
+- **Def** (`CargoElevator_Elevator.xml`): `tickerType Normal`, `surfaceType Item`, inspector tabs `ITab_Storage` + `CargoElevator.ITab_ElevatorContents`, building storage settings (`maxItemsInCell` 1, empty default filter, no `storageGroupTag`), `CompProperties_Transporter` (the buffer), `ElevatorSettingsExtension`.
 - **`ElevatorSettingsExtension`** (new): `defaultSlots` 4, `minSlots` 1, `maxSlots` 4, `ticksPerStack` 60, `heldRetryTicks` -1 (= `ticksPerStack`), `defaultFifo` / `defaultMerge` / `defaultAllowDrop` true. `Building_Elevator.Settings` falls back to a static default instance.
 - **`Building_Elevator`** is `partial` and derives from `Building_Storage`; it re-lists `ISlotGroupParent, IHaulDestination` so interface calls reach the `new Accepts`:
   - `Building_Elevator.cs`: link, lifecycle, `Tick` / `DoPeriodicWork` (absorb pending → periodic partner validation and backstop every 250 ticks → `TrySend` when the buffer is non-empty and `nextSendTick` is reached), gizmo and inspect composition (the Load gizmo is filtered out), explicit `IStorageGroupMember` members, DEV "log buffer state" gizmo.
@@ -13,7 +13,7 @@ Spec: `plan_stepC.md`. Overall: **step concluded.** The elevator is a working it
 - **`ElevatorUtil`**: `OutputCells`, `StorageCellRoom`, `DeliveryDropRoom`, `UnloadValidator`, `TryDropNear`, `Describe`.
 - **`ITab_ElevatorContents`** (new): derives from `ITab_ContentsTransporter`; drops go through `DropFromBuffer`.
 - **`ElevatorDiagnostics`**: the startup line also prints surfaceType, maxItemsInCell, transporter-comp presence and the extension values.
-- **Language keys** (`DeepElevator.xml`): buffer, paused-status, Unload, toggle and slot keys.
+- **Language keys** (`CargoElevator.xml`): buffer, paused-status, Unload, toggle and slot keys.
 
 ### How it works (final behaviour)
 
@@ -28,7 +28,7 @@ Spec: `plan_stepC.md`. Overall: **step concluded.** The elevator is a working it
 | Change | Reason |
 | --- | --- |
 | `HoldUndeliverable` language key dropped again | The pawn message was removed (4.3). Pawn entries still have an internal `HoldReason.Undeliverable`, which is not shown. |
-| `DeepElevator_UnloadEmpty` key added | Tooltip of the disabled Unload gizmo. |
+| `CargoElevator_UnloadEmpty` key added | Tooltip of the disabled Unload gizmo. |
 | `IStorageGroupMember` re-implemented explicitly | See 3.1. |
 | `Dialog_RenameElevator` and the Rename gizmo removed | The vanilla `IRenameable` button in the inspect pane replaces them (3.1). |
 
@@ -105,7 +105,7 @@ The first report covered basics, adding items, merging, unloading, slots, filter
 - The pawn message was dropped (to be added back if pawn sending is ever supported). Old `Hold*` keys deleted.
 
 ### 4.4 FIFO reason
-- With FIFO on, stacks that are not first in the queue are listed under their own reason instead of sharing the head's. The human set the text to **"FIFO on"** (key `DeepElevator_PausedFifoWaiting`; it tells the player what to switch off). Example: `Transfer paused: Corn x50 (storage full); Rice x20, Steel x75 (FIFO on).` Not-connected still applies to all entries.
+- With FIFO on, stacks that are not first in the queue are listed under their own reason instead of sharing the head's. The human set the text to **"FIFO on"** (key `CargoElevator_PausedFifoWaiting`; it tells the player what to switch off). Example: `Transfer paused: Corn x50 (storage full); Rice x20, Steel x75 (FIFO on).` Not-connected still applies to all entries.
 
 ## 5. Decisions
 
@@ -117,7 +117,7 @@ The first report covered basics, adding items, merging, unloading, slots, filter
 
 ## 6. Open items and notes for later steps
 
-- **Sprite variants (not implemented):** lights around a corner or a single light on the elevator; off when inactive, green when connected and not held, red when items are held. The textures `DeepElevator_green/orange/red` (and `_2x2`) are already in the working tree but unused.
+- **Sprite variants (not implemented):** lights around a corner or a single light on the elevator; off when inactive, green when connected and not held, red when items are held. The textures `CargoElevator_green/orange/red` (and `_2x2`) are already in the working tree but unused.
 - **Pawn sending:** not supported; `HoldReason.Undeliverable` exists for such entries and is not shown.
 - **Manifest / Load dialog (Step E):** will use the contents tab's "To load" column.
 - **VFE conveyor checks (Step D)** and **mod settings**: not started.

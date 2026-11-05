@@ -1,4 +1,4 @@
-# DeepElevator – Step H preparation: build menu, performance, preview, mod settings
+# CargoElevator – Step H preparation: build menu, performance, preview, mod settings
 
 Findings for the human's decisions before `plan_stepH.md` is written. Basis: the `stepF` branch as of `69d01a2`, decompiled RimWorld 1.6 (`include/decompiled`), the example mods in `Examples/` (DeepRim and FasterBiosculpterPod sources, MultiFloors 1.6 defs and assembly). Better Architect Menu (BAM) was not looked at, as asked. Nothing was run in game.
 
@@ -6,7 +6,7 @@ Findings for the human's decisions before `plan_stepH.md` is written. Basis: the
 
 ### 1.1 How it works in vanilla
 
-- A buildable def names one `designationCategory` (a `DesignationCategoryDef` reference). That is the architect tab it appears in. Our elevators (`DeepElevatorBase`) and the loader use `Misc`.
+- A buildable def names one `designationCategory` (a `DesignationCategoryDef` reference). That is the architect tab it appears in. Our elevators (`CargoElevatorBase`) and the loader use `Misc`.
 - A `DesignationCategoryDef` is a top-level architect tab: `label`, `description`, `order` (position in the list; vanilla Structure is 700), `specialDesignatorClasses` (Cancel, Deconstruct, …), `showPowerGrid`, `researchPrerequisites`, `preferredColumn`. Vanilla has no sub-categories; a tab is a flat list.
 - `designatorDropdown` (a `DesignatorDropdownGroupDef`) groups several buildables into one button with a drop-down inside a tab, as vanilla does for walls of different materials.
 - Because the category is a def reference, naming a category from another mod directly in our def fails to resolve when that mod isn't loaded. The safe way is an XML patch that runs only when the mod is active: `PatchOperationFindMod` (matches the mod's **name** from `About.xml`, here `MultiFloors`). `MayRequire` works on defs and list items, not on a single field's value.
@@ -24,7 +24,7 @@ So neither mod defines "Elevation" or "Infrastructure". Those names come from BA
 
 | Option | Without MultiFloors | With MultiFloors | Work |
 | --- | --- | --- | --- |
-| **A. Join MultiFloors' tab when it's active** | stays where we choose (`Misc`, or B's own tab) | our buildings sit next to MF's stairs and elevators; under BAM they should land where MF's do (Build/Elevation), **to verify** | one patch file: `PatchOperationFindMod` `MultiFloors` → `PatchOperationReplace` on the `designationCategory` of `DeepElevatorBase` and the loader |
+| **A. Join MultiFloors' tab when it's active** | stays where we choose (`Misc`, or B's own tab) | our buildings sit next to MF's stairs and elevators; under BAM they should land where MF's do (Build/Elevation), **to verify** | one patch file: `PatchOperationFindMod` `MultiFloors` → `PatchOperationReplace` on the `designationCategory` of `CargoElevatorBase` and the loader |
 | B. Own tab (for example "Levels") | a top-level tab of our own, order next to Structure | the same own tab, a second one beside MF's | one `DesignationCategoryDef` plus a language entry. Under BAM it would be an unmapped tab until BAM is configured for it |
 | C. Vanilla tab that fits better | e.g. `Production` like DeepRim, or `Furniture` (vanilla shelves) | same | one line per def |
 
