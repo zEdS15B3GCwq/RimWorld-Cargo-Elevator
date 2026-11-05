@@ -229,7 +229,8 @@ Other points of `pre_stepH.md` reviewed:
 | `88a6292` | results §12 |
 | `89a50df` | (human) `loadBefore` BAM removed |
 | `e841cb9` | (human) higher-quality loader textures |
-| (next) | slots above a lowered maximum are kept; results §13 |
+| `a0f21b8` | slots above a lowered maximum are kept; results §13 |
+| (next) | even glow for the large elevator, with a setting; results §14 |
 
 ## 11. Human decisions after the first round, and changes
 
@@ -325,3 +326,27 @@ The one way this could break is a future BAM or MultiFloors version that renames
 - No vanilla light offsets by a fraction. The wall lamps (`WallLamp`, `TorchWallLamp`) only offset their **graphic** onto the wall (`drawOffsetNorth`…): the light itself sits in the cell in front of the wall, in the lamp's own cell. The `offsetNorth`… values on the torch wall lamp are for its fire overlay, not the light.
 - So a 1×1 elevator is lit evenly around its centre. A 2×2 elevator's position is its south-west cell (for an even size the game rounds the centre down), so the light reaches further south-west than north-east.
 - **Possible workaround** (not done): for the large elevator, register four weaker lights, one per cell, instead of one. Lights in the glow grid add up (`CombineColorsJob.AddColors`), so four lights at about a quarter of the colour each give a pattern that's symmetric about the 2×2 centre, with roughly the same brightness. It needs three glow sources besides the elevator's own `CompGlower`. Each one needs its own thing (the grid tells lights apart by `thingIDNumber`), so three unspawned helper things with their own glower comps would be registered and deregistered with the elevator's glow. That's about 60 lines, and four lights recompute instead of one on each light change (state changes only, not per tick).
+
+## 14. Even glow for the large elevator, as a setting
+
+The human asked for the four-light workaround of §13 (8), as an option players can turn off if it costs too much.
+
+**Setting:** Lights > "Large elevators light up evenly" (`elevatorEvenGlow`), **on** by default. It only affects elevators of more than one cell; the small elevator and the loader always use their single light. Like the other light switches it's read live and applied when the settings window closes.
+
+**How it works** (`Building_Elevator.Power.cs`):
+- With the setting on, the def's `CompGlower` stays off (`IThingGlower.ShouldBeLitNow` returns false). One light per occupied cell glows instead, four on the 2×2.
+- Each cell light is a `CompGlower` on a holder thing that's **never spawned**. The holder only carries a thing ID (the glow grid tells lights apart by ID), the cell and the def. They're registered with `map.glowGrid` directly, because a glower's own lit check needs a spawned parent.
+- Each gets the state colour divided by the number of cells. Lights add up in the glow grid, so further out the sum is about as bright as the single light was.
+- Radius: the def's radius minus half a cell (2×2), so the lit area reaches as far from the elevator's centre as the single light did on average. Large elevator: 5 → 4.5.
+- They're built on first use, re-registered only when the light changes (`UpdateGlow`, like the single light), and taken off on despawn and dropped with the map.
+
+**Cost.** Nothing per tick. Each light change (green ↔ red ↔ off, powering, linking) recomputes four small lights instead of one: four flood fills of radius 4.5 instead of one of radius 5, plus marking their cells dirty. The cost is only at those moments, and an elevator changes light at most every 30 ticks (its periodic check). Pick-ups and sends that don't change the light cost nothing. Turning the setting off goes back to the single light.
+
+**Difference from the single light.** The def's glower also reacts at once to the power comp's on/off signal. The cell lights follow the elevator's light state instead, which is checked every 30 ticks, so after a power cut they go out up to half a second later. The lamp on the sprite follows the same state.
+
+**To test:**
+1. A large elevator in a dark room: the light is centred, and about as bright and wide as before, green and red.
+2. Toggle the setting and close the window: it switches between single and even light at once.
+3. Power cut and restore, unlinking and relinking: the light goes off and on.
+4. Deconstruct a lit large elevator: no light is left behind.
+5. Save and load with the setting on: the light comes back centred.

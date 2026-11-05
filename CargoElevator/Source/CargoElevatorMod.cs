@@ -60,6 +60,7 @@ public class CargoElevatorMod : Mod
 
         Heading(listing, "CargoElevator_SettingsLights".Translate());
         listing.CheckboxLabeled("CargoElevator_SettingElevatorGlow".Translate(), ref Settings.elevatorGlow, "CargoElevator_SettingElevatorGlowDesc".Translate());
+        listing.CheckboxLabeled("CargoElevator_SettingElevatorEvenGlow".Translate(), ref Settings.elevatorEvenGlow, "CargoElevator_SettingElevatorEvenGlowDesc".Translate());
         listing.CheckboxLabeled("CargoElevator_SettingLoaderGlow".Translate(), ref Settings.loaderGlow, "CargoElevator_SettingLoaderGlowDesc".Translate());
         listing.CheckboxLabeled("CargoElevator_SettingLoaderBlink".Translate(), ref Settings.loaderBlink, "CargoElevator_SettingLoaderBlinkDesc".Translate());
 

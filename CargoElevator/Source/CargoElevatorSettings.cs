@@ -34,6 +34,7 @@ public class CargoElevatorSettings : ModSettings
 {
     public bool verboseLogging;
     public bool elevatorGlow = true;
+    public bool elevatorEvenGlow = true;
     public bool loaderGlow = true;
     public bool loaderBlink = true;
 
@@ -44,6 +45,7 @@ public class CargoElevatorSettings : ModSettings
     {
         Scribe_Values.Look(ref verboseLogging, "verboseLogging", false);
         Scribe_Values.Look(ref elevatorGlow, "elevatorGlow", true);
+        Scribe_Values.Look(ref elevatorEvenGlow, "elevatorEvenGlow", true);
         Scribe_Values.Look(ref loaderGlow, "loaderGlow", true);
         Scribe_Values.Look(ref loaderBlink, "loaderBlink", true);
         Scribe_Collections.Look(ref elevatorDefSettings, "elevators", LookMode.Value, LookMode.Deep);
@@ -65,6 +67,7 @@ public class CargoElevatorSettings : ModSettings
     {
         verboseLogging = false;
         elevatorGlow = true;
+        elevatorEvenGlow = true;
         loaderGlow = true;
         loaderBlink = true;
         elevatorDefSettings.Clear();

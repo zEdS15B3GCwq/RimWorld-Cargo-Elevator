@@ -249,9 +249,19 @@ public partial class Building_Elevator
     private CompGlower glowComp;
     private LightState? lastGlowState;
 
+    // Even glow: a light is always centred on one cell (GlowLight.position is a cell), so on an elevator of more
+    // than one cell the def's glower sits off-centre (a 2x2's position is its south-west cell). Instead one weaker
+    // light per occupied cell, which add up in the glow grid to a light centred on the whole elevator. The game tells
+    // lights apart by their thing's ID, so each needs its own holder thing: never spawned, it only carries the ID,
+    // the cell and the def. Runtime only; null = not built yet (built on first use, dropped on despawn).
+    private List<CompGlower> cellGlowers;
+    private bool cellGlowersLit;
+
+    private bool UsesCellGlowers => CargoElevatorMod.Settings.elevatorEvenGlow && def.size.x * def.size.z > 1;
+
     // The glower asks whether the lamp is on (alongside its own checks: spawned, flick, power). The mod setting
-    // only turns off the glow; the lamp on the sprite still shows the state.
-    bool IThingGlower.ShouldBeLitNow() => CargoElevatorMod.Settings.elevatorGlow && CurrentLightState != LightState.Off;
+    // only turns off the glow; the lamp on the sprite still shows the state. With even glow the cell lights glow instead.
+    bool IThingGlower.ShouldBeLitNow() => CargoElevatorMod.Settings.elevatorGlow && !UsesCellGlowers && CurrentLightState != LightState.Off;
 
     private void CacheGlow()
     {
@@ -281,17 +291,82 @@ public partial class Building_Elevator
         }
 
         glowComp.UpdateLit(Map);
-        if (state != LightState.Off)
+        ColorInt color = state == LightState.Red ? Settings.redGlowColor : Settings.greenGlowColor;
+        if (state != LightState.Off && glowComp.GlowColor != color)
         {
-            ColorInt color = state == LightState.Red ? Settings.redGlowColor : Settings.greenGlowColor;
-            if (glowComp.GlowColor != color)
-            {
-                glowComp.GlowColor = color;
-            }
+            glowComp.GlowColor = color;
         }
+        UpdateCellGlowers(state != LightState.Off && CargoElevatorMod.Settings.elevatorGlow && UsesCellGlowers, color);
 
         ElevatorUtil.Log($"Glow: {LogId} {(lastGlowState.HasValue ? lastGlowState.Value.ToString() : "-")} → {state}");
         lastGlowState = state;
+    }
+
+    /// <summary>
+    /// Takes the cell lights off the glow grid and, when <paramref name="lit"/>, puts them back with
+    /// <paramref name="color"/> shared between them. Only called on a light change, like the def's glower.
+    /// </summary>
+    private void UpdateCellGlowers(bool lit, ColorInt color)
+    {
+        DeregisterCellGlowers(Map);
+        if (!lit)
+        {
+            return;
+        }
+
+        cellGlowers ??= CreateCellGlowers();
+        ColorInt cellColor = color * (1f / cellGlowers.Count);
+        foreach (CompGlower cellGlower in cellGlowers)
+        {
+            cellGlower.GlowColor = cellColor; // the holder is not spawned, so the setter only stores the colour
+            Map.glowGrid.RegisterGlower(cellGlower);
+        }
+        cellGlowersLit = true;
+    }
+
+    private void DeregisterCellGlowers(Map map)
+    {
+        if (!cellGlowersLit)
+        {
+            return;
+        }
+        foreach (CompGlower cellGlower in cellGlowers)
+        {
+            map.glowGrid.DeRegisterGlower(cellGlower);
+        }
+        cellGlowersLit = false;
+    }
+
+    private List<CompGlower> CreateCellGlowers()
+    {
+        // Each cell light starts half a cell (per extra cell of width) nearer the edge than the centre, so its radius
+        // is shortened by that much: the lit area then reaches as far from the centre as the def's single light.
+        float radius = Mathf.Max(1f, glowComp.GlowRadius - 0.5f * (Mathf.Max(def.size.x, def.size.z) - 1));
+        var glowers = new List<CompGlower>();
+        foreach (IntVec3 cell in this.OccupiedRect())
+        {
+            var holder = new ThingWithComps { def = def };
+            ThingIDMaker.GiveIDTo(holder);
+            holder.Position = cell;
+            var cellGlower = new CompGlower { parent = holder };
+            cellGlower.Initialize(glowComp.props);
+            cellGlower.GlowRadius = radius;
+            glowers.Add(cellGlower);
+        }
+        ElevatorUtil.Log($"Glow: {LogId} even glow with {glowers.Count} cell lights, radius {radius}");
+        return glowers;
+    }
+
+    /// <summary>Called on despawn and map removal: the cell lights are rebuilt for the new position if it respawns.</summary>
+    private void DropCellGlowers(Map map)
+    {
+        if (map != null)
+        {
+            DeregisterCellGlowers(map);
+        }
+        cellGlowersLit = false;
+        cellGlowers = null;
+        lastGlowState = null;
     }
 
     // ---------------------------------------------------------------- mod settings

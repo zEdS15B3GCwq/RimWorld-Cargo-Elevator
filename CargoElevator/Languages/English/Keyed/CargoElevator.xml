@@ -126,6 +126,8 @@
   <CargoElevator_SettingsLights>Lights</CargoElevator_SettingsLights>
   <CargoElevator_SettingElevatorGlow>Elevators light up their surroundings</CargoElevator_SettingElevatorGlow>
   <CargoElevator_SettingElevatorGlowDesc>When off, elevators give no light. Their green or red lamp still shows their state.</CargoElevator_SettingElevatorGlowDesc>
+  <CargoElevator_SettingElevatorEvenGlow>Large elevators light up evenly</CargoElevator_SettingElevatorEvenGlow>
+  <CargoElevator_SettingElevatorEvenGlowDesc>The game centres a light on one cell, so a single light on a large elevator sits off-centre and reaches further on one side. When on, a large elevator uses one weaker light per cell instead, centred on the whole elevator. When off, it uses one light: slightly cheaper each time the light changes.</CargoElevator_SettingElevatorEvenGlowDesc>
   <CargoElevator_SettingLoaderGlow>Transport loaders light up their surroundings</CargoElevator_SettingLoaderGlow>
   <CargoElevator_SettingLoaderGlowDesc>When off, transport loaders give no light. Their orange lamp still shows when they have something to send.</CargoElevator_SettingLoaderGlowDesc>
   <CargoElevator_SettingLoaderBlink>Transport loaders blink while items wait</CargoElevator_SettingLoaderBlink>

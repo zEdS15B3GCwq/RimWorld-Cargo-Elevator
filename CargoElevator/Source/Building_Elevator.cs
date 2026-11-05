@@ -225,6 +225,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     {
         OnLifecycleEnd(nameof(DeSpawn), $"mode={mode}");
         Map mapBeforeDespawn = Map;
+        DropCellGlowers(mapBeforeDespawn); // the def's glower is taken off by its comp in base.DeSpawn
         base.DeSpawn(mode);
         ReleaseLoaders();
 
@@ -255,6 +256,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
     {
         OnLifecycleEnd(nameof(Notify_MyMapRemoved), "");
         linkedLoaders.Clear(); // the loaders go with the map and clean up themselves
+        DropCellGlowers(null); // the glow grid goes with the map
         ElevatorUtil.Log($"Map removed: {LogId} buffer has {BufferEntryCount} entries (discarded with the map)");
         base.Notify_MyMapRemoved();
     }
