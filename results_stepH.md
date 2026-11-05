@@ -268,3 +268,28 @@ Other points of `pre_stepH.md` reviewed:
 | | Not checked: whether MultiFloors uses roof supports for its upper levels (its stair placement checks the roof). Its own elevators hold the roof, so it is at least compatible |
 
 Recommendation: **leave it off**. The gain is a column you don't have to build; the risk is a surprise roof collapse when an elevator is removed. If you want it anyway, it's one line on `CargoElevatorBase`, best tested together with MultiFloors.
+
+## 12. Load order questions (human) and the roof decision
+
+**Holding the roof: off** (human). Nothing changes.
+
+**"The patches run in some order, so the result depends on it?"** Patches do run one after another, in load order. But the result only depends on the order when two patches touch the same XML nodes, or when one patch's condition looks at something another patch creates or changes. Neither is the case here:
+
+| Patch | Touches | Changes |
+| --- | --- | --- |
+| BAM's MultiFloors patch (`Mods and Shit/Multifloors/Patches/multifloors patch.xml`) | MultiFloors' tab def `DesignationCategoryDef[defName="MultiFloors"]` | its `order` (850) and `label` ("Elevation"); adds a `modExtensions` entry (nested under Structure). **The defName stays `MultiFloors`.** |
+| Ours (`Patches/CargoElevator_BetterArchitectMenu.xml`) | our own `CargoElevatorBase` and loader defs, and our own tab def | `designationCategory` becomes the text `MultiFloors` (or `Ferny_Elevation`); our tab is removed |
+
+- BAM's "MF → Elevation" is a relabel and a move of MultiFloors' tab. It isn't a new tab: the tab's defName stays `MultiFloors`. Our buildings name that defName, and the name is only looked up after all patches, when the XML becomes defs.
+- If BAM's patch runs first: the tab is relabelled, then our buildings are pointed at it. If ours runs first: our buildings are pointed at it, then the tab is relabelled. Either way the final XML is the same: our buildings in the tab with defName `MultiFloors`, which shows as Structure > Elevation.
+- The two patches never touch the same node, so they give the same result in either order.
+
+**"The node check depends on another mod having run?"** No. The two nodes we check are ordinary defs from the mods' `Defs` folders, not something a patch creates:
+- `Ferny_Elevation`: `Better-Architect-Menu/Defs/DesignationCategories.xml`;
+- `MultiFloors`: `MultiFloors/1.6/Defs/Designations/DesignationCategoryDefs.xml`.
+
+The game loads every active mod's `Defs` XML and joins it into one document (`LoadModXML` → `CombineIntoUnifiedXML`) **before the first patch of any mod runs** (`ApplyPatches`). So both nodes are there for our patch whether BAM and MultiFloors load before or after us. The check would only depend on order if it looked for something that only a patch adds. It doesn't. BAM's patch keeps MultiFloors' tab def and its defName.
+
+The one way this could break is a future BAM or MultiFloors version that renames or removes those defs. Then our patch quietly does nothing, and the buildings stay in our own tab. That's a safe failure.
+
+`loadBefore` BAM stays as set; it does no harm.
