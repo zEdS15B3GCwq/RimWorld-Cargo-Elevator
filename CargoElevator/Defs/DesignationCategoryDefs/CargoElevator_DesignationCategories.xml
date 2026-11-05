@@ -11,5 +11,8 @@
       <li>Designator_Cancel</li>
       <li>Designator_Deconstruct</li>
     </specialDesignatorClasses>
+    <researchPrerequisites> <!-- the tab appears with the research, like vanilla's Power tab with electricity -->
+      <li>CargoElevator_Research</li>
+    </researchPrerequisites>
   </DesignationCategoryDef>
 </Defs>

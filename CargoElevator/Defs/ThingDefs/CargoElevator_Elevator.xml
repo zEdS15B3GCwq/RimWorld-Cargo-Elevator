@@ -22,6 +22,9 @@
     </inspectorTabs>
     <canOverlapZones>false</canOverlapZones>
     <designationCategory>CargoElevator</designationCategory>
+    <researchPrerequisites>
+      <li>CargoElevator_Research</li>
+    </researchPrerequisites>
     <placeWorkers>
       <li>CargoElevator.PlaceWorker_Elevator</li>
     </placeWorkers>

@@ -23,6 +23,9 @@
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
     <designationCategory>CargoElevator</designationCategory>
+    <researchPrerequisites>
+      <li>CargoElevator_Research</li>
+    </researchPrerequisites>
     <canOverlapZones>false</canOverlapZones>
     <constructEffect>ConstructMetal</constructEffect>
     <statBases>

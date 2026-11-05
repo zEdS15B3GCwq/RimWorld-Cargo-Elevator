@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Unlocks both elevators and the transport loader (and our architect tab). Cost like solar panels. Placed in the
+       column of advanced lights, gunsmithing, flak armor and smokepop packs (x 6.00, y 2.70 to 4.80 in steps of 0.70),
+       right below smokepop packs; nothing else sits there on the main tab, core or DLC. -->
+  <ResearchProjectDef>
+    <defName>CargoElevator_Research</defName>
+    <label>cargo elevators</label>
+    <description>Build cargo elevators that carry items between levels at the same location, and transport loaders that send chosen items, people and animals through them.</description>
+    <baseCost>600</baseCost>
+    <techLevel>Industrial</techLevel>
+    <prerequisites>
+      <li>Electricity</li>
+    </prerequisites>
+    <researchViewX>6.00</researchViewX>
+    <researchViewY>5.50</researchViewY>
+    <generalRules>
+      <rulesStrings>
+        <li>subject->cargo elevators</li>
+        <li>subject->freight lifts</li>
+
+        <li>subject_story->hauled a season's harvest up from an underground farm one stack at a time</li>
+        <li>subject_story->studied counterweights and cable winches in the ruins of an old mine</li>
+
+        <li>subject_gerund->building cargo elevators</li>
+      </rulesStrings>
+    </generalRules>
+  </ResearchProjectDef>
+</Defs>
