@@ -75,7 +75,7 @@ public partial class Building_Elevator
     /// Active while the last transfer is within the hold window (at least one send interval plus a margin,
     /// so there is no flicker at the maximum rate). Writes the comp's PowerOutput only on change.
     /// </summary>
-    private void UpdatePowerDraw()
+    private void UpdatePowerDraw(bool force = false)
     {
         if (powerComp == null)
         {
@@ -83,9 +83,9 @@ public partial class Building_Elevator
         }
 
         bool shouldBeActive = Find.TickManager.TicksGame - lastActiveTick <= Settings.ActiveHoldTicks;
-        if (shouldBeActive == powerActive && powerComp.PowerOutput != 0f)
+        if (!force && shouldBeActive == powerActive && powerComp.PowerOutput != 0f)
         {
-            return; // nothing to change (PowerOutput 0 = not set up yet)
+            return; // nothing to change (PowerOutput 0 = not set up yet); force = the def's wattage changed
         }
 
         powerActive = shouldBeActive;
@@ -249,8 +249,9 @@ public partial class Building_Elevator
     private CompGlower glowComp;
     private LightState? lastGlowState;
 
-    // The glower asks whether the lamp is on (alongside its own checks: spawned, flick, power).
-    bool IThingGlower.ShouldBeLitNow() => CurrentLightState != LightState.Off;
+    // The glower asks whether the lamp is on (alongside its own checks: spawned, flick, power). The mod setting
+    // only turns off the glow; the lamp on the sprite still shows the state.
+    bool IThingGlower.ShouldBeLitNow() => CargoElevatorMod.Settings.elevatorGlow && CurrentLightState != LightState.Off;
 
     private void CacheGlow()
     {
@@ -291,5 +292,19 @@ public partial class Building_Elevator
 
         ElevatorUtil.Log($"Glow: {LogId} {(lastGlowState.HasValue ? lastGlowState.Value.ToString() : "-")} → {state}");
         lastGlowState = state;
+    }
+
+    // ---------------------------------------------------------------- mod settings
+
+    /// <summary>
+    /// The mod settings changed (the def now holds the new values): lower the slots to a reduced maximum, apply the
+    /// new wattage now rather than at the next draw change, and re-register the glow (it may be switched off).
+    /// </summary>
+    public void Notify_ModSettingsChanged()
+    {
+        ClampSlotsToMaximum();
+        UpdatePowerDraw(force: true);
+        lastGlowState = null;
+        UpdateGlow();
     }
 }

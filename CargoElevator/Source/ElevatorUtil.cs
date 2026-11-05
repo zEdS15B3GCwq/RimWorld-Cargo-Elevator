@@ -30,9 +30,19 @@ public static class ElevatorUtil
         .Where(thingDef => typeof(Building_Elevator).IsAssignableFrom(thingDef.thingClass))
         .ToList();
 
-    // Probe build, so logging is unconditional. Later steps may gate it on Prefs.DevMode.
-    public static void Log(string message) => Verse.Log.Message(LogPrefix + message);
+    /// <summary>The "verbose logging" mod setting. Callers that build an expensive message check it first.</summary>
+    public static bool Verbose => CargoElevatorMod.Settings?.verboseLogging ?? false;
 
+    // Routine lines only with verbose logging on: each Log.Message captures a stack trace and writes to the log file.
+    public static void Log(string message)
+    {
+        if (Verbose)
+        {
+            Verse.Log.Message(LogPrefix + message);
+        }
+    }
+
+    // Warnings are always written.
     public static void LogWarn(string message) => Verse.Log.Warning(LogPrefix + message);
 
     // ---------------------------------------------------------------- overlay graphics

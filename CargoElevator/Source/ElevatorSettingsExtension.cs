@@ -2,7 +2,10 @@ using Verse;
 
 namespace CargoElevator;
 
-/// <summary>Tunables for the elevator, set in the ThingDef (no mod settings).</summary>
+/// <summary>
+/// Tunables for the elevator, set in the ThingDef. The mod settings overwrite ticksPerStack, maxSlots and defaultSlots
+/// at startup and when the settings window closes (<see cref="CargoElevatorSettings.ApplyToDefs"/>).
+/// </summary>
 public class ElevatorSettingsExtension : DefModExtension
 {
     // Buffer size in slots (a slot holds one full stack).

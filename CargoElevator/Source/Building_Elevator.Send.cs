@@ -239,6 +239,12 @@ public partial class Building_Elevator
 
     private void LogTargetsIfChanged(Thing entry, List<DeliveryTarget> targets)
     {
+        // Runs on every send attempt; the text is only built for the log.
+        if (!ElevatorUtil.Verbose)
+        {
+            return;
+        }
+
         string targetsText = $"{LogId} → {partner.LogId} for {entry.LabelCapNoCount}: {DescribeTargets(targets)}";
         if (targetsText != lastLoggedTargets)
         {

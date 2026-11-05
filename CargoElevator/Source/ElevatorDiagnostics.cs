@@ -9,11 +9,11 @@ namespace CargoElevator;
 /// Logs once at startup everything about each elevator def that could make the game reject a placement
 /// for reasons other than our own PlaceWorker (extra place workers added by other mods, interaction cells,
 /// passability), plus the def facts the storage, power and drawing behaviour depends on.
+/// Called by <see cref="CargoElevatorStartup"/> after the settings are applied, so it shows the values in use.
 /// </summary>
-[StaticConstructorOnStartup]
 public static class ElevatorDiagnostics
 {
-    static ElevatorDiagnostics()
+    public static void LogDefs()
     {
         List<ThingDef> elevatorDefs = ElevatorUtil.ElevatorDefs;
         if (elevatorDefs.Count == 0)

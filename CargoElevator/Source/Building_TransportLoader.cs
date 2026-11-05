@@ -213,8 +213,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
         base.Tick(); // vanilla's "nobody can load anything" message; the game ticks the container contents (rot etc.) itself
 
         // The blink runs on real time (constant at every game speed) but is stepped here, so it stops while paused
-        // and the drawn look and the glow always show the same step.
-        if (Container.Any && !LoadInProgress)
+        // and the drawn look and the glow always show the same step. Not stepped at all with blinking off in the settings.
+        if (Container.Any && !LoadInProgress && CargoElevatorMod.Settings.loaderBlink)
         {
             bool blinkPhase = (UnityEngine.Time.realtimeSinceStartup + BlinkOffsetSeconds) % BlinkPeriodSeconds < BlinkPeriodSeconds / 2f;
             if (blinkPhase != blinkOn)
@@ -642,7 +642,8 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
     /// orange overlay (it ignores darkness) is drawn here, over it. Runs every frame, so it only reads fields. The look follows what the loader is doing:
     /// <list type="bullet">
     /// <item>an order is in progress (items still to be sent): constant orange;</item>
-    /// <item>no order, but items wait in the container for the elevator: orange and normal alternate;</item>
+    /// <item>no order, but items wait in the container for the elevator: orange and normal alternate (steady orange
+    /// with blinking off in the mod settings);</item>
     /// <item>nothing to send and nothing waiting: normal.</item>
     /// </list>
     /// </summary>
@@ -665,13 +666,14 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
         }
         if (Container.Any)
         {
-            return blinkOn;
+            return blinkOn || !CargoElevatorMod.Settings.loaderBlink;
         }
         return false;
     }
 
     // The glower asks whether the lamp is on (it has no power or flick comp, so this is the only condition).
-    bool IThingGlower.ShouldBeLitNow() => ShowsOrangeLook();
+    // The mod setting only turns off the glow; the lamp on the sprite still shows the look.
+    bool IThingGlower.ShouldBeLitNow() => CargoElevatorMod.Settings.loaderGlow && ShowsOrangeLook();
 
     /// <summary>
     /// Brings the glower in line with the look, including each blink step. UpdateLit only changes the registration
@@ -684,19 +686,26 @@ public class Building_TransportLoader : MapPortal, IThingHolder, IThingGlower
             return;
         }
 
-        bool on = ShowsOrangeLook();
+        bool on = ((IThingGlower)this).ShouldBeLitNow();
         if (on != lastGlowOn)
         {
             lastGlowOn = on;
             glowComp.UpdateLit(Map);
         }
 
-        string look = LoadInProgress ? "loading" : (Container.Any ? "waiting (blinking)" : "idle");
+        string look = LoadInProgress ? "loading" : (Container.Any ? (CargoElevatorMod.Settings.loaderBlink ? "waiting (blinking)" : "waiting") : "idle");
         if (look != lastLoggedLook)
         {
             ElevatorUtil.Log($"Glow: {ThingID} {lastLoggedLook ?? "-"} → {look}");
             lastLoggedLook = look;
         }
+    }
+
+    /// <summary>The mod settings changed: re-register the glow, which may have been switched off or stopped blinking.</summary>
+    public void Notify_ModSettingsChanged()
+    {
+        lastGlowOn = null;
+        UpdateGlow();
     }
 
     private Graphic LoadingGraphic

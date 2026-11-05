@@ -114,4 +114,33 @@
   <CargoElevator_LoaderOpenMenu>Open transport menu</CargoElevator_LoaderOpenMenu>
   <CargoElevator_LoaderOpenMenuDesc>Choose what to send through the elevator: items, people and animals. While an order is in progress, this also changes it.</CargoElevator_LoaderOpenMenuDesc>
   <CargoElevator_HelperSeveralElevators>Several elevators: use Connect to...</CargoElevator_HelperSeveralElevators>
+
+  <!-- Mod settings (Options, Mod settings) -->
+  <CargoElevator_SettingsCategory>Cargo Elevator</CargoElevator_SettingsCategory>
+  <CargoElevator_SettingsAppliedOnClose>Changes take effect when this window is closed, also for elevators and loaders already built.</CargoElevator_SettingsAppliedOnClose>
+  <CargoElevator_SettingsReset>Reset to defaults</CargoElevator_SettingsReset>
+  <!-- {0} = the value the game uses without this setting. -->
+  <CargoElevator_SettingDefault>(default: {0})</CargoElevator_SettingDefault>
+  <!-- {0} = lowest, {1} = highest allowed value. -->
+  <CargoElevator_SettingRange>Allowed: {0} to {1}.</CargoElevator_SettingRange>
+  <CargoElevator_SettingsLights>Lights</CargoElevator_SettingsLights>
+  <CargoElevator_SettingElevatorGlow>Elevators light up their surroundings</CargoElevator_SettingElevatorGlow>
+  <CargoElevator_SettingElevatorGlowDesc>When off, elevators give no light. Their green or red lamp still shows their state.</CargoElevator_SettingElevatorGlowDesc>
+  <CargoElevator_SettingLoaderGlow>Transport loaders light up their surroundings</CargoElevator_SettingLoaderGlow>
+  <CargoElevator_SettingLoaderGlowDesc>When off, transport loaders give no light. Their orange lamp still shows when they have something to send.</CargoElevator_SettingLoaderGlowDesc>
+  <CargoElevator_SettingLoaderBlink>Transport loaders blink while items wait</CargoElevator_SettingLoaderBlink>
+  <CargoElevator_SettingLoaderBlinkDesc>A loader holding items with no order in progress blinks orange. When off, its lamp stays on instead, for as long as items are inside.</CargoElevator_SettingLoaderBlinkDesc>
+  <!-- {0} = pieces per second at normal game speed. -->
+  <CargoElevator_SettingPiecesPerSecond>({0} per second)</CargoElevator_SettingPiecesPerSecond>
+  <CargoElevator_SettingTicksPerStack>Ticks between sent pieces</CargoElevator_SettingTicksPerStack>
+  <CargoElevator_SettingTicksPerStackDesc>The elevator sends one piece (at most one full stack) every this many ticks. 60 ticks are one second at normal speed; fewer ticks means faster transfer.</CargoElevator_SettingTicksPerStackDesc>
+  <CargoElevator_SettingMaxSlots>Buffer slots (maximum)</CargoElevator_SettingMaxSlots>
+  <CargoElevator_SettingMaxSlotsDesc>How many full stacks the elevator can hold while sending. New elevators start with all of them; elevators above a lowered maximum are lowered to it.</CargoElevator_SettingMaxSlotsDesc>
+  <CargoElevator_SettingActivePower>Power while transferring (W)</CargoElevator_SettingActivePower>
+  <CargoElevator_SettingActivePowerDesc>Power drawn at each end while items are being moved.</CargoElevator_SettingActivePowerDesc>
+  <CargoElevator_SettingIdlePower>Power while idle (W)</CargoElevator_SettingIdlePower>
+  <CargoElevator_SettingIdlePowerDesc>Power drawn at each end while nothing is being moved.</CargoElevator_SettingIdlePowerDesc>
+  <CargoElevator_SettingsLogging>Logging</CargoElevator_SettingsLogging>
+  <CargoElevator_SettingVerboseLogging>Verbose logging</CargoElevator_SettingVerboseLogging>
+  <CargoElevator_SettingVerboseLoggingDesc>Writes a line to the log for every transfer, link and state change. Useful for bug reports; slows the game slightly while elevators are busy. Warnings are always logged.</CargoElevator_SettingVerboseLoggingDesc>
 </LanguageData>

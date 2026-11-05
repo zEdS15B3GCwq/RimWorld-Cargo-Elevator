@@ -84,6 +84,16 @@ public partial class Building_Elevator
 
     // ---------------------------------------------------------------- slots
 
+    /// <summary>A maximum lowered in the mod settings also lowers the player's choice. Items already buffered stay.</summary>
+    private void ClampSlotsToMaximum()
+    {
+        if (maxSlots > Settings.maxSlots)
+        {
+            ElevatorUtil.Log($"Slots: {LogId} {maxSlots} → {Settings.maxSlots} (maximum lowered in the settings)");
+            maxSlots = Settings.maxSlots;
+        }
+    }
+
     /// <summary>Slots in use: every buffer entry takes one slot per (started) full stack.</summary>
     public int UsedSlots()
     {

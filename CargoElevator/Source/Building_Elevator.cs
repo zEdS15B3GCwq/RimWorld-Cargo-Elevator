@@ -109,6 +109,7 @@ public partial class Building_Elevator : Building_Storage, IRenameable, ISlotGro
         base.SpawnSetup(map, respawningAfterLoad);
         CachePower();
         CacheGlow();
+        ClampSlotsToMaximum(); // the maximum may have been lowered in the mod settings since this elevator was saved
         ElevatorUtil.Log($"SpawnSetup: {LogId} on {ElevatorUtil.MapDesc(map)} respawningAfterLoad={respawningAfterLoad} partner={partner?.LogId ?? "none"}");
 
         if (respawningAfterLoad)
