@@ -13,6 +13,8 @@
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
+    <castEdgeShadows>true</castEdgeShadows> <!-- the soft dark rim on the floor around it, like shelves and benches -->
+    <staticSunShadowHeight>0.35</staticSunShadowHeight> <!-- a sun shadow like a tool cabinet's (shelves 0.5, benches 0.2, walls 1.0) -->
     <tickerType>Normal</tickerType>
     <drawerType>MapMeshAndRealTime</drawerType> <!-- base sprite in the map mesh, the state light drawn every frame -->
     <surfaceType>Item</surfaceType>
@@ -60,6 +62,7 @@
       <texPath>Things/Buildings/CargoElevator/CargoElevator</texPath>
       <drawSize>(1,1)</drawSize>
     </graphicData>
+    <uiOrder>3140</uiOrder> <!-- build menu order: small, large, loader; after MultiFloors' elevators (3110, 3130) when sharing its tab -->
     <uiIconPath>Things/Buildings/CargoElevator/CargoElevator_MenuIcon</uiIconPath> <!-- build menu icon; the base sprite is still used for the blueprint and ghost -->
     <size>(1,1)</size>
     <statBases>
@@ -112,6 +115,7 @@
       <texPath>Things/Buildings/CargoElevator/CargoElevator_Large</texPath>
       <drawSize>(2,2)</drawSize>
     </graphicData>
+    <uiOrder>3141</uiOrder>
     <size>(2,2)</size>
     <statBases>
       <MaxHitPoints>400</MaxHitPoints>

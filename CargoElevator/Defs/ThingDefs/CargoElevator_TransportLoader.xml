@@ -22,6 +22,9 @@
     <passability>PassThroughOnly</passability>
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
+    <castEdgeShadows>true</castEdgeShadows>
+    <staticSunShadowHeight>0.5</staticSunShadowHeight> <!-- stacked crates: like a shelf -->
+    <uiOrder>3142</uiOrder> <!-- after both elevators -->
     <designationCategory>CargoElevator</designationCategory>
     <researchPrerequisites>
       <li>CargoElevator_Research</li>
