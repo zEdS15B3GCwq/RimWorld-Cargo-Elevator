@@ -250,12 +250,17 @@ public partial class Building_Elevator
     private LightState? lastGlowState;
 
     // Even glow: a light is always centred on one cell (GlowLight.position is a cell), so on an elevator of more
-    // than one cell the def's glower sits off-centre (a 2x2's position is its south-west cell). Instead one weaker
+    // than one cell the def's glower sits off-centre (a 2x2's position is its south-west cell). Instead one
     // light per occupied cell, which add up in the glow grid to a light centred on the whole elevator. The game tells
     // lights apart by their thing's ID, so each needs its own holder thing: never spawned, it only carries the ID,
     // the cell and the def. Runtime only; null = not built yet (built on first use, dropped on despawn).
     private List<CompGlower> cellGlowers;
     private bool cellGlowersLit;
+
+    // Share of the state colour each cell light gets; they keep the def's radius. A light's falloff is steep (it
+    // counts from 1 at its own cell and mixes in 1/d²), so a quarter each was far too dim. With 0.6 on the 2x2 the
+    // light 1-4 cells out matches the single light's brighter side (50/50/40/1-4 %) on every side (results_stepH §15).
+    private const float CellGlowColorFactor = 0.6f;
 
     private bool UsesCellGlowers => CargoElevatorMod.Settings.elevatorEvenGlow && def.size.x * def.size.z > 1;
 
@@ -304,7 +309,7 @@ public partial class Building_Elevator
 
     /// <summary>
     /// Takes the cell lights off the glow grid and, when <paramref name="lit"/>, puts them back with
-    /// <paramref name="color"/> shared between them. Only called on a light change, like the def's glower.
+    /// <paramref name="color"/> (scaled by <see cref="CellGlowColorFactor"/>). Only called on a light change, like the def's glower.
     /// </summary>
     private void UpdateCellGlowers(bool lit, ColorInt color)
     {
@@ -315,7 +320,7 @@ public partial class Building_Elevator
         }
 
         cellGlowers ??= CreateCellGlowers();
-        ColorInt cellColor = color * (1f / cellGlowers.Count);
+        ColorInt cellColor = color * CellGlowColorFactor;
         foreach (CompGlower cellGlower in cellGlowers)
         {
             cellGlower.GlowColor = cellColor; // the holder is not spawned, so the setter only stores the colour
@@ -339,9 +344,6 @@ public partial class Building_Elevator
 
     private List<CompGlower> CreateCellGlowers()
     {
-        // Each cell light starts half a cell (per extra cell of width) nearer the edge than the centre, so its radius
-        // is shortened by that much: the lit area then reaches as far from the centre as the def's single light.
-        float radius = Mathf.Max(1f, glowComp.GlowRadius - 0.5f * (Mathf.Max(def.size.x, def.size.z) - 1));
         var glowers = new List<CompGlower>();
         foreach (IntVec3 cell in this.OccupiedRect())
         {
@@ -350,10 +352,9 @@ public partial class Building_Elevator
             holder.Position = cell;
             var cellGlower = new CompGlower { parent = holder };
             cellGlower.Initialize(glowComp.props);
-            cellGlower.GlowRadius = radius;
             glowers.Add(cellGlower);
         }
-        ElevatorUtil.Log($"Glow: {LogId} even glow with {glowers.Count} cell lights, radius {radius}");
+        ElevatorUtil.Log($"Glow: {LogId} even glow with {glowers.Count} cell lights");
         return glowers;
     }
 

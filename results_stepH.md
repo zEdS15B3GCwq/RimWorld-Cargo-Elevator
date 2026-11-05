@@ -230,7 +230,8 @@ Other points of `pre_stepH.md` reviewed:
 | `89a50df` | (human) `loadBefore` BAM removed |
 | `e841cb9` | (human) higher-quality loader textures |
 | `a0f21b8` | slots above a lowered maximum are kept; results §13 |
-| (next) | even glow for the large elevator, with a setting; results §14 |
+| `0a6bd55` | even glow for the large elevator, with a setting; results §14 |
+| (next) | even glow retuned: full radius, 0.6 of the colour per cell; results §15 |
 
 ## 11. Human decisions after the first round, and changes
 
@@ -350,3 +351,34 @@ The human asked for the four-light workaround of §13 (8), as an option players 
 3. Power cut and restore, unlinking and relinking: the light goes off and on.
 4. Deconstruct a lit large elevator: no light is left behind.
 5. Save and load with the setting on: the light comes back centred.
+
+## 15. Even glow too dim: retuned
+
+**Test (human).** The even light is centred and the switch works, but it was much weaker than the single light. Light level in the cells going out from the elevator's side, starting with the adjacent cell:
+
+| Light | Measured |
+| --- | --- |
+| small elevator (radius 4) | 50, 50, 7 % |
+| large, single light (radius 5) | 50, 50, 41, 4 % (nearly one cell wider than the small one) |
+| large, even (4 × ¼ colour, radius 4.5) | 50, 35, 7 % (weaker than the small one) |
+
+**Why.** From the game code (`ComputeGlowGridsJob`, `GlowGrid.GroundGlowAt`):
+- A light's distance counts **from 1 at its own cell**, plus 1 per straight and 1.41 per diagonal step. Its strength at distance d is `0.6 × (1 − d/radius) + 0.4 / d²`, times the colour, and nothing beyond the radius.
+- The cell's light level is the brightest colour channel of all lights added up, `/255 × 3.6`, **capped at 50 %**.
+- So the falloff is steep, and a quarter of the colour on each of four lights is much less than one light at full colour. Seen from a given cell, three of the four lights are one or more cells further away. The shortened radius (4.5) also cut off the outer ring.
+- A small script that reimplements those two functions reproduced all three measurements to the percent. It's not in the repo.
+
+**Simulated options** (the same cells going out; the single light's two sides for comparison):
+
+| Light | South | North | Diagonal |
+| --- | --- | --- | --- |
+| single, radius 5 | 50 50 40 4 | 50 25 0 | SW 50 47 0 · NE 47 0 |
+| even, ¼ colour, radius 4.5 (was) | 50 35 7 | same | 50 7 0 |
+| even, 0.5 colour, radius 5 | 50 50 34 1 | same | 50 31 0 |
+| **even, 0.6 colour, radius 5 (now)** | **50 50 40 1** | same | 50 40 0 |
+| even, 0.7 colour, radius 5 | 50 50 48 3 | same | 50 47 0 |
+| even, 0.4 colour, radius 5.5 | 50 50 45 8 | same | 50 47 4 |
+
+**Change.** Each cell light keeps the def's radius (5) and gets **0.6** of the state colour (`CellGlowColorFactor`). That matches the single light's brighter side on every side. The faint fringe at four cells out is 1 % instead of 4 %, because each light's last cell before the radius cut-off is very weak. The red light is scaled the same way, so it keeps its brightness relative to the green.
+
+**To test:** the same walk-out from the elevator's side should give about 50, 50, 40, 1 % on all four sides, green and red. If it should reach a little further, 0.7 gives 50, 50, 48, 3.
