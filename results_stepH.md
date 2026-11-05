@@ -60,4 +60,4 @@ All texture paths named in defs and code were checked against the files after th
 ### 1.4 Commits
 
 - `5c49417` (before; `stepF`)
-- name change commit on `stepH` (this section)
+- `1d01e96` H: rename DeepElevator to CargoElevator (`stepH`)
