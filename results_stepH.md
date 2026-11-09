@@ -17,7 +17,9 @@ Task order (human): 6 (name change) first, then the human tests, then 1–5, 7, 
 
 Added during the step, from the human's decisions and tests: loader uninstall and reinstall (§11), Heavy terrain for the elevators (§11), slots kept above a lowered maximum (§13), and the even glow for the large elevator with its setting (§14, §15).
 
-**Final state:** everything is built (`dotnet build`, 0 warnings, 0 errors) and committed on `stepH`. Test results are in §13 and §16, and §16 also lists what wasn't reported tested. Some earlier sections describe a first version that was changed later; each one says where it changed.
+Last change: the sun shadows halved after the final test (§16.2).
+
+**Final state:** everything is built (`dotnet build`, 0 warnings, 0 errors), committed on `stepH` and tested in game. Test results are in §13 and §16. Some earlier sections describe a first version that was changed later; each one says where it changed.
 
 ## 1. Name change (task 6)
 
@@ -102,7 +104,7 @@ Options → Mod settings → **Cargo Elevator**. Changes take effect when the wi
 | Section | Setting | Default | Applies to |
 | --- | --- | --- | --- |
 | Lights | Elevators light up their surroundings | on | `IThingGlower.ShouldBeLitNow` of the elevator; the lamp on the sprite stays |
-| | Large elevators light up evenly (added in §14) | on | one light per cell instead of the def's single off-centre light (§14, §15, §16.2) |
+| | Large elevators light up evenly (added in §14) | on | one light per cell instead of the def's single off-centre light (§14, §15, §16.3) |
 | | Transport loaders light up their surroundings | on | the same for the loader |
 | | Transport loaders blink while items wait | on | off = steady orange (lamp and light) for as long as items wait and no order runs (the human's new setting) |
 | one heading per elevator def (both sizes) | Ticks between sent pieces (with "N per second") | the def's value (60 / 15) | `ElevatorSettingsExtension.ticksPerStack`, range 1–600 |
@@ -161,9 +163,9 @@ Compared: every building `ThingDef` in DeepRim, MultiFloors, VFE Factory, Adapti
 - **`castEdgeShadows`** (bool). `SectionLayer_EdgeShadows` draws the soft dark rim on the floor around the edifice. Shelves, benches and most furniture have it.
 - **Cost:** none per frame; both are part of the static section mesh, rebuilt only when that section changes.
 - **Do we need them? Will it look cooler?** Not needed for anything functional, but without them our buildings look flat next to vanilla furniture (a shelf has both). **Added** (cosmetic only, easy to change):
-  - elevators (both sizes): `castEdgeShadows` true, `staticSunShadowHeight` **0.6** (changed from 0.35 in §11: the elevators are taller than the loader's crates). A tall frame: above shelves (0.5), below walls (1.0).
-  - loader: `castEdgeShadows` true, `staticSunShadowHeight` **0.35** (changed from 0.5 in §11), stacked crates at tool-cabinet height.
-  - **To judge in game**, outdoors in daylight. Underground (DeepRim, roofed) there's little sun to cast them, but the edge shadow still shows. The height sets how dark and how long the shadow is.
+  - elevators (both sizes): `castEdgeShadows` true, `staticSunShadowHeight` **0.3**. History: 0.35, then 0.6 in §11 (the elevators are taller than the loader's crates), then halved to 0.3 in §16.2 (as long as a shelf's was too long).
+  - loader: `castEdgeShadows` true, `staticSunShadowHeight` **0.175**. History: 0.5, then 0.35 in §11, then halved in §16.2. Still lower than the elevators.
+  - Underground (DeepRim, roofed) there's little sun to cast them, but the edge shadow still shows. The height sets how dark and how long the shadow is.
 
 ### 7.2 Also added
 
@@ -211,7 +213,7 @@ Results: §13 (round 1) and §16 (round 2, with what wasn't reported).
    - The values survive a game restart (settings file).
 4. **Verbose logging:** off (default): no `[CargoElevator]` message lines during normal use, only warnings if something goes wrong. On: the familiar lines come back (startup diagnostics show after a restart).
 5. **BAM** (`ferny.BetterArchitect`): with MultiFloors, our buildings sit in Structure > Elevation next to MF's; without MultiFloors, in BAM's Elevation; in both cases no separate Cargo elevator tab. Without BAM: our own tab.
-6. **Looks:** edge and sun shadows of the elevators (0.6) and the loader (0.35) in daylight (§7.1).
+6. **Looks:** edge and sun shadows of the elevators (0.3) and the loader (0.175) in daylight (§7.1; halved in §16.2).
 7. Regression: transfer, holds, loader orders and pawn trips work as before (nothing in those paths changed except log gating).
 8. **Heavy terrain** (§11): the elevators can't be placed on marsh, mud, soft sand, shallow water or bridges. They still can on soil, sand, gravel, rough stone, built floors, DeepRim layers and MultiFloors upper floors.
 9. **Loader uninstall** (§11): uninstall a loader with items and an order in progress. The order is cancelled, the items are put down nearby, and the minified loader appears. Reinstall it next to an elevator: it links by itself (with the message), keeping its transfer switch and priority.
@@ -239,7 +241,9 @@ Results: §13 (round 1) and §16 (round 2, with what wasn't reported).
 | `a0f21b8` | slots above a lowered maximum are kept; results §13 |
 | `0a6bd55` | even glow for the large elevator, with a setting; results §14 |
 | `592f7ea` | even glow retuned: full radius, 0.6 of the colour per cell; results §15 |
-| (next) | results final (§16), light equation; `performance_review.md` even glow |
+| `30dbdaa` | results final (§16), light equation; `performance_review.md` even glow |
+| `433e67b` | (human/planner) `plan.md` rev 14; results §16 last test round noted |
+| (next) | sun shadows halved (elevators 0.3, loader 0.175); results §16 final |
 
 ## 11. Human decisions after the first round, and changes
 
@@ -397,34 +401,41 @@ The human asked for the four-light workaround of §13 (8), as an option players 
 
 | Test | Result |
 | --- | --- |
-| Even glow, retuned (§15) | looks right. Walking out from the large elevator's side gives **exactly the predicted 50, 50, 40, 1 %**, so the simulation below matches the game |
+| Even glow, retuned (§15) | looks right. Walking out from the large elevator's side gives **exactly the predicted 50, 50, 40, 1 %**, so the simulation in §16.3 matches the game |
 | Build menu without BAM | the buildings are in our own **Cargo elevator** tab |
 | Build menu, BAM without MultiFloors | in **Elevation** (BAM's `Ferny_Elevation`) |
 | Build menu, BAM with MultiFloors | in **Elevation** (MultiFloors' tab, relabelled by BAM; also §13) |
 
-Tested over both rounds (§13, §16): the rename, research, the build menu in all three set-ups, verbose logging, power, ticks per piece, max slots (raising; lowering before the §13 change), the glow and blink switches, the loader's uninstall and reinstall with auto-link, and the even glow and its switch.
+### 16.2 Last test round (human) and the shadow change
 
-**Not reported tested** (no known problem; worth a look in a later step):
-- max slots **lowered** after the §13 change: the elevator keeps its slots, "fewer" works one step at a time, "more" stays disabled until below the maximum;
-- the shadows in daylight (§7.1, §9 item 6);
-- Heavy terrain: refused on marsh, mud, soft sand, shallow water and bridges (§9 item 8);
-- settings surviving a restart, and the reset button (§9 item 3);
-- the even glow after save/load and after deconstructing a lit large elevator (§14);
-- the general regression pass: transfer, holds, loader orders, pawn trips (§9 item 7).
+First noted by the planner as "16.3"; completed here.
 
-Nothing is open on the code side.
+| Test | Result |
+| --- | --- |
+| Settings after quitting and restarting the game | kept, including the glow switches |
+| Max slots lowered in the settings, with built elevators above the new maximum (the §13 behaviour) | items are **not ejected**. "Fewer slots" lowers an elevator's slots; "more slots" stays disabled until the maximum is raised again |
+| Heavy terrain | OK |
+| General regression (transfer, holds, loader orders, pawn trips and the rest) | everything still works, no regression seen |
+| Shadows | too long: as long as a shelf's. **Halved** (below) |
 
-### 16.3 Last test round (human, after this document was written; added by the planner)
+**Decision (human):** the default max slots stay as they are (4 small, 8 large). The open item in §16.1's first version, "max slots lowered", meant the test above (lowering the setting below what built elevators use), not a change to the defaults.
 
-- Settings, including the glow switches, survive quitting and restarting the game.
-- Lowering max slots: items are not ejected; "fewer" lowers the slots, "more" stays disabled until the maximum is raised again (the §13 behaviour).
-- Heavy terrain check: OK.
-- General regression: everything else still works, no regression seen.
-- **Shadows:** too long, as long as a shelf's. They should be halved (elevators 0.6 → 0.3, loader 0.35 → about 0.18). Not changed yet; listed in `plan.md` §7 "To finalise".
+**Shadow change:** `staticSunShadowHeight` halved. Elevators **0.6 → 0.3**, loader **0.35 → 0.175** (XML only; `castEdgeShadows` unchanged). The elevators still cast a longer shadow than the loader.
 
-Still not reported: the reset button, the even glow after save/load and after deconstructing a lit large elevator.
+**Tested over all rounds (§13, §16):**
+- the rename and research;
+- the build menu in all three set-ups;
+- the settings: verbose logging, power, ticks per piece, max slots up and down, the glow, blink and even-glow switches, and keeping them over a restart;
+- the loader's uninstall and reinstall with auto-link;
+- the even glow at the predicted levels;
+- Heavy terrain;
+- a general regression pass.
 
-### 16.2 How the game computes light (for the even glow)
+Not named in the reports, but covered by the regression pass as far as the human could tell: the reset button, and the even glow after save/load and after deconstructing a lit large elevator.
+
+**Step H is closed.** Nothing is open on the code side.
+
+### 16.3 How the game computes light (for the even glow)
 
 From the decompiled 1.6 code: `Verse.Glow.ComputeGlowGridsJob` (per light), `GlowGrid.CombineColorsJob` (adding lights) and `GlowGrid.GroundGlowAt` (the light level). The level is the "light" percentage the inspect pane shows.
 

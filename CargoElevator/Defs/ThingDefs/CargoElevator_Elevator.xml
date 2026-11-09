@@ -14,7 +14,7 @@
     <fillPercent>0.4</fillPercent>
     <pathCost>42</pathCost>
     <castEdgeShadows>true</castEdgeShadows> <!-- the soft dark rim on the floor around it, like shelves and benches -->
-    <staticSunShadowHeight>0.6</staticSunShadowHeight> <!-- a tall frame: above shelves (0.5), below walls (1.0); the loader's crates are 0.35 -->
+    <staticSunShadowHeight>0.3</staticSunShadowHeight> <!-- halved from 0.6 after testing (as long as a shelf's was too much); taller than the loader's 0.175 -->
     <terrainAffordanceNeeded>Heavy</terrainAffordanceNeeded> <!-- like MultiFloors' elevators: not on marsh, mud, soft sand, shallow water or bridges -->
     <tickerType>Normal</tickerType>
     <drawerType>MapMeshAndRealTime</drawerType> <!-- base sprite in the map mesh, the state light drawn every frame -->
