@@ -1,6 +1,6 @@
 # CargoElevator – Step H preparation: build menu, performance, preview, mod settings
 
-Findings for the human's decisions before `plan_stepH.md` is written. Basis: the `stepF` branch as of `69d01a2`, decompiled RimWorld 1.6 (`include/decompiled`), the example mods in `Examples/` (DeepRim and FasterBiosculpterPod sources, MultiFloors 1.6 defs and assembly). Better Architect Menu (BAM) was not looked at, as asked. Nothing was run in game.
+Findings for the human's decisions before `plan_stepH.md` is written. Basis: the `stepF` branch as of `69d01a2`, decompiled RimWorld 1.6 (`include/decompiled`), the example mods in `Examples/` (DeepRim and FasterBiosculpterPod sources, MultiFloors 1.6 defs and assembly). Better Architect Menu (BAM) was not looked at, as asked. Nothing was run in game. **Outcome:** done in Step H (`results_stepH.md`); decisions in results §2. The mod is now named Cargo Elevator.
 
 ## 1. Build menu category
 

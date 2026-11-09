@@ -414,6 +414,16 @@ Tested over both rounds (§13, §16): the rename, research, the build menu in al
 
 Nothing is open on the code side.
 
+### 16.3 Last test round (human, after this document was written; added by the planner)
+
+- Settings, including the glow switches, survive quitting and restarting the game.
+- Lowering max slots: items are not ejected; "fewer" lowers the slots, "more" stays disabled until the maximum is raised again (the §13 behaviour).
+- Heavy terrain check: OK.
+- General regression: everything else still works, no regression seen.
+- **Shadows:** too long, as long as a shelf's. They should be halved (elevators 0.6 → 0.3, loader 0.35 → about 0.18). Not changed yet; listed in `plan.md` §7 "To finalise".
+
+Still not reported: the reset button, the even glow after save/load and after deconstructing a lit large elevator.
+
 ### 16.2 How the game computes light (for the even glow)
 
 From the decompiled 1.6 code: `Verse.Glow.ComputeGlowGridsJob` (per light), `GlowGrid.CombineColorsJob` (adding lights) and `GlowGrid.GroundGlowAt` (the light level). The level is the "light" percentage the inspect pane shows.
