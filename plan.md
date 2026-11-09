@@ -1,7 +1,8 @@
-# CargoElevator – plan (rev 14)
+# CargoElevator – plan (rev 15)
 
 Target: RimWorld 1.6 only (Assembly-CSharp 1.6.4871). **Only hard dependency: Harmony** (`brrainz.harmony`, from Step D; four postfixes: the store-cell patch, §1 "Storage handling and requests", and three loader patches from E2, §3 Code). Supported level mods: DeepRim (Mlie, `Mlie.DeepRim`) and MultiFloors (telardo, `telardo.MultiFloors`), each optional and in any combination. Soft interaction: Vanilla Furniture Expanded - Factory (VFE) conveyors (tested in game: belts push into the elevator, the elevator delivers into hoppers), and Better Architect Menu (`ferny.BetterArchitect`, one conditional XML patch, Step H). There is no compile-time reference to any of these mods (Harmony aside).
 
+- Rev 15: `results_stepH.md` final (§16.2 last test round, sun shadows halved: elevators 0.3, loader 0.175; Step H closed). About description rewritten (features, basic usage). Human: DeepRim, MultiFloors and VFE combinations tested; `stepF` merged into `main`. Publishing: not on Steam (the human owns the game elsewhere); alternatives in "To finalise".
 - Rev 14: Step H results folded in (`results_stepH.md`, `performance_review.md`): the mod is renamed **Cargo Elevator** (`CargoElevator`, packageId `FT.cargoelevator`); mod settings with verbose logging (off by default); own research project and architect tab, BAM placement; shadows, Heavy terrain, minifiable loader; even glow for the large elevator. Done and tested. Remaining work to release: §1 "Steps", "To finalise".
 - Rev 13: Step F results folded in (`results_stepF.md`; glow and post-light state overlays on the elevator and the loader, done and tested). The state looks are now the base sprite plus a lights-only overlay; the full state sprites are gone. Step G (VFE checks) done by the human's tests, no code. Next step proposed: H, mod settings.
 - Rev 12: Step E2 results folded in (`results_stepE2.md`; E1 and E2 done and tested, except the loader as a pocket-map exit). Step F is now visuals (glow and night-visible lights; the icons were wired and tested before it; `pre_stepF.md`); VFE checks move to Step G.
@@ -175,10 +176,10 @@ After each step the human user tests, then the next step is planned.
   - **Max slots lowered:** an elevator keeps its slots; "fewer" lowers one step at a time, "more" stays disabled until below the maximum. No items are lost (only intake checks the slots).
   - **Build menu:** own tab `CargoElevator` (order 640, needs the research). With BAM: `Patches/CargoElevator_BetterArchitectMenu.xml` moves the three buildings to MultiFloors' tab (BAM shows it as Structure > Elevation) or, without MultiFloors, to BAM's `Ferny_Elevation`, and removes our tab. Checks def nodes, not mod names; independent of load order (results §11–§12). No BAM entry in `About.xml`.
   - **Research:** `CargoElevator_Research` ("cargo elevators", 600, Industrial, after Electricity; main tab x 6.00, y 5.50) unlocks both elevators, the loader and the tab.
-  - **Def polish:** `castEdgeShadows` and `staticSunShadowHeight` (elevators 0.6, loader 0.35; **to halve**, human's last test), `uiOrder` 3140–3142, elevators need `Heavy` terrain, the loader is minifiable (reinstalled, it links by itself: `DeSpawn` resets `autoLinkAllowed`). Not taken: `holdsRoof` (roof-collapse risk), construction skill, elevator minify, `paintable`.
-  - **Even glow (large elevator, setting, on by default):** one unspawned-holder `CompGlower` per cell, registered with the glow grid directly, each with the def radius (5) and 0.6 of the state colour; the def's single glower stays off. Measured 50, 50, 40, 1 % on every side, as simulated. The light formula is recorded in results §16.2.
+  - **Def polish:** `castEdgeShadows` and `staticSunShadowHeight` (elevators 0.3, loader 0.175; halved from 0.6 and 0.35 after the last test, results §16.2), `uiOrder` 3140–3142, elevators need `Heavy` terrain, the loader is minifiable (reinstalled, it links by itself: `DeSpawn` resets `autoLinkAllowed`). Not taken: `holdsRoof` (roof-collapse risk), construction skill, elevator minify, `paintable`.
+  - **Even glow (large elevator, setting, on by default):** one unspawned-holder `CompGlower` per cell, registered with the glow grid directly, each with the def radius (5) and 0.6 of the state colour; the def's single glower stays off. Measured 50, 50, 40, 1 % on every side, as simulated. The light formula is recorded in results §16.3.
   - **Removed:** `ElevatorProfiler` and the hitch-detector map component. `ElevatorDiagnostics` stays, verbose only.
-  - **Tested:** everything above, including the build menu in all three set-ups, settings surviving a restart, slot lowering, Heavy terrain, and a general regression pass (human, after results §16). Open from the tests: halve the shadows.
+  - **Tested:** everything above, including the build menu in all three set-ups, settings surviving a restart, slot lowering, Heavy terrain, the shadows, and a general regression pass (results §13, §16). The reset button and the even glow after save/load or deconstruction were not named in the reports; the human counts them covered by the regression pass. Step H is closed.
 - **To finalise (release prep, next):** §7 "To finalise".
 - **Later:** see §7.
 
@@ -304,7 +305,7 @@ UI: inspect string status line (`Status: …, connected to <level>`; candidates 
 | Path | Contents |
 | --- | --- |
 | `CargoElevator.csproj` (SDK-style, `net472`), `CargoElevator.slnx` | repo root; OutputPath `CargoElevator\1.6\Assemblies\`; compiles `CargoElevator\Source\**\*.cs`; references Assembly-CSharp, UnityEngine.CoreModule, UnityEngine.IMGUIModule (for `GUI`) and `include\0Harmony.dll` (Step D), all `Private=false`; no other mod DLLs |
-| `CargoElevator/About/About.xml` | name "Cargo Elevator", packageId `FT.cargoelevator`; `modDependencies` Harmony only (Step D); `loadAfter` Harmony, DeepRim and MultiFloors (harmless when absent); no BAM entry (not needed, results_stepH §12); description lists supported mods (**to update** for release) |
+| `CargoElevator/About/About.xml` | name "Cargo Elevator", packageId `FT.cargoelevator`; `modDependencies` Harmony only (Step D); `loadAfter` Harmony, DeepRim and MultiFloors (harmless when absent); no BAM entry (not needed, results_stepH §12); description: summary, features, basic usage, map sizes, requirements (rev 15) |
 | `CargoElevator/loadFolders.xml` | `/`, `1.6` |
 | `CargoElevator/Defs/ThingDefs/CargoElevator_Elevator.xml` | abstract base + the two ThingDefs |
 | `CargoElevator/Defs/ThingDefs/CargoElevator_TransportLoader.xml` | the transport loader |
@@ -347,13 +348,13 @@ The AI builds with `dotnet build` (or MSBuild from VS 2026 Community). The human
 - Optionally prompt haulers when the elevator starts accepting again (e.g. `listerHaulables` notifications), if items in other storage react too slowly.
 
 **To finalise (release prep)**
-1. **Shadows:** halve `staticSunShadowHeight` (elevators 0.6 → 0.3, loader 0.35 → about 0.18), human's last test after Step H. XML only.
-2. **About:** `About/Preview.png` (human; 16:9, 1280x720 or 1920x1080, under 1 MB, `pre_stepH.md` §3); optional `About/ModIcon.png`. Rewrite the `description` (it predates the loader, research, settings, lights and BAM); optionally `url` and `modVersion`.
-3. **Name check:** look on the Workshop for an existing "Cargo Elevator" mod before publishing (`results_stepH.md` §1).
-4. **Code tidy:** remove the disabled probe comment in `AcceptsPawnDelivery`; keep the dev gizmos (god mode only) and `ElevatorDiagnostics` (verbose only).
-5. **Repository:** rename the repo folder to match (human, between sessions; refresh `obj/` and `.vs/`); merge `stepH` into `main`.
-6. **Package and final test:** copy the shipped folders (§4) into a clean `Mods/` folder, new colony, verbose off: no log lines from us; quick pass with DeepRim only, MultiFloors only, both, and VFE conveyors.
-7. **Publish** (human): Steam Workshop upload from the game's mod list.
+1. (Done, Step H: sun shadows halved, elevators 0.3, loader 0.175.)
+2. **About:** `About/Preview.png` (human; 16:9, 1280x720 or 1920x1080, under 1 MB for Steam, `pre_stepH.md` §3); optional `About/ModIcon.png`. Description rewritten (rev 15). Add `url` once the release page exists (the mod list's link button); optionally `modVersion`.
+3. **Name check:** before publishing, search the chosen site(s) for an existing "Cargo Elevator" mod or packageId (`results_stepH.md` §1).
+4. **Code tidy:** remove the disabled probe comment in `AcceptsPawnDelivery` (`Building_Elevator.Buffer.cs`, results_stepD §15.5/§16); keep the dev gizmos (god mode only) and `ElevatorDiagnostics` (verbose only).
+5. **Repository:** folder rename (human). `stepF` is merged into `main`; `stepH` is not yet (fast-forward possible).
+6. **Package:** a zip of the shipped folders only (§4), with the built DLL. Combination tests done (human): DeepRim, MultiFloors and VFE with Cargo Elevator.
+7. **Publish** (human; not Steam Workshop, the game is owned from another vendor): GitHub release (zip asset; the repo doubles as the issue tracker), Nexus Mods (RimWorld section), the Ludeon forums' Releases board linking to the download. Steam Workshop needs a Steam copy; a Steam-owning collaborator could upload it later (same packageId).
 
 **Known and accepted at release** (no code planned): the loader as a pocket-map exit is untested (two exit patches unproven); vanilla's remove button for one pawn of several in an order can still let that pawn walk in; pocket-map pairing and the broken label-provider fallback are untested; many blinking loaders untested (blink can be switched off); the old unexplained haul-search rejections (Step D, not seen since).
 

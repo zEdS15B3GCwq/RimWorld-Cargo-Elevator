@@ -19,5 +19,27 @@
 		<li>Mlie.DeepRim</li>
 		<li>telardo.MultiFloors</li>
 	</loadAfter>
-	<description>Elevator building that transports items between levels on the same world location: the surface, DeepRim layers, MultiFloors levels, and pocket maps together with the map they were opened from. Build two elevators at the same position measured from the center of their maps to link them. If maps have different sizes (DeepRim's layer size setting), the smaller map is placed over the center of the larger one, cell for cell. Elevators outside the smaller map's area can't connect to it, and an elevator's position relative to the DeepRim shaft may differ between levels. To avoid both, set DeepRim's layer size to the same size as your surface map. Items dropped onto an elevator are sent to its linked elevator; received items go into neighbouring storage if possible, or onto the ground. Works with VFE conveyor belts: conveyors can feed elevators, and output can go into hoppers.</description>
+	<description>Move items, colonists and animals between the levels of one location: the surface, DeepRim layers and MultiFloors levels. Cargo elevators come in two sizes and work in pairs, one on each level.
+
+Features
+- Cargo elevator (1x1) and large cargo elevator (2x2, four times as fast). Each pair links two levels.
+- Transport loader: choose items, colonists and animals in the familiar portal window. Items ride the elevator; colonists and animals step out at the other end.
+- Items go into storage next to the receiving elevator, or onto the floor nearby if you allow it.
+- Per-elevator options: buffer size, first in first out, merge stacks, drop on floor, and whether colonists may haul into it.
+- Clear state at a glance: a green or red lamp, a status line that names the reason when transfer pauses, and a soft glow that lights up dark underground rooms.
+- Uses power at both ends: more while moving items, little while idle.
+- Works with VFE conveyor belts: belts can feed an elevator, and an elevator can deliver into hoppers.
+- Mod settings: transfer speed, buffer size and power for each size, the lights, and verbose logging for bug reports.
+
+Basic usage
+1. Research "cargo elevators" (after Electricity). The buildings appear in their own Cargo elevator tab, or in Structure > Elevation with Better Architect Menu.
+2. Build an elevator, then build another one of the same size on a different level, at the same position measured from the centre of the map. They link by themselves; if several are possible, use "Connect to...". While placing, the mouse tooltip shows which elevator it will connect to.
+3. Power both ends.
+4. Send items: haul or drop items onto the elevator, or let a conveyor belt feed it. They arrive at the linked elevator.
+5. Send a chosen list, or people and animals: build a transport loader next to an elevator and use "Open transport menu".
+
+Maps of different sizes
+If the levels have different map sizes (DeepRim's layer size setting), the smaller map sits over the centre of the larger one, cell for cell. Elevators outside the smaller map can't connect to it. To avoid this, give DeepRim layers the same size as the surface map.
+
+Requires Harmony. DeepRim and MultiFloors are optional and can be used together.</description>
 </ModMetaData>
