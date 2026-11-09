@@ -181,18 +181,6 @@ public partial class Building_Elevator
     public bool AcceptsPawnDelivery(Thing thing)
     {
         return allowInsert && GetRefusalReason(thing) == null;
-
-        // PROBE (disabled): logs every refusal of the haul search with its reason, unfiltered. Used to find out why
-        // pawn deliveries were refused during steady transfer (results_stepD §15.5/§16). It floods the log (the search
-        // runs per cell, per item, per pawn scan), so it is commented out; to re-enable, replace the line above with this.
-        // string refusalReason = allowInsert ? GetRefusalReason(thing) : "allow insert is off";
-        // if (refusalReason == null)
-        // {
-        //     return true;
-        // }
-        //
-        // ElevatorUtil.Log($"Pawn delivery refused: {LogId} refuses {ElevatorUtil.Describe(thing)}: {refusalReason}");
-        // return false;
     }
 
     private void LogRefusal(Thing thing, string reason)

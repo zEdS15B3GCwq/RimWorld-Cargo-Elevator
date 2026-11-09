@@ -1,0 +1,47 @@
+[size=5][b]Cargo Elevator[/b][/size]
+
+Move items, colonists and animals between the levels of one location in RimWorld 1.6: the surface, DeepRim layers and MultiFloors levels.
+
+Cargo Elevator brings conveyor-style automation to multi-level colonies. Items put into an elevator on one level come out at its partner on another level, into storage there, without a pawn carrying them across. DeepRim's own transfer drops items on random cells around the shaft, and MultiFloors' system doesn't work with automation. This mod fills that gap.
+
+[size=4][b]Features[/b][/size]
+[list]
+[*][b]Two sizes[/b], linked in pairs: a 1x1 cargo elevator and a 2x2 large one, four times as fast.
+[*][b]Storage on the sending side:[/b] colonists haul into it like into a shelf, and conveyor belts can feed it.
+[*][b]Storage on the receiving side:[/b] items go into stockpiles, shelves or hoppers next to the partner, or onto the floor nearby if you allow it.
+[*][b]Transport loader:[/b] choose items, people and animals in the familiar portal window and send them through the elevator.
+[*][b]Per-elevator options:[/b] buffer size, first in first out, merge stacks, drop on floor, allow insert.
+[*][b]Status at a glance:[/b] green or red lamp, a status line with the reason for any pause, and a soft glow for dark underground rooms.
+[*][b]Power at both ends:[/b] more while moving items, little while idle.
+[*][b]Mod settings:[/b] speed, buffer size and power for each size, the lights, and verbose logging.
+[/list]
+
+[size=4][b]Basic usage[/b][/size]
+[list=1]
+[*]Research [b]cargo elevators[/b] (after Electricity). The buildings are in their own Cargo elevator tab, or in Structure > Elevation with Better Architect Menu.
+[*]Build an elevator, then one of the same size on another level at the same position measured from the map centre. They link by themselves; use "Connect to..." if several match.
+[*]Power both ends.
+[*]Set the sending elevator's storage filter (nothing is allowed by default). Colonists or conveyors put items in; they arrive at the partner and go into storage next to it.
+[*]For a chosen list, or for people and animals, build a transport loader next to an elevator and use "Open transport menu".
+[/list]
+
+[size=4][b]Requirements[/b][/size]
+[list]
+[*][b]Required:[/b] Harmony.
+[*][b]Optional, in any combination:[/b] DeepRim, MultiFloors, Vanilla Furniture Expanded - Factory (conveyors), Better Architect Menu.
+[/list]
+
+[size=4][b]Installation[/b][/size]
+[list=1]
+[*]Download the file and extract it.
+[*]Copy the [b]CargoElevator[/b] folder (the one that contains About and Defs) into your RimWorld [b]Mods[/b] folder.
+[*]Install Harmony the same way if you don't have it.
+[*]Start the game, open Mods, enable Harmony and Cargo Elevator, and restart when asked.
+[/list]
+Load order: Harmony first, then Cargo Elevator after DeepRim and MultiFloors. The game's Auto-sort button does this for you.
+
+[size=4][b]More information[/b][/size]
+Full usage guide, mod interactions, known limitations and bug reports: [url=https://github.com/YOUR-NAME/CargoElevator]GitHub repository[/url]
+
+[size=4][b]Generative AI use[/b][/size]
+This mod was designed and built with Claude Opus 5.5 (Anthropic) as the main engineer: reverse-engineering, planning, code, documentation and version control. The building images and icons were created with Nano Banana 2 (Google), followed by heavy editing by hand. The author set the goals, made the design decisions and tested every change in game. Details are on GitHub.

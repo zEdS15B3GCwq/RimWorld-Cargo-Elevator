@@ -1,7 +1,8 @@
-# CargoElevator – plan (rev 15)
+# CargoElevator – plan (rev 16)
 
 Target: RimWorld 1.6 only (Assembly-CSharp 1.6.4871). **Only hard dependency: Harmony** (`brrainz.harmony`, from Step D; four postfixes: the store-cell patch, §1 "Storage handling and requests", and three loader patches from E2, §3 Code). Supported level mods: DeepRim (Mlie, `Mlie.DeepRim`) and MultiFloors (telardo, `telardo.MultiFloors`), each optional and in any combination. Soft interaction: Vanilla Furniture Expanded - Factory (VFE) conveyors (tested in game: belts push into the elevator, the elevator delivers into hoppers), and Better Architect Menu (`ferny.BetterArchitect`, one conditional XML patch, Step H). There is no compile-time reference to any of these mods (Harmony aside).
 
+- Rev 16: release prep: probe comment removed; `stepH` merged into `main`; `About/Preview.png` supplied (1920x1080, 1.8 MB: fine without Steam); `README.md` (GitHub) and `NEXUS_DESCRIPTION.txt` (Nexus Mods, BBCode) written; release on GitHub, Nexus Mods and smaller sites.
 - Rev 15: `results_stepH.md` final (§16.2 last test round, sun shadows halved: elevators 0.3, loader 0.175; Step H closed). About description rewritten (features, basic usage). Human: DeepRim, MultiFloors and VFE combinations tested; `stepF` merged into `main`. Publishing: not on Steam (the human owns the game elsewhere); alternatives in "To finalise".
 - Rev 14: Step H results folded in (`results_stepH.md`, `performance_review.md`): the mod is renamed **Cargo Elevator** (`CargoElevator`, packageId `FT.cargoelevator`); mod settings with verbose logging (off by default); own research project and architect tab, BAM placement; shadows, Heavy terrain, minifiable loader; even glow for the large elevator. Done and tested. Remaining work to release: §1 "Steps", "To finalise".
 - Rev 13: Step F results folded in (`results_stepF.md`; glow and post-light state overlays on the elevator and the loader, done and tested). The state looks are now the base sprite plus a lights-only overlay; the full state sprites are gone. Step G (VFE checks) done by the human's tests, no code. Next step proposed: H, mod settings.
@@ -306,6 +307,9 @@ UI: inspect string status line (`Status: …, connected to <level>`; candidates 
 | --- | --- |
 | `CargoElevator.csproj` (SDK-style, `net472`), `CargoElevator.slnx` | repo root; OutputPath `CargoElevator\1.6\Assemblies\`; compiles `CargoElevator\Source\**\*.cs`; references Assembly-CSharp, UnityEngine.CoreModule, UnityEngine.IMGUIModule (for `GUI`) and `include\0Harmony.dll` (Step D), all `Private=false`; no other mod DLLs |
 | `CargoElevator/About/About.xml` | name "Cargo Elevator", packageId `FT.cargoelevator`; `modDependencies` Harmony only (Step D); `loadAfter` Harmony, DeepRim and MultiFloors (harmless when absent); no BAM entry (not needed, results_stepH §12); description: summary, features, basic usage, map sizes, requirements (rev 15) |
+| `CargoElevator/About/Preview.png` | mod list and release preview, 1920x1080 (human) |
+| `README.md` | GitHub readme: purpose, features, install, usage, mod interaction, limitations, AI use (not shipped) |
+| `NEXUS_DESCRIPTION.txt` | Nexus Mods page text, BBCode, placeholder GitHub link (not shipped) |
 | `CargoElevator/loadFolders.xml` | `/`, `1.6` |
 | `CargoElevator/Defs/ThingDefs/CargoElevator_Elevator.xml` | abstract base + the two ThingDefs |
 | `CargoElevator/Defs/ThingDefs/CargoElevator_TransportLoader.xml` | the transport loader |
@@ -349,12 +353,12 @@ The AI builds with `dotnet build` (or MSBuild from VS 2026 Community). The human
 
 **To finalise (release prep)**
 1. (Done, Step H: sun shadows halved, elevators 0.3, loader 0.175.)
-2. **About:** `About/Preview.png` (human; 16:9, 1280x720 or 1920x1080, under 1 MB for Steam, `pre_stepH.md` §3); optional `About/ModIcon.png`. Description rewritten (rev 15). Add `url` once the release page exists (the mod list's link button); optionally `modVersion`.
+2. **About:** `About/Preview.png` supplied (1920x1080, 1.8 MB; the 1 MB limit is Steam's only, and the game loads only the name `Preview.png`, so it stays a PNG). Optional `About/ModIcon.png`. Description rewritten (rev 15, storage-filter note rev 16). Add `url` once the GitHub repo exists (the mod list's link button); optionally `modVersion`.
 3. **Name check:** before publishing, search the chosen site(s) for an existing "Cargo Elevator" mod or packageId (`results_stepH.md` §1).
-4. **Code tidy:** remove the disabled probe comment in `AcceptsPawnDelivery` (`Building_Elevator.Buffer.cs`, results_stepD §15.5/§16); keep the dev gizmos (god mode only) and `ElevatorDiagnostics` (verbose only).
-5. **Repository:** folder rename (human). `stepF` is merged into `main`; `stepH` is not yet (fast-forward possible).
-6. **Package:** a zip of the shipped folders only (§4), with the built DLL. Combination tests done (human): DeepRim, MultiFloors and VFE with Cargo Elevator.
-7. **Publish** (human; not Steam Workshop, the game is owned from another vendor): GitHub release (zip asset; the repo doubles as the issue tracker), Nexus Mods (RimWorld section), the Ludeon forums' Releases board linking to the download. Steam Workshop needs a Steam copy; a Steam-owning collaborator could upload it later (same packageId).
+4. (Done, rev 16: the disabled probe comment in `AcceptsPawnDelivery` removed.) Kept: the dev gizmos (god mode only) and `ElevatorDiagnostics` (verbose only).
+5. **Repository:** folder rename (human). `stepH` merged into `main`. Create the GitHub repo, then replace the placeholder link in `NEXUS_DESCRIPTION.txt` and set `url` in `About.xml`.
+6. **Package:** a zip of the `CargoElevator` folder with the shipped folders only (§4), with the built DLL. The repo's own ZIP download also works (README: copy the `CargoElevator` folder into Mods; `Source/` is harmless there). Combination tests done (human): DeepRim, MultiFloors and VFE with Cargo Elevator.
+7. **Publish** (human; not Steam Workshop): GitHub (repo and release; issues as the bug tracker; `README.md`), Nexus Mods (`NEXUS_DESCRIPTION.txt`, BBCode), possibly smaller RimWorld mod sites. Steam Workshop needs a Steam copy; a Steam-owning collaborator could upload it later (same packageId).
 
 **Known and accepted at release** (no code planned): the loader as a pocket-map exit is untested (two exit patches unproven); vanilla's remove button for one pawn of several in an order can still let that pawn walk in; pocket-map pairing and the broken label-provider fallback are untested; many blinking loaders untested (blink can be switched off); the old unexplained haul-search rejections (Step D, not seen since).
 

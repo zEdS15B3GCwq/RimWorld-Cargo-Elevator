@@ -35,7 +35,7 @@ Basic usage
 1. Research "cargo elevators" (after Electricity). The buildings appear in their own Cargo elevator tab, or in Structure > Elevation with Better Architect Menu.
 2. Build an elevator, then build another one of the same size on a different level, at the same position measured from the centre of the map. They link by themselves; if several are possible, use "Connect to...". While placing, the mouse tooltip shows which elevator it will connect to.
 3. Power both ends.
-4. Send items: haul or drop items onto the elevator, or let a conveyor belt feed it. They arrive at the linked elevator.
+4. Send items: set the elevator's storage filter (nothing is allowed by default), then colonists haul into it, or let a conveyor belt feed it. Items arrive at the linked elevator and go into storage next to it.
 5. Send a chosen list, or people and animals: build a transport loader next to an elevator and use "Open transport menu".
 
 Maps of different sizes
