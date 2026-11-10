@@ -2,7 +2,7 @@
 
 Move items, colonists and animals between the levels of one location in RimWorld 1.6: the surface, DeepRim layers and MultiFloors levels.
 
-Cargo Elevator brings conveyor-style automation to multi-level colonies. Items put into an elevator on one level come out at its partner on another level, into storage there, without a pawn carrying them across. DeepRim's own transfer drops items on random cells around the shaft, and MultiFloors' system doesn't work with automation. This mod fills that gap.
+Cargo Elevator brings conveyor-style automation to multi-level colonies. Items put into an elevator on one level come out at its partner on another level, into storage there (or on the floor), without a pawn carrying them across. Elevators can connect to VFE conveyor belts.
 
 [size=4][b]Features[/b][/size]
 [list]
@@ -22,7 +22,7 @@ Cargo Elevator brings conveyor-style automation to multi-level colonies. Items p
 [*]Build an elevator, then one of the same size on another level at the same position measured from the map centre. They link by themselves; use "Connect to..." if several match.
 [*]Power both ends.
 [*]Set the sending elevator's storage filter (nothing is allowed by default). Colonists or conveyors put items in; they arrive at the partner and go into storage next to it.
-[*]For a chosen list, or for people and animals, build a transport loader next to an elevator and use "Open transport menu".
+[*]To send a specific amount of items, or people and animals, build a transport loader next to an elevator and use "Open transport menu".
 [/list]
 
 [size=4][b]Requirements[/b][/size]
@@ -38,10 +38,10 @@ Cargo Elevator brings conveyor-style automation to multi-level colonies. Items p
 [*]Install Harmony the same way if you don't have it.
 [*]Start the game, open Mods, enable Harmony and Cargo Elevator, and restart when asked.
 [/list]
-Load order: Harmony first, then Cargo Elevator after DeepRim and MultiFloors. The game's Auto-sort button does this for you.
+Mod load order: load Cargo Elevator after Harmony, DeepRim and MultiFloors.
 
 [size=4][b]More information[/b][/size]
 Full usage guide, mod interactions, known limitations and bug reports: [url=https://github.com/YOUR-NAME/CargoElevator]GitHub repository[/url]
 
 [size=4][b]Generative AI use[/b][/size]
-This mod was designed and built with Claude Opus 5.5 (Anthropic) as the main engineer: reverse-engineering, planning, code, documentation and version control. The building images and icons were created with Nano Banana 2 (Google), followed by heavy editing by hand. The author set the goals, made the design decisions and tested every change in game. Details are on GitHub.
+This mod was designed and built with heavy use of Claude Opus and Sonnet 5.5 (Anthropic): reverse-engineering game and mod code, coding, maintaining documentation. Initial building images and icons were created with the help of Nano Banana 2 (Google).
