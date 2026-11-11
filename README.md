@@ -1,6 +1,6 @@
 # Cargo Elevator
 
-A RimWorld 1.6 mod featuring elevators that move items, colonists and animals between floors: the surface, DeepRim layers and MultiFloors levels. It can be part of an automated transport system, similar to a conveyor belt.
+A RimWorld 1.6 mod featuring elevators that move items, colonists and animals between floors: the surface, DeepRim layers and MultiFloors levels. It can be part of an automated transport system, similar to a conveyor belt. Perfect for putting an automated factory or farm on a different level and deliver products back to your base, automatically. Also perfect for sending down a construction materials, pawns etc. to a DeepRim level that doesn't have built-in job discovery like MultiFloors. Or, if you happen to have pawns working on one level, they can just drop their output into an elevator and get it placed into a storage or shelf on another floor.
 
 ![Cargo Elevator](CargoElevator/About/Preview.png)
 
@@ -13,6 +13,8 @@ A RimWorld 1.6 mod featuring elevators that move items, colonists and animals be
 This mod was mostly implemented by an AI coding agent, as I (human) didn't have the time to do so. I also used Nano Banana to draft building images and icons as I have no drawing skills. I made all design decisions, discussed and controlled implementation details, and thoroughly tested the results.
 
 ## Why this mod
+
+RimWorld maps can feel small. When your colony has grown large enough, the buffer zone around your colony can become narrow and raids appear very close to your colony. Defense becomes much more difficult to organise. Sure, you can keep your base small, the number of your pawns small, but sometimes you don't want to. One solution can be to increase the size of the map. I have another utility to do just that, take a look at [Rimworld-Map-Extender](https://github.com/zEdS15B3GCwq/RimWorld-Map-Extender) if you're interested. However, the game warns about game breaking issues with pathfinding on larger maps, and if you want to avoid that, another solution is multi-level colonies. Two mods I'm aware of that allow that are DeepRim and MultiFloors. And while both of them are very useful, they lack well-implemented automated transfer of items between levels. I wanted to put my VFE factories and farms on another level, and get their output dropped right into my storage, automatically. With my mod, you can do that and more:
 
 Cargo Elevator brings conveyor-style automation to multi-level colonies. Items put into an elevator on one level come out at its partner on another level, no pawn has to carry them across.
 
